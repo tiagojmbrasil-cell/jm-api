@@ -1885,40 +1885,42 @@ function renderFiscal(dados) {
         <th>Lote / Cliente</th>
         <th>Rota</th>
         <th>Peso Saída</th>
-        <th>Banco</th>
-        <th>Agência</th>
-        <th>Conta</th>
-        <th>Tipo</th>
-        <th>Titular</th>
-        <th>CPF/CNPJ Titular</th>
         <th>Pagamento</th>
-        <th>Detalhe PIX/Conta</th>
+        <th>Dados Bancários / PIX</th>
+        <th>Titular</th>
       </tr></thead>
       <tbody>
-        ${dados.map(m => `<tr onclick="abrirFiscalModal(${m.id})" style="cursor:pointer">
-          <td style="color:var(--muted);font-size:12px">#${m.id}</td>
-          <td><strong>${m.nome || '—'}</strong></td>
-          <td style="font-size:12px">${m.cpf || '—'}</td>
-          <td style="font-size:12px">${m.placa || '—'}</td>
-          <td>${badgeMotorista(m.status)}</td>
-          <td style="font-size:12px">
-            <span style="color:var(--muted)">Lote #${m.lote_id}</span><br>
-            <strong>${m.lote ? m.lote.cliente || '—' : '—'}</strong>
-          </td>
-          <td style="font-size:12px;color:var(--muted)">${m.lote ? (m.lote.origem||'—') + ' → ' + (m.lote.destino||'—') : '—'}</td>
-          <td style="font-size:12px;color:var(--accent);font-weight:600">${m.peso_saida ? m.peso_saida + ' ton' : '—'}</td>
-          <td style="font-size:12px">${m.banco || '—'}</td>
-          <td style="font-size:12px">${m.agencia || '—'}</td>
-          <td style="font-size:12px">${m.numero_conta || '—'}</td>
-          <td style="font-size:12px">${m.tipo_conta ? m.tipo_conta.charAt(0).toUpperCase() + m.tipo_conta.slice(1) : '—'}</td>
-          <td style="font-size:12px">${m.nome_titular || '—'}</td>
-          <td style="font-size:12px">${m.cpf_titular || '—'}</td>
-          <td style="font-size:12px">${badgeTipoPagamento(m.tipo_pagamento)}</td>
-          <td style="font-size:12px">${m.tipo_pagamento === 'chave_pix'
-            ? `<span style="color:var(--green)">${nomeTipoPix(m.tipo_chave_pix)}: ${m.chave_pix || '—'}</span>`
-            : (m.banco ? `${m.banco} | Ag: ${m.agencia || '—'} | Cc: ${m.numero_conta || '—'}` : '—')
-          }</td>
-        </tr>`).join('')}
+        ${dados.map(m => {
+          const isPix = m.tipo_pagamento === 'chave_pix';
+          const dadosPagamento = isPix
+            ? `<div style="display:flex;flex-direction:column;gap:3px;">
+                <span style="font-size:11px;color:var(--muted)">${nomeTipoPix(m.tipo_chave_pix)}</span>
+                <span style="color:var(--green);font-weight:600;word-break:break-all">${m.chave_pix || '—'}</span>
+               </div>`
+            : `<div style="display:flex;flex-direction:column;gap:3px;">
+                <span style="font-weight:600">${m.banco || '—'}</span>
+                <span style="color:var(--muted);font-size:11px">Ag: ${m.agencia || '—'} | Cc: ${m.numero_conta || '—'} ${m.tipo_conta ? '(' + m.tipo_conta.charAt(0).toUpperCase() + m.tipo_conta.slice(1) + ')' : ''}</span>
+               </div>`;
+          return `<tr onclick="abrirFiscalModal(${m.id})" style="cursor:pointer">
+            <td style="color:var(--muted);font-size:12px">#${m.id}</td>
+            <td><strong>${m.nome || '—'}</strong></td>
+            <td style="font-size:12px">${m.cpf || '—'}</td>
+            <td style="font-size:12px">${m.placa || '—'}</td>
+            <td>${badgeMotorista(m.status)}</td>
+            <td style="font-size:12px">
+              <span style="color:var(--muted)">Lote #${m.lote_id}</span><br>
+              <strong>${m.lote ? m.lote.cliente || '—' : '—'}</strong>
+            </td>
+            <td style="font-size:12px;color:var(--muted)">${m.lote ? (m.lote.origem||'—') + ' → ' + (m.lote.destino||'—') : '—'}</td>
+            <td style="font-size:12px;color:var(--accent);font-weight:600">${m.peso_saida ? m.peso_saida + ' ton' : '—'}</td>
+            <td>${badgeTipoPagamento(m.tipo_pagamento)}</td>
+            <td style="font-size:12px">${dadosPagamento}</td>
+            <td style="font-size:12px">
+              <div style="font-weight:600">${m.nome_titular || '—'}</div>
+              <div style="color:var(--muted);font-size:11px">${m.cpf_titular || ''}</div>
+            </td>
+          </tr>`;
+        }).join('')}
       </tbody>
     </table>`;
 }
