@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JM Brasil — Sistema</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0c0f;--surface:#111318;--surface2:#181c23;--border:#1f2530;
+  --accent:#f97316;--accent2:#fb923c;--text:#e8eaf0;--muted:#5a6070;--muted2:#3a4050;
+  --green:#22c55e;--red:#ef4444;--yellow:#eab308;--blue:#3b82f6;--radius:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;display:flex;align-items:center;gap:10px;}
+nav{display:flex;gap:4px;}
+nav button{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:8px 16px;border-radius:6px;cursor:pointer;transition:all 0.15s;}
+nav button:hover{color:var(--text);background:var(--surface2);}
+nav button.active{color:var(--accent);background:rgba(249,115,22,0.1);}
+.btn-logout{background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 14px;border-radius:6px;cursor:pointer;transition:all 0.15s;}
+.btn-logout:hover{color:var(--red);border-color:rgba(239,68,68,0.5);}
+.page{display:none;padding:32px;max-width:1300px;margin:0 auto;}
+.page.active{display:block;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;position:relative;overflow:hidden;}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.stat.total::before{background:var(--accent);}
+.stat.aprovadas::before{background:var(--green);}
+.stat.reprovadas::before{background:var(--red);}
+.stat.pendentes::before{background:var(--yellow);}
+.stat-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:8px;}
+.stat-value{font-family:'Syne',sans-serif;font-size:32px;font-weight:700;line-height:1;}
+.stat.total .stat-value{color:var(--accent);}
+.stat.aprovadas .stat-value{color:var(--green);}
+.stat.reprovadas .stat-value{color:var(--red);}
+.stat.pendentes .stat-value{color:var(--yellow);}
+.form-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:24px;display:flex;align-items:center;gap:10px;}
+.form-title span{width:4px;height:20px;background:var(--accent);border-radius:2px;display:inline-block;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group.full{grid-column:1/-1;}
+label{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted);}
+input,select,textarea{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 14px;outline:none;transition:border-color 0.15s;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(249,115,22,0.1);}
+select option{background:var(--surface2);}
+textarea{resize:vertical;min-height:80px;}
+.btn-primary{background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding:12px 28px;cursor:pointer;transition:all 0.15s;}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px);}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:10px 20px;cursor:pointer;transition:all 0.15s;}
+.btn-secondary:hover{border-color:var(--muted2);}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+.table-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.table-header h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;}
+.filters{display:flex;gap:10px;align-items:center;}
+.filters input,.filters select{width:auto;font-size:13px;padding:8px 12px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead tr{border-bottom:1px solid var(--border);}
+th{text-align:left;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted);padding:10px 14px;}
+tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s;cursor:pointer;}
+tbody tr:hover{background:var(--surface2);}
+tbody tr:last-child{border-bottom:none;}
+td{padding:14px;color:var(--text);}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;padding:3px 10px;border-radius:20px;}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;}
+.badge-pendente{color:var(--yellow);background:rgba(234,179,8,0.12);}
+.badge-aprovada{color:var(--green);background:rgba(34,197,94,0.12);}
+.badge-reprovada{color:var(--red);background:rgba(239,68,68,0.12);}
+.badge-em_negociacao{color:var(--blue);background:rgba(59,130,246,0.12);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;}
+.modal-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;}
+.modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.detail-row:last-child{border-bottom:none;}
+.detail-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:0.5px;}
+.detail-value{font-weight:500;}
+.status-select-row{display:flex;align-items:center;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);}
+.status-select-row label{font-size:12px;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 20px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:10px;z-index:300;transform:translateY(100px);opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-left:3px solid var(--green);}
+.toast.error{border-left:3px solid var(--red);}
+.empty{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.empty p{font-size:14px;}
+.loading{text-align:center;padding:40px;color:var(--muted);font-size:14px;}
+.section-divider{display:flex;align-items:center;gap:10px;margin:28px 0 20px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+.section-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.valor-cell{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);}
+@media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr);}.form-grid{grid-template-columns:1fr;}.page{padding:16px;}header{padding:0 16px;}}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--accent);border-top:none;border-radius:0 0 8px 8px;z-index:50;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+.autocomplete-item{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);transition:background 0.1s;}
+.autocomplete-item:last-child{border-bottom:none;}
+.autocomplete-item:hover,.autocomplete-item.active{background:rgba(249,115,22,0.15);}
+</style>
+</head>
+<body>
+
+<!-- TELA DE LOGIN -->
+<div id="login-screen" style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px;width:100%;max-width:400px;">
+    <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:8px;text-align:center;">
+      <span style="color:#22c55e">JM</span><span style="color:#eab308"> BRASIL</span>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:13px;margin-bottom:28px;">Sistema de Cotações</p>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted)">Email</label>
+        <input type="email" id="login-email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')fazerLogin()">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted)">Senha</label>
+        <input type="password" id="login-senha" placeholder="••••••••" onkeydown="if(event.key==='Enter')fazerLogin()">
+      </div>
+      <p id="login-erro" style="color:var(--red);font-size:13px;display:none;text-align:center"></p>
+      <button id="login-btn" onclick="fazerLogin()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding:12px;cursor:pointer;margin-top:4px;">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://jdmcbdmkoxxnnuzjoepa.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
+</script>
+
+<header>
+  <div class="logo">
+    <span style="color:#22c55e">JM</span><span style="color:#eab308"> BRASIL</span>
+  </div>
+  <nav>
+    <button class="active" onclick="showPage('dashboard')">Dashboard</button>
+    <button onclick="showPage('nova')">Nova Cotação</button>
+    <button onclick="showPage('lista')">Todas as Cotações</button>
+    <button onclick="showPage('lotes')">Lotes</button>
+    <button onclick="showPage('status-lote')">Status do Lote</button>
+    <button onclick="showPage('clientes')">Clientes</button>
+  </nav>
+  <button class="btn-logout" onclick="fazerLogout()">Sair</button>
+</header>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="stats">
+    <div class="stat total"><div class="stat-label">Total</div><div class="stat-value" id="stat-total">—</div></div>
+    <div class="stat aprovadas"><div class="stat-label">Aprovadas</div><div class="stat-value" id="stat-aprovadas">—</div></div>
+    <div class="stat reprovadas"><div class="stat-label">Reprovadas</div><div class="stat-value" id="stat-reprovadas">—</div></div>
+    <div class="stat pendentes"><div class="stat-label">Pendentes</div><div class="stat-value" id="stat-pendentes">—</div></div>
+  </div>
+  <div class="card">
+    <div class="table-header">
+      <h2>Cotações Recentes</h2>
+      <button class="btn-secondary" onclick="showPage('lista')">Ver todas →</button>
+    </div>
+    <div id="dashboard-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- NOVA COTAÇÃO -->
+<div class="page" id="page-nova">
+  <div class="card">
+    <div class="form-title"><span></span> Registrar Nova Cotação</div>
+    <div class="section-divider">Cliente e Vendedor</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nome do Cliente / Empresa</label>
+        <input type="text" id="f-cliente" placeholder="Ex: Empresa ABC Ltda">
+      </div>
+      <div class="form-group">
+        <label>Vendedor Responsável</label>
+        <input type="text" id="f-vendedor" placeholder="Nome do vendedor">
+      </div>
+    </div>
+    <div class="section-divider">Rota da Carga</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Origem</label>
+        <input type="text" id="f-origem" placeholder="Ex: São Paulo, SP">
+      </div>
+      <div class="form-group">
+        <label>Destino</label>
+        <input type="text" id="f-destino" placeholder="Ex: Belo Horizonte, MG">
+      </div>
+    </div>
+    <div class="section-divider">Dados da Carga</div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Produto</label>
+        <input type="text" id="f-produto" placeholder="Ex: Soja, Milho, Aço...">
+      </div>
+      <div class="form-group">
+        <label>Tipo de Carga</label>
+        <input type="text" id="f-tipo" placeholder="Ex: Granel, Frigorificado...">
+      </div>
+      <div class="form-group">
+        <label>Peso (ton)</label>
+        <input type="number" id="f-peso" placeholder="Ex: 5" min="0" step="0.1">
+      </div>
+    </div>
+    <div class="section-divider">Valor e Status</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Valor Cotado</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
+          <input type="number" id="f-valor" placeholder="0,00" step="0.01" min="0" style="padding-left:36px">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="f-status">
+          <option value="pendente">Pendente</option>
+          <option value="em_negociacao">Em Negociação</option>
+          <option value="aprovada">Aprovada</option>
+          <option value="reprovada">Reprovada</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Data da Cotação</label>
+        <input type="date" id="f-data">
+      </div>
+      <div class="form-group full">
+        <label>Observações</label>
+        <textarea id="f-obs" placeholder="Informações adicionais..."></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="resetForm()">Limpar</button>
+      <button class="btn-primary" onclick="salvarCotacao()">💾 Salvar Cotação</button>
+    </div>
+  </div>
+</div>
+
+<!-- LISTA DE COTAÇÕES -->
+<div class="page" id="page-lista">
+  <div class="card">
+    <div class="table-header">
+      <h2>Todas as Cotações</h2>
+      <div class="filters">
+        <input type="text" id="filtro-busca" placeholder="🔍 Buscar cliente..." oninput="filtrarTabela()">
+        <select id="filtro-status" onchange="filtrarTabela()">
+          <option value="">Todos os status</option>
+          <option value="pendente">Pendente</option>
+          <option value="aprovada">Aprovada</option>
+          <option value="reprovada">Reprovada</option>
+          <option value="em_negociacao">Em Negociação</option>
+        </select>
+      </div>
+    </div>
+    <div id="lista-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- LOTES -->
+<div class="page" id="page-lotes">
+  <div class="card" style="margin-bottom:20px">
+    <div class="form-title"><span></span> Novo Lote</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Agência</label>
+        <select id="l-agencia">
+          <option value="">Selecione...</option>
+          <option>UNIDADE 01 (LUCAS)</option>
+          <option>UNIDADE 03 (PEDRO)</option>
+          <option>UNIDADE 04 (IVO)</option>
+          <option>UNIDADE 05 (GABRIEL)</option>
+          <option>UNIDADE 06 (ITALO)</option>
+          <option>UNIDADE 07 (ADMINISTRATIVO)</option>
+          <option>UNIDADE (LOGISTICA 02)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cliente</label>
+        <select id="l-cliente">
+          <option value="">Selecione um cliente...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Produto</label>
+        <input type="text" id="l-produto" placeholder="Ex: Soja, Milho, Fertilizante...">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="l-status">
+          <option value="liberado">Liberado</option>
+          <option value="aceita">Aceita</option>
+          <option value="aguardando">Aguardando</option>
+          <option value="aguardando_inicio">Aguardando Início</option>
+          <option value="aguardando_produto">Aguardando Produto</option>
+          <option value="buscando">Buscando</option>
+          <option value="fechada">Fechada</option>
+          <option value="finalizado">Finalizado</option>
+          <option value="finalizando">Finalizando</option>
+          <option value="no_show">No-Show</option>
+          <option value="paralizado">Paralizado</option>
+          <option value="prob_qualidade">Prob. Qualidade</option>
+          <option value="ret_domingo">Ret. Domingo</option>
+          <option value="ret_fds">Ret. Final de Semana</option>
+          <option value="ret_quarta">Ret. Quarta</option>
+          <option value="ret_quinta">Ret. Quinta</option>
+          <option value="ret_sabado">Ret. Sábado</option>
+          <option value="ret_segunda">Ret. Segunda</option>
+          <option value="ret_sexta">Ret. Sexta</option>
+          <option value="ret_terca">Ret. Terça</option>
+          <option value="sab_dom">Sab/Dom</option>
+          <option value="sab_ate_11">Sab até 11hrs</option>
+          <option value="sab_ate_17">Sab até 17hrs</option>
+          <option value="sem_cota">Sem Cota</option>
+          <option value="sem_produto">Sem Produto</option>
+          <option value="suspenso">Suspenso</option>
+          <option value="urgente">Urgente</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Coleta</label>
+        <input type="text" id="l-coleta" placeholder="Local de coleta">
+      </div>
+      <div class="form-group">
+        <label>Origem</label>
+        <div style="position:relative">
+          <input type="text" id="l-origem" placeholder="Digite a cidade de origem..." autocomplete="off" oninput="buscarCidade(this.value,'l-origem-list')" onkeydown="navegarAutocomplete(event,'l-origem-list')">
+          <div id="l-origem-list" class="autocomplete-list" style="display:none"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Entrega</label>
+        <input type="text" id="l-entrega" placeholder="Local de entrega">
+      </div>
+      <div class="form-group">
+        <label>Destino</label>
+        <div style="position:relative">
+          <input type="text" id="l-destino" placeholder="Digite a cidade de destino..." autocomplete="off" oninput="buscarCidade(this.value,'l-destino-list')" onkeydown="navegarAutocomplete(event,'l-destino-list')">
+          <div id="l-destino-list" class="autocomplete-list" style="display:none"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Tarifa Empresa (R$)</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
+          <input type="number" id="l-tarifa-emp" placeholder="0,00" step="0.01" min="0" style="padding-left:36px">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Tarifa Motorista (R$)</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
+          <input type="number" id="l-tarifa-mot" placeholder="0,00" step="0.01" min="0" style="padding-left:36px">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Peso Total (ton)</label>
+        <input type="number" id="l-peso" placeholder="Ex: 25.5" step="0.1" min="0">
+      </div>
+      <div class="form-group">
+        <label>Data</label>
+        <input type="date" id="l-data">
+      </div>
+      <div class="form-group full">
+        <label>Observação</label>
+        <textarea id="l-obs" placeholder="Informações adicionais..."></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="resetLote()">Limpar</button>
+      <button class="btn-primary" onclick="salvarLote()">💾 Salvar Lote</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="table-header">
+      <h2>Lotes Registrados</h2>
+      <div class="filters">
+        <input type="text" id="filtro-lote-busca" placeholder="🔍 Buscar cliente..." oninput="filtrarLotes()">
+        <select id="filtro-lote-status" onchange="filtrarLotes()">
+          <option value="">Todos os status</option>
+          <option value="liberado">Liberado</option>
+          <option value="aceita">Aceita</option>
+          <option value="aguardando">Aguardando</option>
+          <option value="buscando">Buscando</option>
+          <option value="finalizado">Finalizado</option>
+          <option value="suspenso">Suspenso</option>
+          <option value="urgente">Urgente</option>
+        </select>
+      </div>
+    </div>
+    <div id="lotes-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="fecharModal(event)">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Detalhes da Cotação</span>
+      <button class="modal-close" onclick="fecharModalBtn()">✕</button>
+    </div>
+    <div id="modal-content"></div>
+    <div class="status-select-row">
+      <label>Alterar Status:</label>
+      <select id="modal-status" onchange="atualizarStatus()">
+        <option value="pendente">Pendente</option>
+        <option value="em_negociacao">Em Negociação</option>
+        <option value="aprovada">Aprovada</option>
+        <option value="reprovada">Reprovada</option>
+      </select>
+    </div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;">
+      <button onclick="excluirCotacao()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer;">🗑 Excluir Cotação</button>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS DO LOTE -->
+<div class="page" id="page-status-lote">
+  <div class="stats" id="stats-lote">
+    <div class="stat total"><div class="stat-label">Total de Lotes</div><div class="stat-value" id="sl-total">—</div></div>
+    <div class="stat aprovadas"><div class="stat-label">Finalizados</div><div class="stat-value" id="sl-finalizados">—</div></div>
+    <div class="stat pendentes"><div class="stat-label">Em Andamento</div><div class="stat-value" id="sl-andamento">—</div></div>
+    <div class="stat reprovadas"><div class="stat-label">Ton. Total</div><div class="stat-value" id="sl-ton">—</div></div>
+  </div>
+  <div class="card">
+    <div class="table-header">
+      <h2>Status dos Lotes</h2>
+      <div class="filters">
+        <input type="text" id="filtro-sl-busca" placeholder="🔍 Buscar cliente..." oninput="filtrarStatusLote()">
+        <select id="filtro-sl-status" onchange="filtrarStatusLote()">
+          <option value="">Todos os status</option>
+          <option value="liberado">Liberado</option>
+          <option value="aceita">Aceita</option>
+          <option value="aguardando">Aguardando</option>
+          <option value="buscando">Buscando</option>
+          <option value="finalizado">Finalizado</option>
+          <option value="suspenso">Suspenso</option>
+          <option value="urgente">Urgente</option>
+        </select>
+      </div>
+    </div>
+    <div id="status-lote-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- CLIENTES -->
+<div class="page" id="page-clientes">
+  <div class="card" style="margin-bottom:20px">
+    <div class="form-title"><span></span> Cadastro de Cliente</div>
+
+    <div class="section-divider">Identificação</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>CNPJ / CPF</label>
+        <div style="position:relative;display:flex;gap:8px;">
+          <input type="text" id="cl-cnpj" placeholder="00.000.000/0000-00" maxlength="18" oninput="mascaraCNPJ(this)">
+          <button onclick="buscarCNPJ()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:0 16px;cursor:pointer;font-size:13px;white-space:nowrap;font-weight:600;">🔍 Buscar</button>
+        </div>
+        <span id="cl-cnpj-status" style="font-size:12px;color:var(--muted)"></span>
+      </div>
+      <div class="form-group">
+        <label>IE / CEI</label>
+        <input type="text" id="cl-ie" placeholder="Inscrição Estadual">
+      </div>
+      <div class="form-group">
+        <label>Razão Social</label>
+        <input type="text" id="cl-razao" placeholder="Razão Social da empresa">
+      </div>
+      <div class="form-group">
+        <label>Nome Fantasia</label>
+        <input type="text" id="cl-fantasia" placeholder="Nome Fantasia">
+      </div>
+    </div>
+
+    <div class="section-divider">Endereço</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>CEP</label>
+        <input type="text" id="cl-cep" placeholder="00000-000" maxlength="9">
+      </div>
+      <div class="form-group">
+        <label>Endereço</label>
+        <input type="text" id="cl-endereco" placeholder="Rua, Avenida...">
+      </div>
+      <div class="form-group">
+        <label>Número</label>
+        <input type="text" id="cl-numero" placeholder="Nº">
+      </div>
+      <div class="form-group">
+        <label>Bairro</label>
+        <input type="text" id="cl-bairro" placeholder="Bairro">
+      </div>
+      <div class="form-group full">
+        <label>Complemento</label>
+        <textarea id="cl-complemento" placeholder="Complemento..." style="min-height:60px"></textarea>
+      </div>
+      <div class="form-group full">
+        <label>Referência</label>
+        <textarea id="cl-referencia" placeholder="Referência..." style="min-height:60px"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Cidade</label>
+        <input type="text" id="cl-cidade" placeholder="Cidade">
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <input type="text" id="cl-estado" placeholder="UF" maxlength="2" style="text-transform:uppercase">
+      </div>
+    </div>
+
+    <div class="section-divider">Contato</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="cl-email" placeholder="email@empresa.com">
+      </div>
+      <div class="form-group">
+        <label>Telefone</label>
+        <input type="text" id="cl-telefone" placeholder="(00) 0000-0000">
+      </div>
+      <div class="form-group">
+        <label>Celular</label>
+        <input type="text" id="cl-celular" placeholder="(00) 00000-0000">
+      </div>
+      <div class="form-group">
+        <label>Dt. Nasc / Abertura</label>
+        <input type="date" id="cl-dt-abertura">
+      </div>
+      <div class="form-group">
+        <label>Exportador?</label>
+        <select id="cl-exportador">
+          <option value="false">Não</option>
+          <option value="true">Sim</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="resetCliente()">Limpar</button>
+      <button class="btn-primary" onclick="salvarCliente()">💾 Salvar Cliente</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-header">
+      <h2>Clientes Cadastrados</h2>
+      <div class="filters">
+        <input type="text" id="filtro-cl-busca" placeholder="🔍 Buscar cliente..." oninput="filtrarClientes()">
+      </div>
+    </div>
+    <div id="clientes-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- MODAL MOTORISTAS -->
+<div class="modal-overlay" id="modal-motoristas-overlay" onclick="fecharModalMotoristas(event)">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-title">
+      <span id="modal-motoristas-titulo">Motoristas do Lote</span>
+      <button class="modal-close" onclick="fecharModalMotoristasBtn()">✕</button>
+    </div>
+
+    <!-- Info do lote -->
+    <div id="modal-lote-info" style="background:var(--surface2);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;">
+      <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <span>🚛 <strong id="ml-cliente">—</strong></span>
+        <span>📦 Produto: <strong id="ml-produto">—</strong></span>
+        <span>⚖️ Peso total: <strong id="ml-peso-total">—</strong> ton</span>
+        <span style="color:var(--green)">✅ Carregado: <strong id="ml-carregado">0</strong> ton</span>
+        <span style="color:var(--yellow)">⏳ Restante: <strong id="ml-restante">—</strong> ton</span>
+      </div>
+      <div style="margin-top:10px;background:var(--border);border-radius:20px;height:8px;overflow:hidden;">
+        <div id="ml-barra" style="height:100%;background:var(--green);border-radius:20px;transition:width 0.3s;width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Formulário adicionar motorista -->
+    <div style="background:var(--surface2);border-radius:8px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Adicionar Motorista</div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="form-group">
+          <label>Nome</label>
+          <input type="text" id="nm-nome" placeholder="Nome do motorista">
+        </div>
+        <div class="form-group">
+          <label>Placa do Veículo</label>
+          <input type="text" id="nm-placa" placeholder="Ex: ABC-1234">
+        </div>
+        <div class="form-group">
+          <label>Contato / Telefone</label>
+          <input type="text" id="nm-contato" placeholder="Ex: (34) 99999-9999">
+        </div>
+        <div class="form-group">
+          <label>CPF</label>
+          <input type="text" id="nm-cpf" placeholder="Ex: 000.000.000-00">
+        </div>
+        <div class="form-group">
+          <label>Peso Saída (ton)</label>
+          <input type="number" id="nm-peso" placeholder="Ex: 40" step="0.1" min="0">
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end;">
+          <button onclick="adicionarMotorista()" class="btn-primary" style="width:100%;padding:10px;">+ Adicionar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista de motoristas -->
+    <div id="lista-motoristas"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR LOTE -->
+<div class="modal-overlay" id="modal-lote-overlay" onclick="fecharModalLote(event)">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-title">
+      <span>Editar Lote</span>
+      <button class="modal-close" onclick="fecharModalLoteBtn()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Agência</label>
+        <select id="el-agencia">
+          <option value="">Selecione...</option>
+          <option>UNIDADE 01 (LUCAS)</option>
+          <option>UNIDADE 03 (PEDRO)</option>
+          <option>UNIDADE 04 (IVO)</option>
+          <option>UNIDADE 05 (GABRIEL)</option>
+          <option>UNIDADE 06 (ITALO)</option>
+          <option>UNIDADE 07 (ADMINISTRATIVO)</option>
+          <option>UNIDADE (LOGISTICA 02)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cliente</label>
+        <select id="el-cliente">
+          <option value="">Selecione um cliente...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Produto</label>
+        <input type="text" id="el-produto" placeholder="Ex: Soja, Milho...">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="el-status">
+          <option value="liberado">Liberado</option>
+          <option value="aceita">Aceita</option>
+          <option value="aguardando">Aguardando</option>
+          <option value="aguardando_inicio">Aguardando Início</option>
+          <option value="aguardando_produto">Aguardando Produto</option>
+          <option value="buscando">Buscando</option>
+          <option value="fechada">Fechada</option>
+          <option value="finalizado">Finalizado</option>
+          <option value="finalizando">Finalizando</option>
+          <option value="no_show">No-Show</option>
+          <option value="paralizado">Paralizado</option>
+          <option value="prob_qualidade">Prob. Qualidade</option>
+          <option value="ret_domingo">Ret. Domingo</option>
+          <option value="ret_fds">Ret. Final de Semana</option>
+          <option value="ret_quarta">Ret. Quarta</option>
+          <option value="ret_quinta">Ret. Quinta</option>
+          <option value="ret_sabado">Ret. Sábado</option>
+          <option value="ret_segunda">Ret. Segunda</option>
+          <option value="ret_sexta">Ret. Sexta</option>
+          <option value="ret_terca">Ret. Terça</option>
+          <option value="sab_dom">Sab/Dom</option>
+          <option value="sab_ate_11">Sab até 11hrs</option>
+          <option value="sab_ate_17">Sab até 17hrs</option>
+          <option value="sem_cota">Sem Cota</option>
+          <option value="sem_produto">Sem Produto</option>
+          <option value="suspenso">Suspenso</option>
+          <option value="urgente">Urgente</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Coleta</label>
+        <input type="text" id="el-coleta" placeholder="Local de coleta">
+      </div>
+      <div class="form-group">
+        <label>Origem</label>
+        <input type="text" id="el-origem" placeholder="Cidade/UF de origem">
+      </div>
+      <div class="form-group">
+        <label>Entrega</label>
+        <input type="text" id="el-entrega" placeholder="Local de entrega">
+      </div>
+      <div class="form-group">
+        <label>Destino</label>
+        <input type="text" id="el-destino" placeholder="Cidade/UF de destino">
+      </div>
+      <div class="form-group">
+        <label>Tarifa Empresa (R$)</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
+          <input type="number" id="el-tarifa-emp" placeholder="0,00" step="0.01" min="0" style="padding-left:36px">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Tarifa Motorista (R$)</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
+          <input type="number" id="el-tarifa-mot" placeholder="0,00" step="0.01" min="0" style="padding-left:36px">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Peso Total (ton)</label>
+        <input type="number" id="el-peso" placeholder="Ex: 25.5" step="0.1" min="0">
+      </div>
+      <div class="form-group">
+        <label>Data</label>
+        <input type="date" id="el-data">
+      </div>
+      <div class="form-group full">
+        <label>Observação</label>
+        <textarea id="el-obs" placeholder="Informações adicionais..."></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="fecharModalLoteBtn()">Cancelar</button>
+      <button class="btn-primary" onclick="salvarEdicaoLote()">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let cotacoes = [];
+let cotacaoAtualId = null;
+let lotes = [];
+let sb = null;
+
+// SUPABASE REQUEST
+const API_URL = 'https://jm-api-ef3c.vercel.app/api/cotacoes';
+
+async function supabaseRequest(method, path, body = null) {
+  // Extrai tabela e filtros do path estilo Supabase REST
+  const [tabelaComFiltros] = path.split('?');
+  const tabela = tabelaComFiltros;
+  const queryString = path.includes('?') ? path.split('?')[1] : '';
+  
+  // Monta URL da nossa API
+  let url = API_URL + '?tabela=' + tabelaComFiltros;
+  
+  // Extrai id de filtros como id=eq.X
+  const idMatch = queryString.match(/id=eq\.([^&]+)/);
+  if (idMatch) url += '&id=' + idMatch[1];
+  
+  // Extrai outros filtros simples
+  const filtros = {};
+  const params = new URLSearchParams(queryString);
+  params.forEach((val, key) => {
+    if (key !== 'order' && key !== 'limit' && key !== 'select' && !key.includes('id')) {
+      const eqMatch = val.match(/^eq\.(.+)/);
+      if (eqMatch) filtros[key] = eqMatch[1];
+      else if (key.includes('=eq.')) {
+        const parts = key.split('=eq.');
+        filtros[parts[0]] = parts[1];
+      }
+    }
+    if (key.includes('_id') && val.startsWith('eq.')) filtros[key] = val.replace('eq.','');
+  });
+  
+  // Trata filtros especiais como lote_id=eq.X
+  const loteIdMatch = queryString.match(/lote_id=eq\.([^&]+)/);
+  if (loteIdMatch) filtros['lote_id'] = loteIdMatch[1];
+  
+  const nomeMatch = queryString.match(/nome=eq\.([^&]+)/);
+  if (nomeMatch) filtros['nome'] = decodeURIComponent(nomeMatch[1]);
+
+  if (Object.keys(filtros).length > 0) url += '&filtros=' + encodeURIComponent(JSON.stringify(filtros));
+
+  const res = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : null
+  });
+  
+  const text = await res.text();
+  if (!res.ok) {
+    let msg = 'Erro na requisição';
+    try { msg = JSON.parse(text).error || msg; } catch(e) {}
+    throw new Error(msg);
+  }
+  if (!text) return null;
+  try { return JSON.parse(text); } catch(e) { return null; }
+}
+
+// LOGIN
+async function fazerLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-senha').value;
+  const erro = document.getElementById('login-erro');
+  const btn = document.getElementById('login-btn');
+  erro.style.display = 'none';
+  if (!email || !senha) { erro.textContent = 'Preencha email e senha'; erro.style.display = 'block'; return; }
+  btn.textContent = 'Entrando...';
+  btn.disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+  btn.textContent = 'Entrar';
+  btn.disabled = false;
+  if (error) { erro.textContent = 'Email ou senha incorretos'; erro.style.display = 'block'; return; }
+  document.getElementById('login-screen').style.display = 'none';
+  carregarDashboard();
+}
+
+async function fazerLogout() {
+  await sb.auth.signOut();
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-senha').value = '';
+}
+
+// PAGES
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const idx = ['dashboard','nova','lista','lotes','status-lote','clientes'].indexOf(name);
+  if (idx >= 0) document.querySelectorAll('nav button')[idx].classList.add('active');
+  if (name === 'dashboard') carregarDashboard();
+  if (name === 'lista') carregarLista();
+  if (name === 'lotes') { carregarLotes(); carregarClientesSelect('l-cliente'); document.getElementById('l-data').value = new Date().toISOString().split('T')[0]; }
+  if (name === 'status-lote') carregarStatusLote();
+  if (name === 'clientes') carregarClientes();
+  if (name === 'nova') document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
+}
+
+// DASHBOARD
+async function carregarDashboard() {
+  try {
+    const data = await supabaseRequest('GET', 'cotacoes_view?order=criado_em.desc&limit=200');
+    cotacoes = data || [];
+    document.getElementById('stat-total').textContent = cotacoes.length;
+    document.getElementById('stat-aprovadas').textContent = cotacoes.filter(c => c.status === 'aprovada').length;
+    document.getElementById('stat-reprovadas').textContent = cotacoes.filter(c => c.status === 'reprovada').length;
+    document.getElementById('stat-pendentes').textContent = cotacoes.filter(c => c.status === 'pendente' || c.status === 'em_negociacao').length;
+    document.getElementById('dashboard-table').innerHTML = renderTabela(cotacoes.slice(0, 8));
+  } catch(e) {
+    document.getElementById('dashboard-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao conectar.</p></div>';
+  }
+}
+
+// LISTA
+async function carregarLista() {
+  try {
+    if (!cotacoes.length) {
+      const data = await supabaseRequest('GET', 'cotacoes_view?order=criado_em.desc&limit=200');
+      cotacoes = data || [];
+    }
+    document.getElementById('lista-table').innerHTML = renderTabela(cotacoes);
+  } catch(e) {
+    document.getElementById('lista-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao conectar.</p></div>';
+  }
+}
+
+function filtrarTabela() {
+  const busca = document.getElementById('filtro-busca').value.toLowerCase();
+  const status = document.getElementById('filtro-status').value;
+  const filtradas = cotacoes.filter(c => {
+    const matchBusca = !busca || (c.cliente_nome || '').toLowerCase().includes(busca);
+    const matchStatus = !status || c.status === status;
+    return matchBusca && matchStatus;
+  });
+  document.getElementById('lista-table').innerHTML = renderTabela(filtradas);
+}
+
+function renderTabela(dados) {
+  if (!dados.length) return '<div class="empty"><div class="empty-icon">📋</div><p>Nenhuma cotação encontrada.</p></div>';
+  return `<table><thead><tr><th>#</th><th>Cliente</th><th>Rota</th><th>Tipo</th><th>Valor</th><th>Vendedor</th><th>Data</th><th>Status</th></tr></thead><tbody>
+    ${dados.map(c => `<tr onclick="abrirModal(${c.id})">
+      <td style="color:var(--muted);font-size:12px">#${c.id}</td>
+      <td><strong>${c.cliente_nome || '—'}</strong></td>
+      <td style="font-size:12px;color:var(--muted)">${c.origem || '—'} → ${c.destino || '—'}</td>
+      <td style="font-size:12px">${c.tipo_carga || '—'}</td>
+      <td class="valor-cell">R$ ${Number(c.valor_cotado || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+      <td style="font-size:12px">${c.vendedor_nome || '—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${formatDate(c.data_cotacao)}</td>
+      <td>${badgeStatus(c.status)}</td>
+    </tr>`).join('')}
+  </tbody></table>`;
+}
+
+// SALVAR COTAÇÃO
+async function salvarCotacao() {
+  const cliente = document.getElementById('f-cliente').value.trim();
+  if (!cliente) { showToast('Informe ao menos o nome do cliente', 'error'); return; }
+  try {
+    const clientes = await supabaseRequest('GET', `clientes?nome=eq.${encodeURIComponent(cliente)}&select=id`);
+    let clienteId = clientes && clientes.length ? clientes[0].id : (await supabaseRequest('POST', 'clientes', { nome: cliente }))[0].id;
+    let vendedorId = null;
+    const vendedorNome = document.getElementById('f-vendedor').value.trim();
+    if (vendedorNome) {
+      const vendedores = await supabaseRequest('GET', `vendedores?nome=eq.${encodeURIComponent(vendedorNome)}&select=id`);
+      vendedorId = vendedores && vendedores.length ? vendedores[0].id : (await supabaseRequest('POST', 'vendedores', { nome: vendedorNome }))[0].id;
+    }
+    await supabaseRequest('POST', 'cotacoes', {
+      cliente_id: clienteId, vendedor_id: vendedorId,
+      origem: document.getElementById('f-origem').value || null,
+      destino: document.getElementById('f-destino').value || null,
+      tipo_carga: document.getElementById('f-tipo').value || null,
+      peso_kg: document.getElementById('f-peso').value || null,
+      valor_cotado: parseFloat(document.getElementById('f-valor').value) || null,
+      status: document.getElementById('f-status').value,
+      data_cotacao: document.getElementById('f-data').value || null,
+      observacao: document.getElementById('f-obs').value || null,
+    });
+    showToast('✅ Cotação salva!', 'success');
+    resetForm();
+    cotacoes = [];
+    setTimeout(() => showPage('lista'), 1200);
+  } catch(e) { showToast('Erro ao salvar: ' + e.message, 'error'); }
+}
+
+function resetForm() {
+  ['f-cliente','f-vendedor','f-origem','f-destino','f-tipo','f-peso','f-valor','f-obs'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-status').value = 'pendente';
+  document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
+}
+
+// MODAL
+async function abrirModal(id) {
+  const c = cotacoes.find(x => x.id === id);
+  if (!c) return;
+  cotacaoAtualId = id;
+  document.getElementById('modal-status').value = c.status;
+  document.getElementById('modal-content').innerHTML = `
+    <div class="detail-row"><span class="detail-label">Cliente</span><span class="detail-value">${c.cliente_nome || '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Vendedor</span><span class="detail-value">${c.vendedor_nome || '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Origem</span><span class="detail-value">${c.origem || '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Destino</span><span class="detail-value">${c.destino || '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Tipo de Carga</span><span class="detail-value">${c.tipo_carga || '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Peso</span><span class="detail-value">${c.peso_kg ? c.peso_kg + ' ton' : '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Valor Cotado</span><span class="detail-value" style="color:var(--accent);font-family:'Syne',sans-serif;font-size:16px">R$ ${Number(c.valor_cotado || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>
+    <div class="detail-row"><span class="detail-label">Data</span><span class="detail-value">${formatDate(c.data_cotacao)}</span></div>
+    <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${badgeStatus(c.status)}</span></div>
+    ${c.observacao ? `<div class="detail-row" style="flex-direction:column;align-items:flex-start;gap:6px"><span class="detail-label">Observação</span><span style="font-size:13px;color:var(--muted);line-height:1.5">${c.observacao}</span></div>` : ''}
+  `;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+async function atualizarStatus() {
+  const novoStatus = document.getElementById('modal-status').value;
+  try {
+    await supabaseRequest('PATCH', `cotacoes?id=eq.${cotacaoAtualId}`, { status: novoStatus });
+    const c = cotacoes.find(x => x.id === cotacaoAtualId);
+    if (c) c.status = novoStatus;
+    showToast('Status atualizado!', 'success');
+    fecharModalBtn();
+    if (document.getElementById('page-lista').classList.contains('active')) filtrarTabela();
+    else carregarDashboard();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function excluirCotacao() {
+  if (!confirm('Excluir esta cotação?')) return;
+  try {
+    await supabaseRequest('DELETE', `cotacoes?id=eq.${cotacaoAtualId}`);
+    cotacoes = cotacoes.filter(c => c.id !== cotacaoAtualId);
+    fecharModalBtn();
+    showToast('✅ Cotação excluída!', 'success');
+    if (document.getElementById('page-lista').classList.contains('active')) filtrarTabela();
+    else carregarDashboard();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+function fecharModal(e) { if (e.target === document.getElementById('modal-overlay')) fecharModalBtn(); }
+function fecharModalBtn() { document.getElementById('modal-overlay').classList.remove('open'); cotacaoAtualId = null; }
+
+// LOTES
+async function salvarLote() {
+  try {
+    await supabaseRequest('POST', 'lotes', {
+      agencia: document.getElementById('l-agencia').value || null,
+      cliente: document.getElementById('l-cliente').value || null,
+      produto: document.getElementById('l-produto').value || null,
+      status: document.getElementById('l-status').value,
+      coleta: document.getElementById('l-coleta').value || null,
+      origem: document.getElementById('l-origem').value || null,
+      entrega: document.getElementById('l-entrega').value || null,
+      destino: document.getElementById('l-destino').value || null,
+      tarifa_empresa: document.getElementById('l-tarifa-emp').value || null,
+      tarifa_motorista: document.getElementById('l-tarifa-mot').value || null,
+      peso_ton: document.getElementById('l-peso').value || null,
+      data_lote: document.getElementById('l-data').value || null,
+      observacao: document.getElementById('l-obs').value || null,
+    });
+    showToast('✅ Lote salvo!', 'success');
+    resetLote();
+    lotes = [];
+    setTimeout(() => carregarLotes(), 1000);
+  } catch(e) { showToast('Erro ao salvar: ' + e.message, 'error'); }
+}
+
+function resetLote() {
+  ['l-produto','l-coleta','l-origem','l-entrega','l-destino','l-tarifa-emp','l-tarifa-mot','l-peso','l-obs'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('l-agencia').value = '';
+  document.getElementById('l-status').value = 'liberado';
+  document.getElementById('l-data').value = new Date().toISOString().split('T')[0];
+}
+
+async function carregarLotes() {
+  try {
+    lotes = await supabaseRequest('GET', 'lotes?order=criado_em.desc&limit=200') || [];
+    renderLotes(lotes);
+  } catch(e) {
+    document.getElementById('lotes-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar lotes.</p></div>';
+  }
+}
+
+function filtrarLotes() {
+  const busca = document.getElementById('filtro-lote-busca').value.toLowerCase();
+  const status = document.getElementById('filtro-lote-status').value;
+  renderLotes(lotes.filter(l => (!busca || (l.cliente||'').toLowerCase().includes(busca)) && (!status || l.status === status)));
+}
+
+function renderLotes(dados) {
+  if (!dados.length) { document.getElementById('lotes-table').innerHTML = '<div class="empty"><div class="empty-icon">📦</div><p>Nenhum lote encontrado.</p></div>'; return; }
+  document.getElementById('lotes-table').innerHTML = `<table><thead><tr>
+    <th>#</th><th>Agência</th><th>Cliente</th><th>Produto</th><th>Rota</th>
+    <th>Tarifa Emp.</th><th>Tarifa Mot.</th><th>Peso</th><th>Data</th><th>Status</th><th></th>
+  </tr></thead><tbody>
+    ${dados.map(l => `<tr>
+      <td style="color:var(--muted);font-size:12px">#${l.id}</td>
+      <td style="font-size:12px">${l.agencia || '—'}</td>
+      <td><strong>${l.cliente || '—'}</strong></td>
+      <td style="font-size:12px">${l.produto || '—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${l.origem || '—'} → ${l.destino || '—'}</td>
+      <td class="valor-cell">R$ ${Number(l.tarifa_empresa||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+      <td style="color:var(--muted)">R$ ${Number(l.tarifa_motorista||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+      <td style="font-size:12px">${l.peso_ton ? l.peso_ton + ' ton' : '—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${formatDate(l.data_lote)}</td>
+      <td>${badgeLote(l.status)}</td>
+      <td style="display:flex;gap:6px;">
+        <button onclick="abrirMotoristas(${l.id})" style="background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🚛 Motoristas</button>
+        <button onclick="editarLote(${l.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">✏️</button>
+        <button onclick="excluirLote(${l.id})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🗑</button>
+      </td>
+    </tr>`).join('')}
+  </tbody></table>`;
+}
+
+function badgeLote(s) {
+  const cores = {liberado:'badge-aprovada',aceita:'badge-aprovada',finalizado:'badge-aprovada',finalizando:'badge-aprovada',buscando:'badge-em_negociacao',aguardando:'badge-pendente',aguardando_inicio:'badge-pendente',aguardando_produto:'badge-pendente',suspenso:'badge-reprovada',no_show:'badge-reprovada',paralizado:'badge-reprovada',urgente:'badge-reprovada',fechada:'badge-reprovada'};
+  const nomes = {liberado:'Liberado',aceita:'Aceita',aguardando:'Aguardando',aguardando_inicio:'Ag. Início',aguardando_produto:'Ag. Produto',buscando:'Buscando',fechada:'Fechada',finalizado:'Finalizado',finalizando:'Finalizando',no_show:'No-Show',paralizado:'Paralizado',prob_qualidade:'Prob. Qualidade',ret_domingo:'Ret. Domingo',ret_fds:'Ret. FDS',ret_quarta:'Ret. Quarta',ret_quinta:'Ret. Quinta',ret_sabado:'Ret. Sábado',ret_segunda:'Ret. Segunda',ret_sexta:'Ret. Sexta',ret_terca:'Ret. Terça',sab_dom:'Sab/Dom',sab_ate_11:'Sab até 11h',sab_ate_17:'Sab até 17h',sem_cota:'Sem Cota',sem_produto:'Sem Produto',suspenso:'Suspenso',urgente:'Urgente'};
+  return `<span class="badge ${cores[s]||'badge-pendente'}">${nomes[s]||s}</span>`;
+}
+
+async function excluirLote(id) {
+  if (!confirm('Excluir este lote?')) return;
+  try {
+    await supabaseRequest('DELETE', `lotes?id=eq.${id}`);
+    lotes = lotes.filter(l => l.id !== id);
+    renderLotes(lotes);
+    showToast('Lote excluído!', 'success');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+// HELPERS
+function badgeStatus(s) {
+  const map = {pendente:'Pendente',aprovada:'Aprovada',reprovada:'Reprovada',em_negociacao:'Em Negociação'};
+  return `<span class="badge badge-${s}">${map[s]||s}</span>`;
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+
+// EDITAR LOTE
+let loteEditandoId = null;
+
+async function editarLote(id) {
+  await carregarClientesSelect('el-cliente');
+  const l = lotes.find(x => x.id === id);
+  if (!l) return;
+  loteEditandoId = id;
+  document.getElementById('el-agencia').value = l.agencia || '';
+  document.getElementById('el-cliente').value = l.cliente || '';
+  document.getElementById('el-produto').value = l.produto || '';
+  document.getElementById('el-status').value = l.status || 'liberado';
+  document.getElementById('el-coleta').value = l.coleta || '';
+  document.getElementById('el-origem').value = l.origem || '';
+  document.getElementById('el-entrega').value = l.entrega || '';
+  document.getElementById('el-destino').value = l.destino || '';
+  document.getElementById('el-tarifa-emp').value = l.tarifa_empresa || '';
+  document.getElementById('el-tarifa-mot').value = l.tarifa_motorista || '';
+  document.getElementById('el-peso').value = l.peso_ton || '';
+  document.getElementById('el-data').value = l.data_lote || '';
+  document.getElementById('el-obs').value = l.observacao || '';
+  document.getElementById('modal-lote-overlay').classList.add('open');
+}
+
+async function salvarEdicaoLote() {
+  try {
+    await supabaseRequest('PATCH', `lotes?id=eq.${loteEditandoId}`, {
+      agencia: document.getElementById('el-agencia').value || null,
+      cliente: document.getElementById('el-cliente').value || null,
+      produto: document.getElementById('el-produto').value || null,
+      status: document.getElementById('el-status').value,
+      coleta: document.getElementById('el-coleta').value || null,
+      origem: document.getElementById('el-origem').value || null,
+      entrega: document.getElementById('el-entrega').value || null,
+      destino: document.getElementById('el-destino').value || null,
+      tarifa_empresa: document.getElementById('el-tarifa-emp').value || null,
+      tarifa_motorista: document.getElementById('el-tarifa-mot').value || null,
+      peso_ton: document.getElementById('el-peso').value || null,
+      data_lote: document.getElementById('el-data').value || null,
+      observacao: document.getElementById('el-obs').value || null,
+    });
+    showToast('✅ Lote atualizado!', 'success');
+    fecharModalLoteBtn();
+    lotes = [];
+    carregarLotes();
+  } catch(e) { showToast('Erro ao salvar: ' + e.message, 'error'); }
+}
+
+function fecharModalLote(e) { if (e.target === document.getElementById('modal-lote-overlay')) fecharModalLoteBtn(); }
+function fecharModalLoteBtn() { document.getElementById('modal-lote-overlay').classList.remove('open'); loteEditandoId = null; }
+
+
+// ============ MOTORISTAS ============
+let loteAtualId = null;
+let loteAtualDados = null;
+let statusLoteData = [];
+
+async function abrirMotoristas(id) {
+  loteAtualId = id;
+  loteAtualDados = lotes.find(l => l.id === id);
+  if (!loteAtualDados) return;
+  document.getElementById('modal-motoristas-titulo').textContent = 'Motoristas — Lote #' + id;
+  document.getElementById('ml-cliente').textContent = loteAtualDados.cliente || '—';
+  document.getElementById('ml-produto').textContent = loteAtualDados.produto || '—';
+  document.getElementById('ml-peso-total').textContent = loteAtualDados.peso_ton || '0';
+  ['nm-nome','nm-placa','nm-contato','nm-cpf','nm-peso'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('modal-motoristas-overlay').classList.add('open');
+  await carregarMotoristas();
+}
+
+async function carregarMotoristas() {
+  try {
+    const motoristas = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}&order=criado_em.asc`) || [];
+    const totalCarregado = motoristas.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
+    const pesoTotal = parseFloat(loteAtualDados.peso_ton || 0);
+    const restante = Math.max(0, pesoTotal - totalCarregado);
+    const pct = pesoTotal > 0 ? Math.min(100, (totalCarregado / pesoTotal) * 100) : 0;
+
+    document.getElementById('ml-carregado').textContent = totalCarregado.toFixed(2);
+    document.getElementById('ml-restante').textContent = restante.toFixed(2);
+    document.getElementById('ml-barra').style.width = pct + '%';
+    document.getElementById('ml-barra').style.background = pct >= 100 ? 'var(--green)' : pct > 60 ? 'var(--yellow)' : 'var(--accent)';
+
+    if (!motoristas.length) {
+      document.getElementById('lista-motoristas').innerHTML = '<div class="empty"><div class="empty-icon">🚛</div><p>Nenhum motorista adicionado ainda.</p></div>';
+      return;
+    }
+
+    document.getElementById('lista-motoristas').innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Nome</th><th>Placa</th><th>Contato</th><th>CPF</th><th>Peso Saída</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${motoristas.map(m => `<tr>
+            <td><strong>${m.nome || '—'}</strong></td>
+            <td style="font-size:12px">${m.placa || '—'}</td>
+            <td style="font-size:12px">${m.contato || '—'}</td>
+            <td style="font-size:12px">${m.cpf || '—'}</td>
+            <td class="valor-cell">${m.peso_saida ? m.peso_saida + ' ton' : '—'}</td>
+            <td>
+              <select onchange="atualizarStatusMotorista(${m.id}, this.value)" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;cursor:pointer;min-width:160px;">
+                <option value="em_negociacao" ${m.status==='em_negociacao'?'selected':''}>Em Negociação</option>
+                <option value="cadastro" ${m.status==='cadastro'?'selected':''}>Cadastro</option>
+                <option value="validando_gr_interna" ${m.status==='validando_gr_interna'?'selected':''}>Validando GR Interna</option>
+                <option value="validando_gr_externa" ${m.status==='validando_gr_externa'?'selected':''}>Validando GR Externa</option>
+                <option value="liberado_carregar" ${m.status==='liberado_carregar'?'selected':''}>Liberado Carregar</option>
+                <option value="aguardando_nota" ${m.status==='aguardando_nota'?'selected':''}>Aguardando Nota</option>
+                <option value="documento_emitido" ${m.status==='documento_emitido'?'selected':''}>Documento Emitido</option>
+                <option value="carregado" ${m.status==='carregado'?'selected':''}>Carregado</option>
+                <option value="em_transito" ${m.status==='em_transito'?'selected':''}>Em Trânsito</option>
+                <option value="aguardando_coleta" ${m.status==='aguardando_coleta'?'selected':''}>Aguardando Coleta</option>
+                <option value="aguardando_descarga" ${m.status==='aguardando_descarga'?'selected':''}>Aguardando Descarga</option>
+              </select>
+            </td>
+            <td><button onclick="removerMotorista(${m.id})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🗑</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+
+    // Verificar se lote está completo
+    if (pesoTotal > 0 && totalCarregado >= pesoTotal) {
+      await supabaseRequest('PATCH', `lotes?id=eq.${loteAtualId}`, { status: 'finalizado' });
+      const l = lotes.find(x => x.id === loteAtualId);
+      if (l) l.status = 'finalizado';
+      showToast('🎉 Lote finalizado! 100% carregado!', 'success');
+    }
+  } catch(e) {
+    document.getElementById('lista-motoristas').innerHTML = '<div class="empty"><p>Erro ao carregar.</p></div>';
+  }
+}
+
+async function adicionarMotorista() {
+  const nome = document.getElementById('nm-nome').value.trim();
+  const peso = document.getElementById('nm-peso').value;
+  if (!nome) { showToast('Informe o nome do motorista', 'error'); return; }
+  if (!peso) { showToast('Informe o peso saída', 'error'); return; }
+
+  const pesoTotal = parseFloat(loteAtualDados.peso_ton || 0);
+  const motoristas = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}`) || [];
+  const totalCarregado = motoristas.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
+  const restante = pesoTotal - totalCarregado;
+
+  if (pesoTotal > 0 && parseFloat(peso) > restante) {
+    showToast(`Peso excede o restante (${restante.toFixed(2)} ton)`, 'error'); return;
+  }
+
+  try {
+    await supabaseRequest('POST', 'lote_motoristas', {
+      lote_id: loteAtualId,
+      nome,
+      placa: document.getElementById('nm-placa').value || null,
+      contato: document.getElementById('nm-contato').value || null,
+      cpf: document.getElementById('nm-cpf').value || null,
+      peso_saida: parseFloat(peso),
+      status: 'em_negociacao',
+    });
+    showToast('✅ Motorista adicionado!', 'success');
+    ['nm-nome','nm-placa','nm-contato','nm-cpf','nm-peso'].forEach(id => document.getElementById(id).value = '');
+    await carregarMotoristas();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function removerMotorista(id) {
+  if (!confirm('Remover este motorista?')) return;
+  try {
+    await supabaseRequest('DELETE', `lote_motoristas?id=eq.${id}`);
+    showToast('Motorista removido!', 'success');
+    await carregarMotoristas();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+function fecharModalMotoristas(e) { if (e.target === document.getElementById('modal-motoristas-overlay')) fecharModalMotoristasBtn(); }
+function fecharModalMotoristasBtn() {
+  document.getElementById('modal-motoristas-overlay').classList.remove('open');
+  loteAtualId = null;
+  loteAtualDados = null;
+  lotes = [];
+  carregarLotes();
+}
+
+// ============ STATUS DO LOTE ============
+async function carregarStatusLote() {
+  try {
+    const data = await supabaseRequest('GET', 'lotes?order=criado_em.desc&limit=200') || [];
+    statusLoteData = await Promise.all(data.map(async l => {
+      const motoristas = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${l.id}`) || [];
+      const carregado = motoristas.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
+      return { ...l, motoristas, carregado, restante: Math.max(0, parseFloat(l.peso_ton || 0) - carregado) };
+    }));
+
+    document.getElementById('sl-total').textContent = statusLoteData.length;
+    document.getElementById('sl-finalizados').textContent = statusLoteData.filter(l => l.status === 'finalizado').length;
+    document.getElementById('sl-andamento').textContent = statusLoteData.filter(l => l.status !== 'finalizado').length;
+    const tonTotal = statusLoteData.reduce((sum, l) => sum + parseFloat(l.peso_ton || 0), 0);
+    document.getElementById('sl-ton').textContent = tonTotal.toFixed(1);
+
+    renderStatusLote(statusLoteData);
+  } catch(e) {
+    document.getElementById('status-lote-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
+  }
+}
+
+function filtrarStatusLote() {
+  const busca = document.getElementById('filtro-sl-busca').value.toLowerCase();
+  const status = document.getElementById('filtro-sl-status').value;
+  const filtrados = statusLoteData.filter(l => {
+    const matchBusca = !busca || (l.cliente || '').toLowerCase().includes(busca);
+    const matchStatus = !status || l.status === status;
+    return matchBusca && matchStatus;
+  });
+  renderStatusLote(filtrados);
+}
+
+function renderStatusLote(dados) {
+  if (!dados.length) { document.getElementById('status-lote-table').innerHTML = '<div class="empty"><div class="empty-icon">📦</div><p>Nenhum lote encontrado.</p></div>'; return; }
+  document.getElementById('status-lote-table').innerHTML = `<table>
+    <thead><tr>
+      <th>#</th><th>Cliente</th><th>Produto</th><th>Agência</th>
+      <th>Peso Total</th><th>Carregado</th><th>Restante</th><th>Progresso</th>
+      <th>Motoristas</th><th>Último Status</th><th>Status Lote</th>
+    </tr></thead>
+    <tbody>
+      ${dados.map(l => {
+        const pct = parseFloat(l.peso_ton) > 0 ? Math.min(100, (l.carregado / parseFloat(l.peso_ton)) * 100) : 0;
+        const barColor = pct >= 100 ? '#22c55e' : pct > 60 ? '#eab308' : '#f97316';
+        return `<tr onclick="abrirMotoristas(${l.id})">
+          <td style="color:var(--muted);font-size:12px">#${l.id}</td>
+          <td><strong>${l.cliente || '—'}</strong></td>
+          <td style="font-size:12px">${l.produto || '—'}</td>
+          <td style="font-size:12px">${l.agencia || '—'}</td>
+          <td style="font-size:12px">${l.peso_ton ? l.peso_ton + ' ton' : '—'}</td>
+          <td style="color:var(--green);font-weight:600">${l.carregado.toFixed(2)} ton</td>
+          <td style="color:var(--yellow);font-weight:600">${l.restante.toFixed(2)} ton</td>
+          <td style="min-width:120px">
+            <div style="background:var(--border);border-radius:20px;height:8px;overflow:hidden;">
+              <div style="height:100%;background:${barColor};border-radius:20px;width:${pct.toFixed(1)}%"></div>
+            </div>
+            <span style="font-size:11px;color:var(--muted)">${pct.toFixed(1)}%</span>
+          </td>
+          <td style="font-size:12px;text-align:center">${l.motoristas.length}</td>
+          <td style="font-size:12px">${l.motoristas.length ? badgeMotorista(l.motoristas[l.motoristas.length-1].status) : '—'}</td>
+          <td>${badgeLote(l.status)}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+
+async function atualizarStatusMotorista(id, novoStatus) {
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: novoStatus });
+    showToast('Status atualizado!', 'success');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+function badgeMotorista(s) {
+  const cores = {
+    em_negociacao: 'color:#3b82f6;background:rgba(59,130,246,0.12)',
+    cadastro: 'color:#8b5cf6;background:rgba(139,92,246,0.12)',
+    validando_gr_interna: 'color:#eab308;background:rgba(234,179,8,0.12)',
+    validando_gr_externa: 'color:#f97316;background:rgba(249,115,22,0.12)',
+    liberado_carregar: 'color:#22c55e;background:rgba(34,197,94,0.12)',
+    aguardando_nota: 'color:#eab308;background:rgba(234,179,8,0.12)',
+    documento_emitido: 'color:#22c55e;background:rgba(34,197,94,0.12)',
+    carregado: 'color:#22c55e;background:rgba(34,197,94,0.12)',
+    em_transito: 'color:#3b82f6;background:rgba(59,130,246,0.12)',
+    aguardando_coleta: 'color:#eab308;background:rgba(234,179,8,0.12)',
+    aguardando_descarga: 'color:#f97316;background:rgba(249,115,22,0.12)',
+  };
+  const nomes = {
+    em_negociacao:'Em Negociação', cadastro:'Cadastro',
+    validando_gr_interna:'Valid. GR Interna', validando_gr_externa:'Valid. GR Externa',
+    liberado_carregar:'Liberado Carregar', aguardando_nota:'Ag. Nota',
+    documento_emitido:'Doc. Emitido', carregado:'Carregado',
+    em_transito:'Em Trânsito', aguardando_coleta:'Ag. Coleta',
+    aguardando_descarga:'Ag. Descarga',
+  };
+  const style = cores[s] || 'color:var(--muted);background:var(--surface2)';
+  return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;${style}">${nomes[s]||s}</span>`;
+}
+
+
+// ============ CLIENTES ============
+let clientesData = [];
+let clienteEditandoId = null;
+
+function mascaraCNPJ(input) {
+  let v = input.value.replace(/\D/g,'');
+  if (v.length <= 11) {
+    v = v.replace(/(\d{3})(\d)/,'$1.$2');
+    v = v.replace(/(\d{3})(\d)/,'$1.$2');
+    v = v.replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  } else {
+    v = v.replace(/^(\d{2})(\d)/,'$1.$2');
+    v = v.replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3');
+    v = v.replace(/\.(\d{3})(\d)/,'.$1/$2');
+    v = v.replace(/(\d{4})(\d)/,'$1-$2');
+  }
+  input.value = v;
+}
+
+async function buscarCNPJ() {
+  const cnpj = document.getElementById('cl-cnpj').value.replace(/\D/g,'');
+  const status = document.getElementById('cl-cnpj-status');
+  if (cnpj.length !== 14) { status.textContent = '⚠️ CNPJ deve ter 14 dígitos'; status.style.color='var(--red)'; return; }
+  status.textContent = '🔍 Buscando...'; status.style.color='var(--muted)';
+  try {
+    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
+    if (!res.ok) throw new Error('CNPJ não encontrado');
+    const d = await res.json();
+    document.getElementById('cl-razao').value = d.razao_social || '';
+    document.getElementById('cl-fantasia').value = d.nome_fantasia || d.razao_social || '';
+    document.getElementById('cl-cep').value = d.cep || '';
+    document.getElementById('cl-endereco').value = d.logradouro || '';
+    document.getElementById('cl-numero').value = d.numero || '';
+    document.getElementById('cl-bairro').value = d.bairro || '';
+    document.getElementById('cl-complemento').value = d.complemento || '';
+    document.getElementById('cl-cidade').value = d.municipio || '';
+    document.getElementById('cl-estado').value = d.uf || '';
+    document.getElementById('cl-email').value = d.email || '';
+    document.getElementById('cl-telefone').value = d.ddd_telefone_1 ? '(' + d.ddd_telefone_1.substring(0,2) + ') ' + d.ddd_telefone_1.substring(2) : '';
+    if (d.data_inicio_atividade) document.getElementById('cl-dt-abertura').value = d.data_inicio_atividade;
+    status.textContent = '✅ Empresa encontrada: ' + (d.razao_social || '');
+    status.style.color = 'var(--green)';
+  } catch(e) {
+    status.textContent = '❌ CNPJ não encontrado ou inválido';
+    status.style.color = 'var(--red)';
+  }
+}
+
+async function salvarCliente() {
+  const razao = document.getElementById('cl-razao').value.trim();
+  const cnpj = document.getElementById('cl-cnpj').value.trim();
+  if (!razao && !cnpj) { showToast('Informe ao menos o CNPJ ou Razão Social', 'error'); return; }
+  try {
+    const dados = {
+      cnpj: cnpj || null,
+      ie_cei: document.getElementById('cl-ie').value || null,
+      razao_social: razao || null,
+      nome_fantasia: document.getElementById('cl-fantasia').value || null,
+      cep: document.getElementById('cl-cep').value || null,
+      endereco: document.getElementById('cl-endereco').value || null,
+      numero: document.getElementById('cl-numero').value || null,
+      bairro: document.getElementById('cl-bairro').value || null,
+      complemento: document.getElementById('cl-complemento').value || null,
+      referencia: document.getElementById('cl-referencia').value || null,
+      cidade: document.getElementById('cl-cidade').value || null,
+      estado: document.getElementById('cl-estado').value || null,
+      email: document.getElementById('cl-email').value || null,
+      telefone: document.getElementById('cl-telefone').value || null,
+      celular: document.getElementById('cl-celular').value || null,
+      dt_abertura: document.getElementById('cl-dt-abertura').value || null,
+      exportador: document.getElementById('cl-exportador').value === 'true',
+    };
+    if (clienteEditandoId) {
+      await supabaseRequest('PATCH', `clientes_cadastro?id=eq.${clienteEditandoId}`, dados);
+      showToast('✅ Cliente atualizado!', 'success');
+      clienteEditandoId = null;
+    } else {
+      await supabaseRequest('POST', 'clientes_cadastro', dados);
+      showToast('✅ Cliente salvo!', 'success');
+    }
+    resetCliente();
+    clientesData = [];
+    carregarClientes();
+  } catch(e) { showToast('Erro ao salvar: ' + e.message, 'error'); }
+}
+
+function resetCliente() {
+  ['cl-cnpj','cl-ie','cl-razao','cl-fantasia','cl-cep','cl-endereco','cl-numero',
+   'cl-bairro','cl-complemento','cl-referencia','cl-cidade','cl-estado',
+   'cl-email','cl-telefone','cl-celular','cl-dt-abertura'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('cl-exportador').value = 'false';
+  document.getElementById('cl-cnpj-status').textContent = '';
+  clienteEditandoId = null;
+  document.querySelector('#page-clientes .form-title').innerHTML = '<span></span> Cadastro de Cliente';
+}
+
+async function carregarClientes() {
+  try {
+    clientesData = await supabaseRequest('GET', 'clientes_cadastro?order=criado_em.desc&limit=200') || [];
+    renderClientes(clientesData);
+  } catch(e) {
+    document.getElementById('clientes-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
+  }
+}
+
+function filtrarClientes() {
+  const busca = document.getElementById('filtro-cl-busca').value.toLowerCase();
+  const filtrados = clientesData.filter(c =>
+    !busca ||
+    (c.razao_social||'').toLowerCase().includes(busca) ||
+    (c.nome_fantasia||'').toLowerCase().includes(busca) ||
+    (c.cnpj||'').includes(busca)
+  );
+  renderClientes(filtrados);
+}
+
+function renderClientes(dados) {
+  if (!dados.length) { document.getElementById('clientes-table').innerHTML = '<div class="empty"><div class="empty-icon">👥</div><p>Nenhum cliente cadastrado.</p></div>'; return; }
+  document.getElementById('clientes-table').innerHTML = `<table>
+    <thead><tr>
+      <th>#</th><th>CNPJ</th><th>Razão Social</th><th>Nome Fantasia</th>
+      <th>Cidade/UF</th><th>Telefone</th><th>Email</th><th>Exportador</th><th></th>
+    </tr></thead>
+    <tbody>
+      ${dados.map(c => `<tr>
+        <td style="color:var(--muted);font-size:12px">#${c.id}</td>
+        <td style="font-size:12px">${c.cnpj || '—'}</td>
+        <td><strong>${c.razao_social || '—'}</strong></td>
+        <td style="font-size:12px">${c.nome_fantasia || '—'}</td>
+        <td style="font-size:12px;color:var(--muted)">${c.cidade || '—'}${c.estado ? '/' + c.estado : ''}</td>
+        <td style="font-size:12px">${c.telefone || '—'}</td>
+        <td style="font-size:12px">${c.email || '—'}</td>
+        <td style="font-size:12px;text-align:center">${c.exportador ? '<span style="color:var(--green)">✅</span>' : '—'}</td>
+        <td style="display:flex;gap:6px;">
+          <button onclick="editarCliente(${c.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">✏️</button>
+          <button onclick="excluirCliente(${c.id})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🗑</button>
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function editarCliente(id) {
+  const c = clientesData.find(x => x.id === id);
+  if (!c) return;
+  clienteEditandoId = id;
+  document.getElementById('cl-cnpj').value = c.cnpj || '';
+  document.getElementById('cl-ie').value = c.ie_cei || '';
+  document.getElementById('cl-razao').value = c.razao_social || '';
+  document.getElementById('cl-fantasia').value = c.nome_fantasia || '';
+  document.getElementById('cl-cep').value = c.cep || '';
+  document.getElementById('cl-endereco').value = c.endereco || '';
+  document.getElementById('cl-numero').value = c.numero || '';
+  document.getElementById('cl-bairro').value = c.bairro || '';
+  document.getElementById('cl-complemento').value = c.complemento || '';
+  document.getElementById('cl-referencia').value = c.referencia || '';
+  document.getElementById('cl-cidade').value = c.cidade || '';
+  document.getElementById('cl-estado').value = c.estado || '';
+  document.getElementById('cl-email').value = c.email || '';
+  document.getElementById('cl-telefone').value = c.telefone || '';
+  document.getElementById('cl-celular').value = c.celular || '';
+  document.getElementById('cl-dt-abertura').value = c.dt_abertura || '';
+  document.getElementById('cl-exportador').value = c.exportador ? 'true' : 'false';
+  document.getElementById('cl-cnpj-status').textContent = '';
+  document.querySelector('#page-clientes .form-title').innerHTML = '<span></span> Editando Cliente #' + id;
+  window.scrollTo(0, 0);
+  showPage('clientes');
+}
+
+async function excluirCliente(id) {
+  if (!confirm('Excluir este cliente?')) return;
+  try {
+    await supabaseRequest('DELETE', `clientes_cadastro?id=eq.${id}`);
+    clientesData = clientesData.filter(c => c.id !== id);
+    renderClientes(clientesData);
+    showToast('Cliente excluído!', 'success');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+
+async function carregarClientesSelect(selectId) {
+  try {
+    const clientes = await supabaseRequest('GET', 'clientes_cadastro?order=razao_social.asc&select=id,razao_social,nome_fantasia') || [];
+    const sel = document.getElementById(selectId);
+    const valorAtual = sel.value;
+    sel.innerHTML = '<option value="">Selecione um cliente...</option>';
+    clientes.forEach(c => {
+      const nome = c.nome_fantasia || c.razao_social;
+      const opt = document.createElement('option');
+      opt.value = nome;
+      opt.textContent = nome;
+      if (nome === valorAtual) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  } catch(e) { console.error('Erro ao carregar clientes:', e); }
+}
+
+
+// ============ AUTOCOMPLETE CIDADES ============
+let cidadesCache = [];
+let buscandoCidades = false;
+let cidadesCarregadas = false;
+
+async function carregarCidadesIBGE() {
+  if (cidadesCarregadas || buscandoCidades) return;
+  buscandoCidades = true;
+  try {
+    const res = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome');
+    const data = await res.json();
+    cidadesCache = data.map(c => ({ nome: c.nome, uf: c.microrregiao.mesorregiao.UF.sigla }));
+    cidadesCarregadas = true;
+  } catch(e) { console.error('Erro IBGE:', e); }
+  buscandoCidades = false;
+}
+
+async function buscarCidade(termo, listaId) {
+  const lista = document.getElementById(listaId);
+  if (!termo || termo.length < 2) { lista.style.display = 'none'; return; }
+
+  if (!cidadesCarregadas) {
+    await carregarCidadesIBGE();
+  }
+
+  const termoLower = termo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const filtradas = cidadesCache.filter(c => {
+    const nomeLower = c.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    return nomeLower.startsWith(termoLower);
+  }).slice(0, 10);
+
+  if (!filtradas.length) { lista.style.display = 'none'; return; }
+
+  lista.innerHTML = filtradas.map(c =>
+    `<div class="autocomplete-item" onmousedown="selecionarCidade('${c.nome}/${c.uf}', '${listaId}')">
+      <strong>${c.nome}</strong> <span style="color:var(--muted);font-size:11px">/ ${c.uf}</span>
+    </div>`
+  ).join('');
+  lista.style.display = 'block';
+}
+
+function selecionarCidade(valor, listaId) {
+  const inputId = listaId.replace('-list', '');
+  const input = document.getElementById(inputId);
+  if (input) input.value = valor;
+  const lista = document.getElementById(listaId);
+  if (lista) lista.style.display = 'none';
+}
+
+function navegarAutocomplete(event, listaId) {
+  const lista = document.getElementById(listaId);
+  if (!lista || lista.style.display === 'none') return;
+  const items = lista.querySelectorAll('.autocomplete-item');
+  const ativo = lista.querySelector('.autocomplete-item.active');
+  let idx = -1;
+  items.forEach((el, i) => { if(el === ativo) idx = i; });
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    if (ativo) ativo.classList.remove('active');
+    const next = items[idx + 1] || items[0];
+    if (next) next.classList.add('active');
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    if (ativo) ativo.classList.remove('active');
+    const prev = items[idx - 1] || items[items.length - 1];
+    if (prev) prev.classList.add('active');
+  } else if (event.key === 'Enter') {
+    if (ativo) { event.preventDefault(); ativo.dispatchEvent(new Event('mousedown')); }
+  } else if (event.key === 'Escape') {
+    lista.style.display = 'none';
+  }
+}
+
+document.addEventListener('click', function(e) {
+  document.querySelectorAll('.autocomplete-list').forEach(l => {
+    if (!l.parentElement.contains(e.target)) l.style.display = 'none';
+  });
+});
+
+// Pré-carrega cidades ao abrir a página de lotes
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(carregarCidadesIBGE, 1000);
+});
+
+// INIT
+sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+sb.auth.getSession().then(({ data: { session } }) => {
+  if (session) {
+    document.getElementById('login-screen').style.display = 'none';
+    carregarDashboard();
+  }
+});
+</script>
+</body>
+</html>
