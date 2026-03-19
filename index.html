@@ -378,7 +378,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     <div class="table-header">
       <h2>Lotes Registrados</h2>
       <div class="filters">
-        <input type="text" id="filtro-lote-busca" placeholder="🔍 Buscar cliente..." oninput="filtrarLotes()">
+        <input type="text" id="filtro-lote-busca" placeholder="🔍 Buscar cliente ou nº do lote..." oninput="filtrarLotes()">
         <select id="filtro-lote-status" onchange="filtrarLotes()">
           <option value="">Todos os status</option>
           <option value="liberado">Liberado</option>
@@ -1188,17 +1188,17 @@ async function carregarLotes() {
 function filtrarLotes() {
   const busca = document.getElementById('filtro-lote-busca').value.toLowerCase();
   const status = document.getElementById('filtro-lote-status').value;
-  renderLotes(lotes.filter(l => (!busca || (l.cliente||'').toLowerCase().includes(busca)) && (!status || l.status === status)));
+  renderLotes(lotes.filter(l => (!busca || (l.cliente||'').toLowerCase().includes(busca) || String(l.id).includes(busca)) && (!status || l.status === status)));
 }
 
 function renderLotes(dados) {
   if (!dados.length) { document.getElementById('lotes-table').innerHTML = '<div class="empty"><div class="empty-icon">📦</div><p>Nenhum lote encontrado.</p></div>'; return; }
   document.getElementById('lotes-table').innerHTML = `<table><thead><tr>
-    <th>#</th><th>Agência</th><th>Cliente</th><th>Produto</th><th>Rota</th>
+    <th>Nº Lote</th><th>Agência</th><th>Cliente</th><th>Produto</th><th>Rota</th>
     <th>Tarifa Emp.</th><th>Tarifa Mot.</th><th>Peso</th><th>Data</th><th>Status</th><th></th>
   </tr></thead><tbody>
     ${dados.map(l => `<tr>
-      <td style="color:var(--muted);font-size:12px">#${l.id}</td>
+      <td><span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--accent)">Lote ${l.id}</span></td>
       <td style="font-size:12px">${l.agencia || '—'}</td>
       <td><strong>${l.cliente || '—'}</strong></td>
       <td style="font-size:12px">${l.produto || '—'}</td>
