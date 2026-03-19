@@ -600,7 +600,22 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
         </div>
       </div>
       <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 10px;">Dados Bancários</div>
-      <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+
+      <!-- Seletor Tipo de Pagamento -->
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button type="button" id="btn-tipo-conta-bancaria" onclick="selecionarTipoPagamento('conta_bancaria')"
+          style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:rgba(249,115,22,0.12);color:var(--accent);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;">
+          🏦 Conta Bancária
+        </button>
+        <button type="button" id="btn-tipo-chave-pix" onclick="selecionarTipoPagamento('chave_pix')"
+          style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;">
+          ⚡ Chave PIX
+        </button>
+      </div>
+      <input type="hidden" id="nm-tipo-pagamento" value="conta_bancaria">
+
+      <!-- Campos Conta Bancária -->
+      <div id="campos-conta-bancaria" class="form-grid" style="grid-template-columns:1fr 1fr;">
         <div class="form-group">
           <label>Nome do Titular</label>
           <input type="text" id="nm-nome-titular" placeholder="Nome completo do titular">
@@ -629,9 +644,24 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
             <option value="poupanca">Poupança</option>
           </select>
         </div>
-        <div class="form-group full">
+      </div>
+
+      <!-- Campos Chave PIX -->
+      <div id="campos-chave-pix" class="form-grid" style="grid-template-columns:1fr 1fr;display:none;">
+        <div class="form-group">
+          <label>Tipo de Chave PIX</label>
+          <select id="nm-tipo-pix" onchange="atualizarPlaceholderPix()">
+            <option value="">Selecione o tipo...</option>
+            <option value="telefone">📱 Número de Telefone</option>
+            <option value="cpf">🪪 CPF</option>
+            <option value="cnpj">🏢 CNPJ</option>
+            <option value="email">✉️ E-mail</option>
+            <option value="aleatoria">🔑 Chave Aleatória</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label>Chave PIX</label>
-          <input type="text" id="nm-pix" placeholder="CPF, CNPJ, email, telefone ou chave aleatória">
+          <input type="text" id="nm-pix" placeholder="Selecione o tipo acima">
         </div>
       </div>
       <div style="margin-top:14px;">
@@ -824,14 +854,18 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     <!-- Seção Bancária -->
     <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:16px;">
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">💳 Dados Bancários</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div style="margin-bottom:12px;" id="mf-badge-pagamento"></div>
+      <div id="mf-secao-conta" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">NOME DO TITULAR</div><div style="font-weight:600" id="mf-nome-titular">—</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CPF/CNPJ TITULAR</div><div style="font-weight:600" id="mf-cpf-titular">—</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">BANCO</div><div style="font-weight:600" id="mf-banco">—</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">AGÊNCIA</div><div style="font-weight:600" id="mf-agencia">—</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">NÚMERO DA CONTA</div><div style="font-weight:600" id="mf-conta">—</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">TIPO DE CONTA</div><div style="font-weight:600" id="mf-tipo-conta">—</div></div>
-        <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CHAVE PIX</div><div style="font-weight:600;color:var(--green)" id="mf-pix">—</div></div>
+      </div>
+      <div id="mf-secao-pix" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">TIPO DE CHAVE PIX</div><div style="font-weight:600" id="mf-tipo-pix">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CHAVE PIX</div><div style="font-weight:600;color:var(--green)" id="mf-pix">—</div></div>
       </div>
     </div>
 
@@ -1281,6 +1315,8 @@ async function abrirMotoristas(id) {
   document.getElementById('ml-peso-total').textContent = loteAtualDados.peso_ton || '0';
   ['nm-nome','nm-placa','nm-contato','nm-cpf','nm-peso','nm-nome-titular','nm-cpf-titular','nm-banco','nm-agencia','nm-conta','nm-pix'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('nm-tipo-conta').value = '';
+    document.getElementById('nm-tipo-pix').value = '';
+    selecionarTipoPagamento('conta_bancaria');
   document.getElementById('modal-motoristas-overlay').classList.add('open');
   await carregarMotoristas();
 }
@@ -1371,17 +1407,21 @@ async function adicionarMotorista() {
       cpf: document.getElementById('nm-cpf').value || null,
       peso_saida: parseFloat(peso),
       status: 'em_negociacao',
+      tipo_pagamento: document.getElementById('nm-tipo-pagamento').value || 'conta_bancaria',
       nome_titular: document.getElementById('nm-nome-titular').value || null,
       cpf_titular: document.getElementById('nm-cpf-titular').value || null,
       banco: document.getElementById('nm-banco').value || null,
       agencia: document.getElementById('nm-agencia').value || null,
       numero_conta: document.getElementById('nm-conta').value || null,
       tipo_conta: document.getElementById('nm-tipo-conta').value || null,
+      tipo_chave_pix: document.getElementById('nm-tipo-pix').value || null,
       chave_pix: document.getElementById('nm-pix').value || null,
     });
     showToast('✅ Motorista adicionado!', 'success');
     ['nm-nome','nm-placa','nm-contato','nm-cpf','nm-peso','nm-nome-titular','nm-cpf-titular','nm-banco','nm-agencia','nm-conta','nm-pix'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('nm-tipo-conta').value = '';
+    document.getElementById('nm-tipo-pix').value = '';
+    selecionarTipoPagamento('conta_bancaria');
     await carregarMotoristas();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
@@ -1846,7 +1886,8 @@ function renderFiscal(dados) {
         <th>Tipo</th>
         <th>Titular</th>
         <th>CPF/CNPJ Titular</th>
-        <th>PIX</th>
+        <th>Pagamento</th>
+        <th>Detalhe PIX/Conta</th>
       </tr></thead>
       <tbody>
         ${dados.map(m => `<tr onclick="abrirFiscalModal(${m.id})" style="cursor:pointer">
@@ -1867,7 +1908,11 @@ function renderFiscal(dados) {
           <td style="font-size:12px">${m.tipo_conta ? m.tipo_conta.charAt(0).toUpperCase() + m.tipo_conta.slice(1) : '—'}</td>
           <td style="font-size:12px">${m.nome_titular || '—'}</td>
           <td style="font-size:12px">${m.cpf_titular || '—'}</td>
-          <td style="font-size:12px;color:var(--green)">${m.chave_pix || '—'}</td>
+          <td style="font-size:12px">${badgeTipoPagamento(m.tipo_pagamento)}</td>
+          <td style="font-size:12px">${m.tipo_pagamento === 'chave_pix'
+            ? `<span style="color:var(--green)">${nomeTipoPix(m.tipo_chave_pix)}: ${m.chave_pix || '—'}</span>`
+            : (m.banco ? `${m.banco} | Ag: ${m.agencia || '—'} | Cc: ${m.numero_conta || '—'}` : '—')
+          }</td>
         </tr>`).join('')}
       </tbody>
     </table>`;
@@ -1904,7 +1949,13 @@ function abrirFiscalModal(id) {
   document.getElementById('mf-agencia').textContent = m.agencia || '—';
   document.getElementById('mf-conta').textContent = m.numero_conta || '—';
   document.getElementById('mf-tipo-conta').textContent = m.tipo_conta ? m.tipo_conta.charAt(0).toUpperCase() + m.tipo_conta.slice(1) : '—';
+  document.getElementById('mf-tipo-pix').textContent = nomeTipoPix(m.tipo_chave_pix);
   document.getElementById('mf-pix').textContent = m.chave_pix || '—';
+  document.getElementById('mf-badge-pagamento').innerHTML = badgeTipoPagamento(m.tipo_pagamento);
+
+  const isPix = m.tipo_pagamento === 'chave_pix';
+  document.getElementById('mf-secao-conta').style.display = isPix ? 'none' : 'grid';
+  document.getElementById('mf-secao-pix').style.display = isPix ? 'grid' : 'none';
 
   document.getElementById('modal-fiscal-overlay').classList.add('open');
 }
@@ -1926,6 +1977,65 @@ async function atualizarStatusFiscal() {
 
 function fecharModalFiscal(e) { if (e.target === document.getElementById('modal-fiscal-overlay')) fecharModalFiscalBtn(); }
 function fecharModalFiscalBtn() { document.getElementById('modal-fiscal-overlay').classList.remove('open'); motoristFiscalId = null; }
+
+// ============ TIPO PAGAMENTO ============
+function selecionarTipoPagamento(tipo) {
+  document.getElementById('nm-tipo-pagamento').value = tipo;
+  const btnConta = document.getElementById('btn-tipo-conta-bancaria');
+  const btnPix = document.getElementById('btn-tipo-chave-pix');
+  const campoConta = document.getElementById('campos-conta-bancaria');
+  const campoPix = document.getElementById('campos-chave-pix');
+
+  if (tipo === 'conta_bancaria') {
+    btnConta.style.borderColor = 'var(--accent)';
+    btnConta.style.background = 'rgba(249,115,22,0.12)';
+    btnConta.style.color = 'var(--accent)';
+    btnPix.style.borderColor = 'var(--border)';
+    btnPix.style.background = 'var(--surface)';
+    btnPix.style.color = 'var(--muted)';
+    campoConta.style.display = 'grid';
+    campoPix.style.display = 'none';
+  } else {
+    btnPix.style.borderColor = 'var(--green)';
+    btnPix.style.background = 'rgba(34,197,94,0.12)';
+    btnPix.style.color = 'var(--green)';
+    btnConta.style.borderColor = 'var(--border)';
+    btnConta.style.background = 'var(--surface)';
+    btnConta.style.color = 'var(--muted)';
+    campoPix.style.display = 'grid';
+    campoConta.style.display = 'none';
+  }
+}
+
+function atualizarPlaceholderPix() {
+  const tipo = document.getElementById('nm-tipo-pix').value;
+  const placeholders = {
+    telefone: 'Ex: (34) 99999-9999',
+    cpf: 'Ex: 000.000.000-00',
+    cnpj: 'Ex: 00.000.000/0001-00',
+    email: 'Ex: nome@email.com',
+    aleatoria: 'Cole a chave aleatória aqui',
+  };
+  document.getElementById('nm-pix').placeholder = placeholders[tipo] || 'Digite a chave PIX';
+}
+
+function nomeTipoPix(tipo) {
+  const nomes = {
+    telefone: '📱 Telefone',
+    cpf: '🪪 CPF',
+    cnpj: '🏢 CNPJ',
+    email: '✉️ E-mail',
+    aleatoria: '🔑 Chave Aleatória',
+  };
+  return nomes[tipo] || (tipo ? tipo : '—');
+}
+
+function badgeTipoPagamento(tipo) {
+  if (tipo === 'chave_pix') {
+    return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;color:var(--green);background:rgba(34,197,94,0.12);">⚡ Chave PIX</span>`;
+  }
+  return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;color:var(--blue);background:rgba(59,130,246,0.12);">🏦 Conta Bancária</span>`;
+}
 
 // INIT
 sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
