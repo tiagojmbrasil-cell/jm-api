@@ -785,6 +785,76 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
   </div>
 </div>
 
+<!-- MODAL FISCAL -->
+<div class="modal-overlay" id="modal-fiscal-overlay" onclick="fecharModalFiscal(event)">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-title">
+      <span id="mf-titulo">Detalhes do Motorista</span>
+      <button class="modal-close" onclick="fecharModalFiscalBtn()">✕</button>
+    </div>
+
+    <!-- Status -->
+    <div id="mf-status-bar" style="margin-bottom:16px;"></div>
+
+    <!-- Seção Motorista -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">🧑 Dados do Motorista</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">NOME</div><div style="font-weight:600" id="mf-nome">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CPF</div><div style="font-weight:600" id="mf-cpf">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PLACA</div><div style="font-weight:600" id="mf-placa">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CONTATO</div><div style="font-weight:600" id="mf-contato">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PESO SAÍDA</div><div style="font-weight:600;color:var(--accent)" id="mf-peso">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">STATUS</div><div id="mf-status">—</div></div>
+      </div>
+    </div>
+
+    <!-- Seção Lote -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">🚛 Dados do Lote</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">LOTE</div><div style="font-weight:600" id="mf-lote">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CLIENTE</div><div style="font-weight:600" id="mf-cliente">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PRODUTO</div><div style="font-weight:600" id="mf-produto">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">AGÊNCIA</div><div style="font-weight:600" id="mf-agencia-lote">—</div></div>
+        <div class="full" style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">ROTA</div><div style="font-weight:600" id="mf-rota">—</div></div>
+      </div>
+    </div>
+
+    <!-- Seção Bancária -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">💳 Dados Bancários</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">NOME DO TITULAR</div><div style="font-weight:600" id="mf-nome-titular">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CPF/CNPJ TITULAR</div><div style="font-weight:600" id="mf-cpf-titular">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">BANCO</div><div style="font-weight:600" id="mf-banco">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">AGÊNCIA</div><div style="font-weight:600" id="mf-agencia">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">NÚMERO DA CONTA</div><div style="font-weight:600" id="mf-conta">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">TIPO DE CONTA</div><div style="font-weight:600" id="mf-tipo-conta">—</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CHAVE PIX</div><div style="font-weight:600;color:var(--green)" id="mf-pix">—</div></div>
+      </div>
+    </div>
+
+    <!-- Alterar status -->
+    <div class="status-select-row">
+      <label>Alterar Status:</label>
+      <select id="mf-status-select" onchange="atualizarStatusFiscal()">
+        <option value="em_negociacao">Em Negociação</option>
+        <option value="cadastro">Cadastro</option>
+        <option value="validando_gr_interna">Validando GR Interna</option>
+        <option value="validando_gr_externa">Validando GR Externa</option>
+        <option value="liberado_carregar">Liberado Carregar</option>
+        <option value="aguardando_nota">Aguardando Nota</option>
+        <option value="documento_emitido">Documento Emitido</option>
+        <option value="carregado">Carregado</option>
+        <option value="em_transito">Em Trânsito</option>
+        <option value="aguardando_coleta">Aguardando Coleta</option>
+        <option value="aguardando_descarga">Aguardando Descarga</option>
+      </select>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1779,7 +1849,7 @@ function renderFiscal(dados) {
         <th>PIX</th>
       </tr></thead>
       <tbody>
-        ${dados.map(m => `<tr>
+        ${dados.map(m => `<tr onclick="abrirFiscalModal(${m.id})" style="cursor:pointer">
           <td style="color:var(--muted);font-size:12px">#${m.id}</td>
           <td><strong>${m.nome || '—'}</strong></td>
           <td style="font-size:12px">${m.cpf || '—'}</td>
@@ -1802,6 +1872,60 @@ function renderFiscal(dados) {
       </tbody>
     </table>`;
 }
+
+
+// ============ MODAL FISCAL ============
+let motoristFiscalId = null;
+
+function abrirFiscalModal(id) {
+  const m = fiscalData.find(x => x.id === id);
+  if (!m) return;
+  motoristFiscalId = id;
+
+  document.getElementById('mf-titulo').textContent = 'Motorista — ' + (m.nome || '#' + id);
+  document.getElementById('mf-status-bar').innerHTML = badgeMotorista(m.status);
+  document.getElementById('mf-nome').textContent = m.nome || '—';
+  document.getElementById('mf-cpf').textContent = m.cpf || '—';
+  document.getElementById('mf-placa').textContent = m.placa || '—';
+  document.getElementById('mf-contato').textContent = m.contato || '—';
+  document.getElementById('mf-peso').textContent = m.peso_saida ? m.peso_saida + ' ton' : '—';
+  document.getElementById('mf-status').innerHTML = badgeMotorista(m.status);
+  document.getElementById('mf-status-select').value = m.status || 'em_negociacao';
+
+  document.getElementById('mf-lote').textContent = 'Lote #' + m.lote_id;
+  document.getElementById('mf-cliente').textContent = m.lote ? (m.lote.cliente || '—') : '—';
+  document.getElementById('mf-produto').textContent = m.lote ? (m.lote.produto || '—') : '—';
+  document.getElementById('mf-agencia-lote').textContent = m.lote ? (m.lote.agencia || '—') : '—';
+  document.getElementById('mf-rota').textContent = m.lote ? ((m.lote.origem||'—') + ' → ' + (m.lote.destino||'—')) : '—';
+
+  document.getElementById('mf-nome-titular').textContent = m.nome_titular || '—';
+  document.getElementById('mf-cpf-titular').textContent = m.cpf_titular || '—';
+  document.getElementById('mf-banco').textContent = m.banco || '—';
+  document.getElementById('mf-agencia').textContent = m.agencia || '—';
+  document.getElementById('mf-conta').textContent = m.numero_conta || '—';
+  document.getElementById('mf-tipo-conta').textContent = m.tipo_conta ? m.tipo_conta.charAt(0).toUpperCase() + m.tipo_conta.slice(1) : '—';
+  document.getElementById('mf-pix').textContent = m.chave_pix || '—';
+
+  document.getElementById('modal-fiscal-overlay').classList.add('open');
+}
+
+async function atualizarStatusFiscal() {
+  const novoStatus = document.getElementById('mf-status-select').value;
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: novoStatus });
+    const m = fiscalData.find(x => x.id === motoristFiscalId);
+    if (m) {
+      m.status = novoStatus;
+      document.getElementById('mf-status-bar').innerHTML = badgeMotorista(novoStatus);
+      document.getElementById('mf-status').innerHTML = badgeMotorista(novoStatus);
+    }
+    showToast('Status atualizado!', 'success');
+    renderFiscal(fiscalData);
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+function fecharModalFiscal(e) { if (e.target === document.getElementById('modal-fiscal-overlay')) fecharModalFiscalBtn(); }
+function fecharModalFiscalBtn() { document.getElementById('modal-fiscal-overlay').classList.remove('open'); motoristFiscalId = null; }
 
 // INIT
 sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
