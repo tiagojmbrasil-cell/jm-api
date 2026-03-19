@@ -139,6 +139,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     <button onclick="showPage('lotes')">Lotes</button>
     <button onclick="showPage('status-lote')">Status do Lote</button>
     <button onclick="showPage('clientes')">Clientes</button>
+    <button onclick="showPage('fiscal')">Fiscal</button>
   </nav>
   <button class="btn-logout" onclick="fazerLogout()">Sair</button>
 </header>
@@ -597,11 +598,47 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
           <label>Peso Saída (ton)</label>
           <input type="number" id="nm-peso" placeholder="Ex: 40" step="0.1" min="0">
         </div>
-        <div class="form-group" style="display:flex;align-items:flex-end;">
-          <button onclick="adicionarMotorista()" class="btn-primary" style="width:100%;padding:10px;">+ Adicionar</button>
+      </div>
+      <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 10px;">Dados Bancários</div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="form-group">
+          <label>Nome do Titular</label>
+          <input type="text" id="nm-nome-titular" placeholder="Nome completo do titular">
+        </div>
+        <div class="form-group">
+          <label>CPF/CNPJ do Titular</label>
+          <input type="text" id="nm-cpf-titular" placeholder="CPF ou CNPJ">
+        </div>
+        <div class="form-group">
+          <label>Banco</label>
+          <input type="text" id="nm-banco" placeholder="Ex: Bradesco, Itaú, Nubank...">
+        </div>
+        <div class="form-group">
+          <label>Agência</label>
+          <input type="text" id="nm-agencia" placeholder="Ex: 1234">
+        </div>
+        <div class="form-group">
+          <label>Número da Conta</label>
+          <input type="text" id="nm-conta" placeholder="Ex: 12345-6">
+        </div>
+        <div class="form-group">
+          <label>Tipo de Conta</label>
+          <select id="nm-tipo-conta">
+            <option value="">Selecione...</option>
+            <option value="corrente">Corrente</option>
+            <option value="poupanca">Poupança</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Chave PIX</label>
+          <input type="text" id="nm-pix" placeholder="CPF, CNPJ, email, telefone ou chave aleatória">
         </div>
       </div>
+      <div style="margin-top:14px;">
+        <button onclick="adicionarMotorista()" class="btn-primary" style="width:100%;padding:12px;">+ Adicionar Motorista</button>
+      </div>
     </div>
+  </div>
 
     <!-- Lista de motoristas -->
     <div id="lista-motoristas"><div class="loading">Carregando...</div></div>
@@ -721,6 +758,33 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
   </div>
 </div>
 
+<!-- FISCAL -->
+<div class="page" id="page-fiscal">
+  <div class="card">
+    <div class="table-header">
+      <h2>Painel Fiscal</h2>
+      <div class="filters">
+        <input type="text" id="filtro-fiscal-busca" placeholder="🔍 Buscar motorista..." oninput="filtrarFiscal()">
+        <select id="filtro-fiscal-status" onchange="filtrarFiscal()">
+          <option value="">Todos os status</option>
+          <option value="em_negociacao">Em Negociação</option>
+          <option value="cadastro">Cadastro</option>
+          <option value="validando_gr_interna">Validando GR Interna</option>
+          <option value="validando_gr_externa">Validando GR Externa</option>
+          <option value="liberado_carregar">Liberado Carregar</option>
+          <option value="aguardando_nota">Aguardando Nota</option>
+          <option value="documento_emitido">Documento Emitido</option>
+          <option value="carregado">Carregado</option>
+          <option value="em_transito">Em Trânsito</option>
+          <option value="aguardando_coleta">Aguardando Coleta</option>
+          <option value="aguardando_descarga">Aguardando Descarga</option>
+        </select>
+      </div>
+    </div>
+    <div id="fiscal-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -815,13 +879,14 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  const idx = ['dashboard','nova','lista','lotes','status-lote','clientes'].indexOf(name);
+  const idx = ['dashboard','nova','lista','lotes','status-lote','clientes','fiscal'].indexOf(name);
   if (idx >= 0) document.querySelectorAll('nav button')[idx].classList.add('active');
   if (name === 'dashboard') carregarDashboard();
   if (name === 'lista') carregarLista();
   if (name === 'lotes') { carregarLotes(); carregarClientesSelect('l-cliente'); document.getElementById('l-data').value = new Date().toISOString().split('T')[0]; }
   if (name === 'status-lote') carregarStatusLote();
   if (name === 'clientes') carregarClientes();
+  if (name === 'fiscal') carregarFiscal();
   if (name === 'nova') document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
 }
 
@@ -1144,7 +1209,8 @@ async function abrirMotoristas(id) {
   document.getElementById('ml-cliente').textContent = loteAtualDados.cliente || '—';
   document.getElementById('ml-produto').textContent = loteAtualDados.produto || '—';
   document.getElementById('ml-peso-total').textContent = loteAtualDados.peso_ton || '0';
-  ['nm-nome','nm-placa','nm-contato','nm-cpf','nm-peso'].forEach(id => document.getElementById(id).value = '');
+  ['nm-nome','nm-placa','nm-contato','nm-cpf','nm-peso','nm-nome-titular','nm-cpf-titular','nm-banco','nm-agencia','nm-conta','nm-pix'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('nm-tipo-conta').value = '';
   document.getElementById('modal-motoristas-overlay').classList.add('open');
   await carregarMotoristas();
 }
@@ -1235,9 +1301,17 @@ async function adicionarMotorista() {
       cpf: document.getElementById('nm-cpf').value || null,
       peso_saida: parseFloat(peso),
       status: 'em_negociacao',
+      nome_titular: document.getElementById('nm-nome-titular').value || null,
+      cpf_titular: document.getElementById('nm-cpf-titular').value || null,
+      banco: document.getElementById('nm-banco').value || null,
+      agencia: document.getElementById('nm-agencia').value || null,
+      numero_conta: document.getElementById('nm-conta').value || null,
+      tipo_conta: document.getElementById('nm-tipo-conta').value || null,
+      chave_pix: document.getElementById('nm-pix').value || null,
     });
     showToast('✅ Motorista adicionado!', 'success');
-    ['nm-nome','nm-placa','nm-contato','nm-cpf','nm-peso'].forEach(id => document.getElementById(id).value = '');
+    ['nm-nome','nm-placa','nm-contato','nm-cpf','nm-peso','nm-nome-titular','nm-cpf-titular','nm-banco','nm-agencia','nm-conta','nm-pix'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('nm-tipo-conta').value = '';
     await carregarMotoristas();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
@@ -1647,6 +1721,87 @@ document.addEventListener('click', function(e) {
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(carregarCidadesIBGE, 1000);
 });
+
+
+// ============ FISCAL ============
+let fiscalData = [];
+
+async function carregarFiscal() {
+  try {
+    document.getElementById('fiscal-table').innerHTML = '<div class="loading">Carregando motoristas...</div>';
+    const motoristas = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500') || [];
+    const loteIds = [...new Set(motoristas.map(m => m.lote_id))];
+    const lotesMap = {};
+    await Promise.all(loteIds.map(async lid => {
+      const l = await supabaseRequest('GET', `lotes?id=eq.${lid}&select=id,cliente,produto,origem,destino`) || [];
+      if (l.length) lotesMap[lid] = l[0];
+    }));
+    fiscalData = motoristas.map(m => ({ ...m, lote: lotesMap[m.lote_id] || null }));
+    renderFiscal(fiscalData);
+  } catch(e) {
+    document.getElementById('fiscal-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
+  }
+}
+
+function filtrarFiscal() {
+  const busca = document.getElementById('filtro-fiscal-busca').value.toLowerCase();
+  const status = document.getElementById('filtro-fiscal-status').value;
+  const filtrados = fiscalData.filter(m => {
+    const matchBusca = !busca || (m.nome||'').toLowerCase().includes(busca) || (m.cpf||'').includes(busca);
+    const matchStatus = !status || m.status === status;
+    return matchBusca && matchStatus;
+  });
+  renderFiscal(filtrados);
+}
+
+function renderFiscal(dados) {
+  if (!dados.length) {
+    document.getElementById('fiscal-table').innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>Nenhum motorista encontrado.</p></div>';
+    return;
+  }
+  document.getElementById('fiscal-table').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>#</th>
+        <th>Motorista</th>
+        <th>CPF</th>
+        <th>Placa</th>
+        <th>Status</th>
+        <th>Lote / Cliente</th>
+        <th>Rota</th>
+        <th>Peso Saída</th>
+        <th>Banco</th>
+        <th>Agência</th>
+        <th>Conta</th>
+        <th>Tipo</th>
+        <th>Titular</th>
+        <th>CPF/CNPJ Titular</th>
+        <th>PIX</th>
+      </tr></thead>
+      <tbody>
+        ${dados.map(m => `<tr>
+          <td style="color:var(--muted);font-size:12px">#${m.id}</td>
+          <td><strong>${m.nome || '—'}</strong></td>
+          <td style="font-size:12px">${m.cpf || '—'}</td>
+          <td style="font-size:12px">${m.placa || '—'}</td>
+          <td>${badgeMotorista(m.status)}</td>
+          <td style="font-size:12px">
+            <span style="color:var(--muted)">Lote #${m.lote_id}</span><br>
+            <strong>${m.lote ? m.lote.cliente || '—' : '—'}</strong>
+          </td>
+          <td style="font-size:12px;color:var(--muted)">${m.lote ? (m.lote.origem||'—') + ' → ' + (m.lote.destino||'—') : '—'}</td>
+          <td style="font-size:12px;color:var(--accent);font-weight:600">${m.peso_saida ? m.peso_saida + ' ton' : '—'}</td>
+          <td style="font-size:12px">${m.banco || '—'}</td>
+          <td style="font-size:12px">${m.agencia || '—'}</td>
+          <td style="font-size:12px">${m.numero_conta || '—'}</td>
+          <td style="font-size:12px">${m.tipo_conta ? m.tipo_conta.charAt(0).toUpperCase() + m.tipo_conta.slice(1) : '—'}</td>
+          <td style="font-size:12px">${m.nome_titular || '—'}</td>
+          <td style="font-size:12px">${m.cpf_titular || '—'}</td>
+          <td style="font-size:12px;color:var(--green)">${m.chave_pix || '—'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
 
 // INIT
 sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
