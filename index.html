@@ -262,6 +262,10 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     <div class="form-title"><span></span> Novo Lote</div>
     <div class="form-grid">
       <div class="form-group">
+        <label>ID do Pedido</label>
+        <input type="text" id="l-id-pedido" placeholder="Ex: PED-2024-001">
+      </div>
+      <div class="form-group">
         <label>Agência</label>
         <select id="l-agencia">
           <option value="">Selecione...</option>
@@ -1153,6 +1157,7 @@ async function salvarLote() {
       tarifa_motorista: document.getElementById('l-tarifa-mot').value || null,
       peso_ton: document.getElementById('l-peso').value || null,
       data_lote: document.getElementById('l-data').value || null,
+      id_pedido: document.getElementById('l-id-pedido').value || null,
       observacao: document.getElementById('l-obs').value || null,
     });
     showToast('✅ Lote salvo!', 'success');
@@ -1163,7 +1168,7 @@ async function salvarLote() {
 }
 
 function resetLote() {
-  ['l-produto','l-coleta','l-origem','l-entrega','l-destino','l-tarifa-emp','l-tarifa-mot','l-peso','l-obs'].forEach(id => {
+  ['l-produto','l-coleta','l-origem','l-entrega','l-destino','l-tarifa-emp','l-tarifa-mot','l-peso','l-obs','l-id-pedido'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('l-agencia').value = '';
