@@ -16,8 +16,9 @@ export default async function handler(req, res) {
   if (!tabela) return res.status(400).json({ error: 'Tabela não informada' });
 
   const tabelasPermitidas = [
-    'cotacoes', 'cotacoes_view', 'clientes', 'vendedores',
-    'lotes', 'lote_motoristas', 'clientes_cadastro'
+  'cotacoes', 'cotacoes_view', 'clientes', 'vendedores',
+  'lotes', 'lote_motoristas', 'clientes_cadastro', 'usuarios_perfil'
+];
   ];
 
   if (!tabelasPermitidas.includes(tabela)) {
