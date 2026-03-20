@@ -1872,20 +1872,21 @@ async function adicionarMotorista() {
     selecionarTipoPagamento('conta_bancaria');
 
     // Limpar botões de anexo
-    [
-      ['nm-arq-cnh','label-nm-arq-cnh'],
-      ['nm-arq-antt','label-nm-arq-antt'],
-      ['nm-arq-doc-caminhao','label-nm-arq-doc-caminhao'],
-      ['nm-arq-residencia','label-nm-arq-residencia'],
-      ['nm-arq-foto-caminhao','label-nm-arq-foto-caminhao'],
-      ['nm-arq-selfie-cnh','label-nm-arq-selfie-cnh'],
-      ['nm-arq-selfie-placa','label-nm-arq-selfie-placa'],
-      ['nm-arq-lonas','label-nm-arq-lonas'],
+    [['nm-arq-cnh','label-nm-arq-cnh'],['nm-arq-antt','label-nm-arq-antt'],
+     ['nm-arq-doc-caminhao','label-nm-arq-doc-caminhao'],['nm-arq-residencia','label-nm-arq-residencia'],
+     ['nm-arq-foto-caminhao','label-nm-arq-foto-caminhao'],['nm-arq-selfie-cnh','label-nm-arq-selfie-cnh'],
+     ['nm-arq-selfie-placa','label-nm-arq-selfie-placa'],['nm-arq-lonas','label-nm-arq-lonas'],
     ].forEach(([inputId, labelId]) => limparAnexo(inputId, labelId));
 
-    // Ir para aba inseridos E atualizar carregado/restante
+    // Atualizar painel de carregado/restante e ir para aba inseridos
     await carregarMotoristas();
-    trocarAbaMotorista('inseridos', true); // true = não recarregar (já carregou acima)
+    // Forçar atualização visual das abas
+    document.getElementById('aba-adicionar').style.display = 'none';
+    document.getElementById('aba-inseridos').style.display = '';
+    document.getElementById('aba-btn-adicionar').style.background = 'transparent';
+    document.getElementById('aba-btn-adicionar').style.color = 'var(--muted)';
+    document.getElementById('aba-btn-inseridos').style.background = 'var(--accent)';
+    document.getElementById('aba-btn-inseridos').style.color = '#fff';
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 async function removerMotorista(id) {
