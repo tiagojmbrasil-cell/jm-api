@@ -1657,7 +1657,7 @@ let loteAtualId = null;
 let loteAtualDados = null;
 let statusLoteData = [];
 
-function trocarAbaMotorista(aba) {
+function trocarAbaMotorista(aba, skipReload) {
   const isAdicionar = aba === 'adicionar';
   document.getElementById('aba-adicionar').style.display = isAdicionar ? '' : 'none';
   document.getElementById('aba-inseridos').style.display = isAdicionar ? 'none' : '';
@@ -1665,7 +1665,7 @@ function trocarAbaMotorista(aba) {
   document.getElementById('aba-btn-adicionar').style.color = isAdicionar ? '#fff' : 'var(--muted)';
   document.getElementById('aba-btn-inseridos').style.background = isAdicionar ? 'transparent' : 'var(--accent)';
   document.getElementById('aba-btn-inseridos').style.color = isAdicionar ? 'var(--muted)' : '#fff';
-  if (!isAdicionar) carregarMotoristas();
+  if (!isAdicionar && !skipReload) carregarMotoristas();
 }
 
 async function abrirMotoristas(id) {
@@ -1856,9 +1856,13 @@ async function adicionarMotorista() {
     }
 
     showToast('✅ Motorista adicionado!', 'success');
+
+    // Limpar campos de texto
     ['nm-nome','nm-placa','nm-contato','nm-cpf','nm-peso','nm-nome-titular','nm-cpf-titular','nm-banco','nm-agencia','nm-conta','nm-pix',
      'nm-ck-valor-frete','nm-ck-valor-carga','nm-ck-canal','nm-ck-excecao-pgto','nm-ck-assinatura-pgto','nm-ck-excecao-prazo','nm-ck-assinatura-prazo'
     ].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+
+    // Limpar checkboxes
     ['nm-ck-cnh','nm-ck-antt','nm-ck-doc-caminhao','nm-ck-residencia','nm-ck-foto-caminhao','nm-ck-selfie-cnh','nm-ck-selfie-placa',
      'nm-ck-ref-prof','nm-ck-ref-pessoal','nm-ck-proprietario','nm-ck-lonas','nm-ck-adiantamento','nm-ck-saldo','nm-ck-pessoa-fisica','nm-ck-pessoa-juridica'
     ].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
@@ -1866,7 +1870,22 @@ async function adicionarMotorista() {
     document.getElementById('nm-tipo-conta').value = '';
     document.getElementById('nm-tipo-pix').value = '';
     selecionarTipoPagamento('conta_bancaria');
-    trocarAbaMotorista('inseridos'); // vai para aba inseridos e carrega automaticamente
+
+    // Limpar botões de anexo
+    [
+      ['nm-arq-cnh','label-nm-arq-cnh'],
+      ['nm-arq-antt','label-nm-arq-antt'],
+      ['nm-arq-doc-caminhao','label-nm-arq-doc-caminhao'],
+      ['nm-arq-residencia','label-nm-arq-residencia'],
+      ['nm-arq-foto-caminhao','label-nm-arq-foto-caminhao'],
+      ['nm-arq-selfie-cnh','label-nm-arq-selfie-cnh'],
+      ['nm-arq-selfie-placa','label-nm-arq-selfie-placa'],
+      ['nm-arq-lonas','label-nm-arq-lonas'],
+    ].forEach(([inputId, labelId]) => limparAnexo(inputId, labelId));
+
+    // Ir para aba inseridos E atualizar carregado/restante
+    await carregarMotoristas();
+    trocarAbaMotorista('inseridos', true); // true = não recarregar (já carregou acima)
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 async function removerMotorista(id) {
