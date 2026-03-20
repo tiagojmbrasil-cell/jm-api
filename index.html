@@ -2117,8 +2117,9 @@ function badgeTipoPagamento(tipo) {
 // ============ PERFIL E PERMISSÕES ============
 async function carregarPerfilUsuario(userId) {
   try {
-    const perfis = await supabaseRequest('GET', `usuarios_perfil?id=eq.${userId}&select=*`);
+    const perfis = await supabaseRequest('GET', `usuarios_perfil?id=eq.${userId}`);
     if (perfis && perfis.length) {
+      console.log('Perfil encontrado:', perfis[0].setor);
       aplicarPermissoes(perfis[0].setor || 'comercial');
     } else {
       // Criar perfil padrão se não existir
