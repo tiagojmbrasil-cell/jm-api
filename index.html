@@ -1241,7 +1241,7 @@ async function supabaseRequest(method, path, body = null) {
   // Monta URL da nossa API
   let url = API_URL + '?tabela=' + tabelaComFiltros;
   
-  // Extrai id de filtros como id=eq.X
+  // Extrai id de filtros como id=eq.X (converte para número se possível)
   const idMatch = queryString.match(/id=eq\.([^&]+)/);
   if (idMatch) url += '&id=' + idMatch[1];
   
@@ -1260,9 +1260,9 @@ async function supabaseRequest(method, path, body = null) {
     if (key.includes('_id') && val.startsWith('eq.')) filtros[key] = val.replace('eq.','');
   });
   
-  // Trata filtros especiais como lote_id=eq.X
+  // Trata filtros especiais como lote_id=eq.X (converte para número)
   const loteIdMatch = queryString.match(/lote_id=eq\.([^&]+)/);
-  if (loteIdMatch) filtros['lote_id'] = loteIdMatch[1];
+  if (loteIdMatch) filtros['lote_id'] = parseInt(loteIdMatch[1]) || loteIdMatch[1];
   
   const nomeMatch = queryString.match(/nome=eq\.([^&]+)/);
   if (nomeMatch) filtros['nome'] = decodeURIComponent(nomeMatch[1]);
@@ -1669,7 +1669,7 @@ function trocarAbaMotorista(aba, skipReload) {
 }
 
 async function abrirMotoristas(id) {
-  loteAtualId = id;
+  loteAtualId = parseInt(id);
   loteAtualDados = lotes.find(l => l.id === id);
   if (!loteAtualDados) return;
   document.getElementById('modal-motoristas-titulo').textContent = 'Motoristas — Lote #' + id;
