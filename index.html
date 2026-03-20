@@ -687,46 +687,133 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
           </div>
         </div>
 
-        <!-- Checkboxes de documentos -->
+        <!-- Documentos + Anexo lado a lado -->
         <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Documentos Recebidos</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-          ${[
-            ['nm-ck-cnh','Habilitação do motorista (CNH)'],
-            ['nm-ck-antt','Registro na ANTT'],
-            ['nm-ck-doc-caminhao','Documentação do caminhão e carretas (com nome do proprietário)'],
-            ['nm-ck-residencia','Comprovante de residência (nome e endereço atualizados)'],
-            ['nm-ck-foto-caminhao','Foto do caminhão e carretas com as placas visíveis'],
-            ['nm-ck-selfie-cnh','Foto do motorista (selfie segurando a CNH)'],
-            ['nm-ck-selfie-placa','Foto do motorista (selfie ao lado direito do veículo, mostrando a placa)'],
-            ['nm-ck-ref-prof','Três contatos de referência profissional'],
-            ['nm-ck-ref-pessoal','Três contatos de referência pessoal'],
-            ['nm-ck-proprietario','Contato do proprietário ou responsável pelo veículo'],
-            ['nm-ck-lonas','Fotos das lonas que serão utilizadas no transporte'],
-          ].map(([id, label]) => `
-          <label style="display:flex;align-items:flex-start;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);">
-            <input type="checkbox" id="${id}" style="width:16px;height:16px;min-width:16px;margin-top:1px;accent-color:var(--accent);cursor:pointer;">
-            <span>${label}</span>
-          </label>`).join('')}
-        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
 
-        <!-- Anexos de documentos -->
-        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Anexar Arquivos / Fotos</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-          ${[
-            ['nm-arq-cnh','📄 CNH'],
-            ['nm-arq-antt','📄 ANTT'],
-            ['nm-arq-doc-caminhao','📄 Doc. Caminhão/Carretas'],
-            ['nm-arq-residencia','📄 Comp. Residência'],
-            ['nm-arq-foto-caminhao','📷 Foto Caminhão/Carretas'],
-            ['nm-arq-selfie-cnh','📷 Selfie com CNH'],
-            ['nm-arq-selfie-placa','📷 Selfie ao lado do veículo'],
-            ['nm-arq-lonas','📷 Fotos das Lonas'],
-          ].map(([id, label]) => `
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
-            <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">${label}</div>
-            <input type="file" id="${id}" accept="image/*,.pdf" multiple
-              style="font-size:12px;color:var(--text);background:transparent;border:none;padding:0;width:100%;cursor:pointer;">
-          </div>`).join('')}
+          <!-- CNH -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;margin:0;">
+              <input type="checkbox" id="nm-ck-cnh" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
+              Habilitação do motorista (CNH)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              📎 Anexar
+              <input type="file" id="nm-arq-cnh" accept="image/*,.pdf" style="display:none;">
+            </label>
+          </div>
+
+          <!-- ANTT -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;margin:0;">
+              <input type="checkbox" id="nm-ck-antt" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
+              Registro na ANTT
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              📎 Anexar
+              <input type="file" id="nm-arq-antt" accept="image/*,.pdf" style="display:none;">
+            </label>
+          </div>
+
+          <!-- Doc Caminhão -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;margin:0;">
+              <input type="checkbox" id="nm-ck-doc-caminhao" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
+              Documentação do caminhão e carretas (com nome do proprietário)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              📎 Anexar
+              <input type="file" id="nm-arq-doc-caminhao" accept="image/*,.pdf" style="display:none;">
+            </label>
+          </div>
+
+          <!-- Comprovante Residência -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;margin:0;">
+              <input type="checkbox" id="nm-ck-residencia" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
+              Comprovante de residência (nome e endereço atualizados)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              📎 Anexar
+              <input type="file" id="nm-arq-residencia" accept="image/*,.pdf" style="display:none;">
+            </label>
+          </div>
+
+          <!-- Foto Caminhão -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;margin:0;">
+              <input type="checkbox" id="nm-ck-foto-caminhao" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
+              Foto do caminhão e carretas com as placas visíveis
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              📎 Anexar
+              <input type="file" id="nm-arq-foto-caminhao" accept="image/*" multiple style="display:none;">
+            </label>
+          </div>
+
+          <!-- Selfie CNH -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;margin:0;">
+              <input type="checkbox" id="nm-ck-selfie-cnh" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
+              Foto do motorista (selfie segurando a CNH)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              📎 Anexar
+              <input type="file" id="nm-arq-selfie-cnh" accept="image/*" style="display:none;">
+            </label>
+          </div>
+
+          <!-- Selfie Placa -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;margin:0;">
+              <input type="checkbox" id="nm-ck-selfie-placa" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
+              Foto do motorista (selfie ao lado direito do veículo, mostrando a placa)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              📎 Anexar
+              <input type="file" id="nm-arq-selfie-placa" accept="image/*" style="display:none;">
+            </label>
+          </div>
+
+          <!-- Ref Profissional -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;margin:0;">
+              <input type="checkbox" id="nm-ck-ref-prof" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
+              Três contatos de referência profissional
+            </label>
+            <div style="width:80px;"></div>
+          </div>
+
+          <!-- Ref Pessoal -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;margin:0;">
+              <input type="checkbox" id="nm-ck-ref-pessoal" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
+              Três contatos de referência pessoal
+            </label>
+            <div style="width:80px;"></div>
+          </div>
+
+          <!-- Proprietário -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;margin:0;">
+              <input type="checkbox" id="nm-ck-proprietario" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
+              Solicitar o contato do proprietário ou responsável pelo veículo
+            </label>
+            <div style="width:80px;"></div>
+          </div>
+
+          <!-- Lonas -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;margin:0;">
+              <input type="checkbox" id="nm-ck-lonas" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
+              Fotos das lonas que serão utilizadas no transporte
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              📎 Anexar
+              <input type="file" id="nm-arq-lonas" accept="image/*" multiple style="display:none;">
+            </label>
+          </div>
+
         </div>
 
         <!-- Forma de Pagamento -->
@@ -2570,8 +2657,31 @@ function aplicarPermissoes(setor, perms) {
   showPage(primeiraVisivel);
 }
 
-// INIT
-sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Atualiza label dos botões de anexo com nome do arquivo selecionado
+document.addEventListener('change', function(e) {
+  if (e.target.type === 'file' && e.target.style.display === 'none') {
+    const label = e.target.closest('label');
+    if (!label) return;
+    const file = e.target.files[0];
+    const span = label.querySelector('span') || label.childNodes[0];
+    const nomeArquivo = file ? (file.name.length > 18 ? file.name.substring(0,16)+'...' : file.name) : null;
+    // Atualiza texto do label mantendo o ícone
+    const textoAtual = label.textContent.trim();
+    if (nomeArquivo) {
+      label.style.background = 'rgba(34,197,94,0.1)';
+      label.style.borderColor = 'rgba(34,197,94,0.3)';
+      label.style.color = '#22c55e';
+      // Troca texto para nome do arquivo
+      label.childNodes.forEach(n => { if(n.nodeType === 3) n.textContent = ' ' + nomeArquivo + ' '; });
+    } else {
+      label.style.background = 'rgba(249,115,22,0.1)';
+      label.style.borderColor = 'rgba(249,115,22,0.3)';
+      label.style.color = 'var(--accent)';
+      label.childNodes.forEach(n => { if(n.nodeType === 3) n.textContent = ' Anexar '; });
+    }
+  }
+});
+
 
 sb.auth.getSession().then(async ({ data: { session } }) => {
   if (session) {
