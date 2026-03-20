@@ -138,6 +138,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     <button onclick="showPage('nova')">Nova Cotação</button>
     <button onclick="showPage('lista')">Todas as Cotações</button>
     <button onclick="showPage('lotes')">Lotes</button>
+    <button onclick="showPage('motoristas')">Motoristas</button>
     <button onclick="showPage('status-lote')">Status do Lote</button>
     <button onclick="showPage('clientes')">Clientes</button>
     <button onclick="showPage('fiscal')">Fiscal</button>
@@ -1010,6 +1011,33 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
   </div>
 </div>
 
+<!-- MOTORISTAS -->
+<div class="page" id="page-motoristas">
+  <div class="card">
+    <div class="table-header">
+      <h2>Motoristas Cadastrados</h2>
+      <div class="filters">
+        <input type="text" id="filtro-mot-busca" placeholder="🔍 Buscar motorista, CPF ou lote..." oninput="filtrarMotoristasPagina()">
+        <select id="filtro-mot-status" onchange="filtrarMotoristasPagina()">
+          <option value="">Todos os status</option>
+          <option value="em_negociacao">Em Negociação</option>
+          <option value="cadastro">Cadastro</option>
+          <option value="validando_gr_interna">Validando GR Interna</option>
+          <option value="validando_gr_externa">Validando GR Externa</option>
+          <option value="liberado_carregar">Liberado Carregar</option>
+          <option value="aguardando_nota">Aguardando Nota</option>
+          <option value="documento_emitido">Documento Emitido</option>
+          <option value="carregado">Carregado</option>
+          <option value="em_transito">Em Trânsito</option>
+          <option value="aguardando_coleta">Aguardando Coleta</option>
+          <option value="aguardando_descarga">Aguardando Descarga</option>
+        </select>
+      </div>
+    </div>
+    <div id="motoristas-page-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
 <!-- FISCAL -->
 <div class="page" id="page-fiscal">
   <div class="card">
@@ -1317,11 +1345,12 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  const idx = ['dashboard','nova','lista','lotes','status-lote','clientes','fiscal','seguranca'].indexOf(name);
+  const idx = ['dashboard','nova','lista','lotes','motoristas','status-lote','clientes','fiscal','seguranca'].indexOf(name);
   if (idx >= 0) document.querySelectorAll('nav button')[idx].classList.add('active');
   if (name === 'dashboard') carregarDashboard();
   if (name === 'lista') carregarLista();
   if (name === 'lotes') { carregarLotes(); carregarClientesSelect('l-cliente'); document.getElementById('l-data').value = new Date().toISOString().split('T')[0]; }
+  if (name === 'motoristas') carregarMotoristasPagina();
   if (name === 'status-lote') carregarStatusLote();
   if (name === 'clientes') carregarClientes();
   if (name === 'fiscal') carregarFiscal();
@@ -1886,9 +1915,19 @@ async function adicionarMotorista() {
      ['nm-arq-selfie-placa','label-nm-arq-selfie-placa'],['nm-arq-lonas','label-nm-arq-lonas'],
     ].forEach(([inputId, labelId]) => limparAnexo(inputId, labelId));
 
-    // Atualizar painel de carregado/restante e ir para aba inseridos
+    // Recarregar motoristas do lote — isso recalcula o peso corretamente
     await carregarMotoristas();
-    // Forçar atualização visual das abas
+
+    // Verificar se lote precisa ser finalizado
+    const motoristasAtual = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}`) || [];
+    const totalAtual = motoristasAtual.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
+    const pesoTotalAtual = parseFloat(loteAtualDados.peso_ton || 0);
+    if (pesoTotalAtual > 0 && totalAtual >= pesoTotalAtual) {
+      await supabaseRequest('PATCH', `lotes?id=eq.${loteAtualId}`, { status: 'finalizado' });
+      showToast('🎉 Lote finalizado! 100% carregado!', 'success');
+    }
+
+    // Ir para aba inseridos
     document.getElementById('aba-adicionar').style.display = 'none';
     document.getElementById('aba-inseridos').style.display = '';
     document.getElementById('aba-btn-adicionar').style.background = 'transparent';
@@ -1912,6 +1951,92 @@ function fecharModalMotoristasBtn() {
   loteAtualId = null;
   loteAtualDados = null;
   carregarLotes();
+}
+
+// ============ PÁGINA MOTORISTAS ============
+let motoristasPageData = [];
+
+async function carregarMotoristasPagina() {
+  try {
+    document.getElementById('motoristas-page-table').innerHTML = '<div class="loading">Carregando...</div>';
+    const motoristas = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500') || [];
+    const loteIds = [...new Set(motoristas.map(m => m.lote_id))];
+    const lotesMap = {};
+    await Promise.all(loteIds.map(async lid => {
+      const l = await supabaseRequest('GET', `lotes?id=eq.${lid}`) || [];
+      if (l.length) lotesMap[lid] = l[0];
+    }));
+    motoristasPageData = motoristas.map(m => ({ ...m, lote: lotesMap[m.lote_id] || null }));
+    filtrarMotoristasPagina();
+  } catch(e) {
+    document.getElementById('motoristas-page-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
+  }
+}
+
+function filtrarMotoristasPagina() {
+  const busca = (document.getElementById('filtro-mot-busca').value || '').toLowerCase();
+  const status = document.getElementById('filtro-mot-status').value;
+  const filtrados = motoristasPageData.filter(m => {
+    const matchBusca = !busca ||
+      (m.nome||'').toLowerCase().includes(busca) ||
+      (m.cpf||'').includes(busca) ||
+      String(m.lote_id).includes(busca) ||
+      (m.placa||'').toLowerCase().includes(busca);
+    const matchStatus = !status || m.status === status;
+    return matchBusca && matchStatus;
+  });
+  renderMotoristasPagina(filtrados);
+}
+
+function renderMotoristasPagina(dados) {
+  if (!dados.length) {
+    document.getElementById('motoristas-page-table').innerHTML = '<div class="empty"><div class="empty-icon">🚛</div><p>Nenhum motorista encontrado.</p></div>';
+    return;
+  }
+  document.getElementById('motoristas-page-table').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>#</th>
+        <th>Motorista</th>
+        <th>CPF</th>
+        <th>Placa</th>
+        <th>Contato</th>
+        <th>Lote / Cliente</th>
+        <th>Peso Saída</th>
+        <th>Status</th>
+        <th>Pagamento</th>
+        <th></th>
+      </tr></thead>
+      <tbody>
+        ${dados.map(m => `<tr>
+          <td style="color:var(--muted);font-size:12px">#${m.id}</td>
+          <td><strong>${m.nome || '—'}</strong></td>
+          <td style="font-size:12px">${m.cpf || '—'}</td>
+          <td style="font-size:12px">${m.placa || '—'}</td>
+          <td style="font-size:12px">${m.contato || '—'}</td>
+          <td style="font-size:12px">
+            <span style="color:var(--muted)">Lote ${m.lote_id}</span><br>
+            <strong>${m.lote ? m.lote.cliente || '—' : '—'}</strong>
+          </td>
+          <td style="font-size:12px;color:var(--accent);font-weight:600">${m.peso_saida ? m.peso_saida + ' ton' : '—'}</td>
+          <td>${badgeMotorista(m.status)}</td>
+          <td>${badgeTipoPagamento(m.tipo_pagamento)}</td>
+          <td style="display:flex;gap:6px;">
+            <button onclick="abrirEditarMotorista(${m.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">✏️ Editar</button>
+            <button onclick="removerMotoristaPagina(${m.id})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🗑</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function removerMotoristaPagina(id) {
+  if (!confirm('Remover este motorista?')) return;
+  try {
+    await supabaseRequest('DELETE', `lote_motoristas?id=eq.${id}`);
+    showToast('Motorista removido!', 'success');
+    await carregarMotoristasPagina();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 
 // ============ STATUS DO LOTE ============
@@ -2653,7 +2778,8 @@ const ABAS_SISTEMA = [
   { id: 'nova',        label: '➕ Nova Cotação' },
   { id: 'lista',       label: '📋 Todas as Cotações' },
   { id: 'lotes',       label: '📦 Lotes' },
-  { id: 'status-lote', label: '🚛 Status do Lote' },
+  { id: 'motoristas',  label: '🚛 Motoristas' },
+  { id: 'status-lote', label: '📍 Status do Lote' },
   { id: 'clientes',    label: '👥 Clientes' },
   { id: 'fiscal',      label: '💼 Fiscal' },
   { id: 'seguranca',   label: '🔒 Segurança' },
@@ -2661,10 +2787,10 @@ const ABAS_SISTEMA = [
 
 // Permissões padrão por setor: 0=oculto, 1=só ver, 2=acesso total
 const PERMISSOES_PADRAO = {
-  administrativo: { dashboard:2, nova:2, lista:2, lotes:2, 'status-lote':2, clientes:2, fiscal:2, seguranca:2 },
-  comercial:      { dashboard:2, nova:2, lista:2, lotes:2, 'status-lote':2, clientes:2, fiscal:0, seguranca:0 },
-  logistico:      { dashboard:2, nova:0, lista:1, lotes:2, 'status-lote':2, clientes:0, fiscal:0, seguranca:0 },
-  fiscal:         { dashboard:2, nova:0, lista:1, lotes:0, 'status-lote':2, clientes:0, fiscal:2, seguranca:0 },
+  administrativo: { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, 'status-lote':2, clientes:2, fiscal:2, seguranca:2 },
+  comercial:      { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, 'status-lote':2, clientes:2, fiscal:0, seguranca:0 },
+  logistico:      { dashboard:2, nova:0, lista:1, lotes:2, motoristas:2, 'status-lote':2, clientes:0, fiscal:0, seguranca:0 },
+  fiscal:         { dashboard:2, nova:0, lista:1, lotes:0, motoristas:1, 'status-lote':2, clientes:0, fiscal:2, seguranca:0 },
 };
 
 function getPermissoesUsuario(u) {
@@ -2847,7 +2973,7 @@ function aplicarPermissoes(setor, perms) {
   setorAtual = setor;
   permissoesAtual = perms || PERMISSOES_PADRAO[setor] || PERMISSOES_PADRAO['comercial'];
 
-  const paginas = ['dashboard','nova','lista','lotes','status-lote','clientes','fiscal','seguranca'];
+  const paginas = ['dashboard','nova','lista','lotes','motoristas','status-lote','clientes','fiscal','seguranca'];
   const botoesNav = document.querySelectorAll('nav button');
 
   paginas.forEach((p, i) => {
