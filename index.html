@@ -2344,7 +2344,7 @@ function renderFiscal(dados) {
 // ============ MODAL FISCAL ============
 let motoristFiscalId = null;
 
-function abrirFiscalModal(id) {
+async function abrirFiscalModal(id) {
   const m = fiscalData.find(x => x.id === id);
   if (!m) return;
   motoristFiscalId = id;
