@@ -577,9 +577,21 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       </div>
     </div>
 
-    <!-- Formulário adicionar motorista -->
+    <!-- ABAS -->
+    <div style="display:flex;gap:0;margin-bottom:16px;background:var(--surface2);border-radius:10px;padding:4px;">
+      <button id="aba-btn-adicionar" onclick="trocarAbaMotorista('adicionar')"
+        style="flex:1;padding:10px 16px;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;background:var(--accent);color:#fff;">
+        ➕ Adicionar Motorista
+      </button>
+      <button id="aba-btn-inseridos" onclick="trocarAbaMotorista('inseridos')"
+        style="flex:1;padding:10px 16px;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;background:transparent;color:var(--muted);">
+        🚛 Motoristas Inseridos
+      </button>
+    </div>
+
+    <!-- ABA ADICIONAR MOTORISTA -->
+    <div id="aba-adicionar">
     <div style="background:var(--surface2);border-radius:8px;padding:16px;margin-bottom:16px;">
-      <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Adicionar Motorista</div>
       <div class="form-grid" style="grid-template-columns:1fr 1fr;">
         <div class="form-group">
           <label>Nome</label>
@@ -603,8 +615,6 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
         </div>
       </div>
       <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 10px;">Dados Bancários</div>
-
-      <!-- Seletor Tipo de Pagamento -->
       <div style="display:flex;gap:8px;margin-bottom:14px;">
         <button type="button" id="btn-tipo-conta-bancaria" onclick="selecionarTipoPagamento('conta_bancaria')"
           style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:rgba(249,115,22,0.12);color:var(--accent);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;">
@@ -616,43 +626,18 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
         </button>
       </div>
       <input type="hidden" id="nm-tipo-pagamento" value="conta_bancaria">
-
-      <!-- Campos Conta Bancária -->
       <div id="campos-conta-bancaria" class="form-grid" style="grid-template-columns:1fr 1fr;">
-        <div class="form-group">
-          <label>Nome do Titular</label>
-          <input type="text" id="nm-nome-titular" placeholder="Nome completo do titular">
-        </div>
-        <div class="form-group">
-          <label>CPF/CNPJ do Titular</label>
-          <input type="text" id="nm-cpf-titular" placeholder="CPF ou CNPJ">
-        </div>
-        <div class="form-group">
-          <label>Banco</label>
-          <input type="text" id="nm-banco" placeholder="Ex: Bradesco, Itaú, Nubank...">
-        </div>
-        <div class="form-group">
-          <label>Agência</label>
-          <input type="text" id="nm-agencia" placeholder="Ex: 1234">
-        </div>
-        <div class="form-group">
-          <label>Número da Conta</label>
-          <input type="text" id="nm-conta" placeholder="Ex: 12345-6">
-        </div>
-        <div class="form-group">
-          <label>Tipo de Conta</label>
-          <select id="nm-tipo-conta">
-            <option value="">Selecione...</option>
-            <option value="corrente">Corrente</option>
-            <option value="poupanca">Poupança</option>
-          </select>
+        <div class="form-group"><label>Nome do Titular</label><input type="text" id="nm-nome-titular" placeholder="Nome completo do titular"></div>
+        <div class="form-group"><label>CPF/CNPJ do Titular</label><input type="text" id="nm-cpf-titular" placeholder="CPF ou CNPJ"></div>
+        <div class="form-group"><label>Banco</label><input type="text" id="nm-banco" placeholder="Ex: Bradesco, Itaú, Nubank..."></div>
+        <div class="form-group"><label>Agência</label><input type="text" id="nm-agencia" placeholder="Ex: 1234"></div>
+        <div class="form-group"><label>Número da Conta</label><input type="text" id="nm-conta" placeholder="Ex: 12345-6"></div>
+        <div class="form-group"><label>Tipo de Conta</label>
+          <select id="nm-tipo-conta"><option value="">Selecione...</option><option value="corrente">Corrente</option><option value="poupanca">Poupança</option></select>
         </div>
       </div>
-
-      <!-- Campos Chave PIX -->
       <div id="campos-chave-pix" class="form-grid" style="grid-template-columns:1fr 1fr;display:none;">
-        <div class="form-group">
-          <label>Tipo de Chave PIX</label>
+        <div class="form-group"><label>Tipo de Chave PIX</label>
           <select id="nm-tipo-pix" onchange="atualizarPlaceholderPix()">
             <option value="">Selecione o tipo...</option>
             <option value="telefone">📱 Número de Telefone</option>
@@ -662,11 +647,9 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
             <option value="aleatoria">🔑 Chave Aleatória</option>
           </select>
         </div>
-        <div class="form-group">
-          <label>Chave PIX</label>
-          <input type="text" id="nm-pix" placeholder="Selecione o tipo acima">
-        </div>
+        <div class="form-group"><label>Chave PIX</label><input type="text" id="nm-pix" placeholder="Selecione o tipo acima"></div>
       </div>
+    </div>
       <!-- ========== CHECK LIST DOCUMENTAÇÃO ========== -->
       <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:16px;">
         <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">📋 Check List — Documentação para Gerenciamento do Risco</div>
@@ -905,10 +888,12 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
         <button onclick="adicionarMotorista()" class="btn-primary" style="width:100%;padding:12px;">+ Adicionar Motorista</button>
       </div>
     </div>
-  </div>
+    </div>
 
-    <!-- Lista de motoristas -->
-    <div id="lista-motoristas"><div class="loading">Carregando...</div></div>
+    <!-- ABA MOTORISTAS INSERIDOS -->
+    <div id="aba-inseridos" style="display:none;">
+      <div id="lista-motoristas"><div class="loading">Carregando...</div></div>
+    </div>
   </div>
 </div>
 
@@ -1672,6 +1657,17 @@ let loteAtualId = null;
 let loteAtualDados = null;
 let statusLoteData = [];
 
+function trocarAbaMotorista(aba) {
+  const isAdicionar = aba === 'adicionar';
+  document.getElementById('aba-adicionar').style.display = isAdicionar ? '' : 'none';
+  document.getElementById('aba-inseridos').style.display = isAdicionar ? 'none' : '';
+  document.getElementById('aba-btn-adicionar').style.background = isAdicionar ? 'var(--accent)' : 'transparent';
+  document.getElementById('aba-btn-adicionar').style.color = isAdicionar ? '#fff' : 'var(--muted)';
+  document.getElementById('aba-btn-inseridos').style.background = isAdicionar ? 'transparent' : 'var(--accent)';
+  document.getElementById('aba-btn-inseridos').style.color = isAdicionar ? 'var(--muted)' : '#fff';
+  if (!isAdicionar) carregarMotoristas();
+}
+
 async function abrirMotoristas(id) {
   loteAtualId = id;
   loteAtualDados = lotes.find(l => l.id === id);
@@ -1685,6 +1681,7 @@ async function abrirMotoristas(id) {
     document.getElementById('nm-tipo-pix').value = '';
     selecionarTipoPagamento('conta_bancaria');
   document.getElementById('modal-motoristas-overlay').classList.add('open');
+  trocarAbaMotorista('adicionar');
   await carregarMotoristas();
 }
 
@@ -1706,38 +1703,40 @@ async function carregarMotoristas() {
       return;
     }
 
-    document.getElementById('lista-motoristas').innerHTML = `
-      <table>
-        <thead><tr>
-          <th>Nome</th><th>Placa</th><th>Contato</th><th>CPF</th><th>Peso Saída</th><th>Status</th><th></th>
-        </tr></thead>
-        <tbody>
-          ${motoristas.map(m => `<tr>
-            <td><strong>${m.nome || '—'}</strong></td>
-            <td style="font-size:12px">${m.placa || '—'}</td>
-            <td style="font-size:12px">${m.contato || '—'}</td>
-            <td style="font-size:12px">${m.cpf || '—'}</td>
-            <td class="valor-cell">${m.peso_saida ? m.peso_saida + ' ton' : '—'}</td>
-            <td>
-              <select onchange="atualizarStatusMotorista(${m.id}, this.value)" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;cursor:pointer;min-width:160px;">
-                <option value="em_negociacao" ${m.status==='em_negociacao'?'selected':''}>Em Negociação</option>
-                <option value="cadastro" ${m.status==='cadastro'?'selected':''}>Cadastro</option>
-                <option value="validando_gr_interna" ${m.status==='validando_gr_interna'?'selected':''}>Validando GR Interna</option>
-                <option value="validando_gr_externa" ${m.status==='validando_gr_externa'?'selected':''}>Validando GR Externa</option>
-                <option value="liberado_carregar" ${m.status==='liberado_carregar'?'selected':''}>Liberado Carregar</option>
-                <option value="aguardando_nota" ${m.status==='aguardando_nota'?'selected':''}>Aguardando Nota</option>
-                <option value="documento_emitido" ${m.status==='documento_emitido'?'selected':''}>Documento Emitido</option>
-                <option value="carregado" ${m.status==='carregado'?'selected':''}>Carregado</option>
-                <option value="em_transito" ${m.status==='em_transito'?'selected':''}>Em Trânsito</option>
-                <option value="aguardando_coleta" ${m.status==='aguardando_coleta'?'selected':''}>Aguardando Coleta</option>
-                <option value="aguardando_descarga" ${m.status==='aguardando_descarga'?'selected':''}>Aguardando Descarga</option>
-              </select>
-            </td>
-            <td><button onclick="removerMotorista(${m.id})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🗑</button>
-            <button onclick="abrirEditarMotorista(${m.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;margin-left:4px;">✏️ Editar</button></td>
-          </tr>`).join('')}
-        </tbody>
-      </table>`;
+    document.getElementById('lista-motoristas').innerHTML = motoristas.map(m => `
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:34px;height:34px;border-radius:50%;background:rgba(249,115,22,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;">🚛</div>
+            <div>
+              <div style="font-weight:700;font-size:14px;">${m.nome || '—'}</div>
+              <div style="font-size:11px;color:var(--muted);">CPF: ${m.cpf || '—'} · Placa: ${m.placa || '—'}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select onchange="atualizarStatusMotorista(${m.id}, this.value)" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;cursor:pointer;min-width:160px;">
+              <option value="em_negociacao" ${m.status==='em_negociacao'?'selected':''}>Em Negociação</option>
+              <option value="cadastro" ${m.status==='cadastro'?'selected':''}>Cadastro</option>
+              <option value="validando_gr_interna" ${m.status==='validando_gr_interna'?'selected':''}>Validando GR Interna</option>
+              <option value="validando_gr_externa" ${m.status==='validando_gr_externa'?'selected':''}>Validando GR Externa</option>
+              <option value="liberado_carregar" ${m.status==='liberado_carregar'?'selected':''}>Liberado Carregar</option>
+              <option value="aguardando_nota" ${m.status==='aguardando_nota'?'selected':''}>Aguardando Nota</option>
+              <option value="documento_emitido" ${m.status==='documento_emitido'?'selected':''}>Documento Emitido</option>
+              <option value="carregado" ${m.status==='carregado'?'selected':''}>Carregado</option>
+              <option value="em_transito" ${m.status==='em_transito'?'selected':''}>Em Trânsito</option>
+              <option value="aguardando_coleta" ${m.status==='aguardando_coleta'?'selected':''}>Aguardando Coleta</option>
+              <option value="aguardando_descarga" ${m.status==='aguardando_descarga'?'selected':''}>Aguardando Descarga</option>
+            </select>
+            <button onclick="abrirEditarMotorista(${m.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">✏️ Editar</button>
+            <button onclick="removerMotorista(${m.id})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;">🗑️</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px;">
+          <div><span style="color:var(--muted);">Contato:</span> <strong>${m.contato || '—'}</strong></div>
+          <div><span style="color:var(--muted);">Peso:</span> <strong style="color:var(--accent);">${m.peso_saida ? m.peso_saida + ' ton' : '—'}</strong></div>
+          <div><span style="color:var(--muted);">Pagamento:</span> <strong>${m.tipo_pagamento === 'chave_pix' ? '⚡ PIX' : '🏦 Conta'}</strong></div>
+        </div>
+      </div>`).join('');
 
     // Verificar se lote está completo
     if (pesoTotal > 0 && totalCarregado >= pesoTotal) {
