@@ -670,6 +670,129 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
           <input type="text" id="nm-pix" placeholder="Selecione o tipo acima">
         </div>
       </div>
+      <!-- ========== CHECK LIST DOCUMENTAÇÃO ========== -->
+      <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:16px;">
+        <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">📋 Check List — Documentação para Gerenciamento do Risco</div>
+
+        <!-- Dados do checklist -->
+        <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px;">
+          <div class="form-group">
+            <label>Valor do Frete do Motorista (R$)</label>
+            <input type="number" id="nm-ck-valor-frete" placeholder="R$ 0,00" step="0.01" min="0">
+          </div>
+          <div class="form-group">
+            <label>Valor da Carga (R$)</label>
+            <input type="number" id="nm-ck-valor-carga" placeholder="R$ 0,00" step="0.01" min="0">
+          </div>
+          <div class="form-group full">
+            <label>Canal de Contato do Motorista</label>
+            <input type="text" id="nm-ck-canal" placeholder="Ex: WhatsApp, Fretebras, indicação...">
+          </div>
+        </div>
+
+        <!-- Checkboxes de documentos -->
+        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Documentos Recebidos</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+          ${[
+            ['nm-ck-cnh','Habilitação do motorista (CNH)'],
+            ['nm-ck-antt','Registro na ANTT'],
+            ['nm-ck-doc-caminhao','Documentação do caminhão e carretas (com nome do proprietário)'],
+            ['nm-ck-residencia','Comprovante de residência (nome e endereço atualizados)'],
+            ['nm-ck-foto-caminhao','Foto do caminhão e carretas com as placas visíveis'],
+            ['nm-ck-selfie-cnh','Foto do motorista (selfie segurando a CNH)'],
+            ['nm-ck-selfie-placa','Foto do motorista (selfie ao lado direito do veículo, mostrando a placa)'],
+            ['nm-ck-ref-prof','Três contatos de referência profissional'],
+            ['nm-ck-ref-pessoal','Três contatos de referência pessoal'],
+            ['nm-ck-proprietario','Contato do proprietário ou responsável pelo veículo'],
+            ['nm-ck-lonas','Fotos das lonas que serão utilizadas no transporte'],
+          ].map(([id, label]) => `
+          <label style="display:flex;align-items:flex-start;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);">
+            <input type="checkbox" id="${id}" style="width:16px;height:16px;min-width:16px;margin-top:1px;accent-color:var(--accent);cursor:pointer;">
+            <span>${label}</span>
+          </label>`).join('')}
+        </div>
+
+        <!-- Anexos de documentos -->
+        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Anexar Arquivos / Fotos</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+          ${[
+            ['nm-arq-cnh','📄 CNH'],
+            ['nm-arq-antt','📄 ANTT'],
+            ['nm-arq-doc-caminhao','📄 Doc. Caminhão/Carretas'],
+            ['nm-arq-residencia','📄 Comp. Residência'],
+            ['nm-arq-foto-caminhao','📷 Foto Caminhão/Carretas'],
+            ['nm-arq-selfie-cnh','📷 Selfie com CNH'],
+            ['nm-arq-selfie-placa','📷 Selfie ao lado do veículo'],
+            ['nm-arq-lonas','📷 Fotos das Lonas'],
+          ].map(([id, label]) => `
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">${label}</div>
+            <input type="file" id="${id}" accept="image/*,.pdf" multiple
+              style="font-size:12px;color:var(--text);background:transparent;border:none;padding:0;width:100%;cursor:pointer;">
+          </div>`).join('')}
+        </div>
+
+        <!-- Forma de Pagamento -->
+        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Forma de Pagamento</div>
+        <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;">
+            <input type="checkbox" id="nm-ck-adiantamento" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            Adiantamento 70%
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;">
+            <input type="checkbox" id="nm-ck-saldo" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            Saldo 30%
+          </label>
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>Exceção — Pagamento diferente (informar e responsável que autorizou)</label>
+          <input type="text" id="nm-ck-excecao-pgto" placeholder="Descreva o pagamento diferente, se houver">
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>Assinatura do Responsável (exceção pagamento)</label>
+          <input type="text" id="nm-ck-assinatura-pgto" placeholder="Nome do responsável que autorizou">
+        </div>
+
+        <!-- Prazo de Pagamento do Saldo -->
+        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Prazo de Pagamento (Saldo)</div>
+        <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;">
+            <input type="radio" name="nm-ck-prazo-saldo" value="5" style="accent-color:var(--accent);cursor:pointer;">
+            05 dias após a descarga
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;">
+            <input type="radio" name="nm-ck-prazo-saldo" value="7" style="accent-color:var(--accent);cursor:pointer;">
+            07 dias após a descarga
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;">
+            <input type="radio" name="nm-ck-prazo-saldo" value="8+" style="accent-color:var(--accent);cursor:pointer;">
+            08 dias ou mais após a descarga
+          </label>
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>Exceção — Prazo menor que 05 dias (informar prazo e responsável)</label>
+          <input type="text" id="nm-ck-excecao-prazo" placeholder="Informe o prazo e o responsável que autorizou">
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>Assinatura do Responsável (exceção prazo)</label>
+          <input type="text" id="nm-ck-assinatura-prazo" placeholder="Nome do responsável que autorizou">
+        </div>
+
+        <!-- Recolhimento -->
+        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Recolhimento do Motorista</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;flex:1;min-width:220px;">
+            <input type="checkbox" id="nm-ck-pessoa-fisica" style="width:16px;height:16px;min-width:16px;margin-top:2px;accent-color:var(--accent);cursor:pointer;">
+            <span><strong>Pessoa Física:</strong> INSS (Valor total do frete motorista s/pedágio × 20% × 11%)<br>SEST SENAT (Valor total do frete motorista s/pedágio × 20% × 2,5%)</span>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;flex:1;min-width:220px;">
+            <input type="checkbox" id="nm-ck-pessoa-juridica" style="width:16px;height:16px;min-width:16px;margin-top:2px;accent-color:var(--accent);cursor:pointer;">
+            <span><strong>Pessoa Jurídica:</strong> Taxa administrativa de carga no valor de R$ 88,00</span>
+          </label>
+        </div>
+      </div>
+      <!-- ========== FIM CHECK LIST ========== -->
+
       <div style="margin-top:14px;">
         <button onclick="adicionarMotorista()" class="btn-primary" style="width:100%;padding:12px;">+ Adicionar Motorista</button>
       </div>
@@ -1488,6 +1611,34 @@ async function adicionarMotorista() {
     showToast(`Peso excede o restante (${restante.toFixed(2)} ton)`, 'error'); return;
   }
 
+  // Coleta checklist
+  const prazoSaldoEl = document.querySelector('input[name="nm-ck-prazo-saldo"]:checked');
+  const checklist = {
+    valor_frete_motorista: document.getElementById('nm-ck-valor-frete').value || null,
+    valor_carga: document.getElementById('nm-ck-valor-carga').value || null,
+    canal_contato: document.getElementById('nm-ck-canal').value || null,
+    doc_cnh: document.getElementById('nm-ck-cnh').checked,
+    doc_antt: document.getElementById('nm-ck-antt').checked,
+    doc_caminhao: document.getElementById('nm-ck-doc-caminhao').checked,
+    doc_residencia: document.getElementById('nm-ck-residencia').checked,
+    doc_foto_caminhao: document.getElementById('nm-ck-foto-caminhao').checked,
+    doc_selfie_cnh: document.getElementById('nm-ck-selfie-cnh').checked,
+    doc_selfie_placa: document.getElementById('nm-ck-selfie-placa').checked,
+    doc_ref_prof: document.getElementById('nm-ck-ref-prof').checked,
+    doc_ref_pessoal: document.getElementById('nm-ck-ref-pessoal').checked,
+    doc_proprietario: document.getElementById('nm-ck-proprietario').checked,
+    doc_lonas: document.getElementById('nm-ck-lonas').checked,
+    pgto_adiantamento70: document.getElementById('nm-ck-adiantamento').checked,
+    pgto_saldo30: document.getElementById('nm-ck-saldo').checked,
+    pgto_excecao: document.getElementById('nm-ck-excecao-pgto').value || null,
+    pgto_assinatura: document.getElementById('nm-ck-assinatura-pgto').value || null,
+    prazo_saldo: prazoSaldoEl ? prazoSaldoEl.value : null,
+    prazo_excecao: document.getElementById('nm-ck-excecao-prazo').value || null,
+    prazo_assinatura: document.getElementById('nm-ck-assinatura-prazo').value || null,
+    recolhimento_pf: document.getElementById('nm-ck-pessoa-fisica').checked,
+    recolhimento_pj: document.getElementById('nm-ck-pessoa-juridica').checked,
+  };
+
   try {
     await supabaseRequest('POST', 'lote_motoristas', {
       lote_id: loteAtualId,
@@ -1506,9 +1657,16 @@ async function adicionarMotorista() {
       tipo_conta: document.getElementById('nm-tipo-conta').value || null,
       tipo_chave_pix: document.getElementById('nm-tipo-pix').value || null,
       chave_pix: document.getElementById('nm-pix').value || null,
+      checklist: checklist,
     });
     showToast('✅ Motorista adicionado!', 'success');
-    ['nm-nome','nm-placa','nm-contato','nm-cpf','nm-peso','nm-nome-titular','nm-cpf-titular','nm-banco','nm-agencia','nm-conta','nm-pix'].forEach(id => document.getElementById(id).value = '');
+    ['nm-nome','nm-placa','nm-contato','nm-cpf','nm-peso','nm-nome-titular','nm-cpf-titular','nm-banco','nm-agencia','nm-conta','nm-pix',
+     'nm-ck-valor-frete','nm-ck-valor-carga','nm-ck-canal','nm-ck-excecao-pgto','nm-ck-assinatura-pgto','nm-ck-excecao-prazo','nm-ck-assinatura-prazo'
+    ].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    ['nm-ck-cnh','nm-ck-antt','nm-ck-doc-caminhao','nm-ck-residencia','nm-ck-foto-caminhao','nm-ck-selfie-cnh','nm-ck-selfie-placa',
+     'nm-ck-ref-prof','nm-ck-ref-pessoal','nm-ck-proprietario','nm-ck-lonas','nm-ck-adiantamento','nm-ck-saldo','nm-ck-pessoa-fisica','nm-ck-pessoa-juridica'
+    ].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
+    document.querySelectorAll('input[name="nm-ck-prazo-saldo"]').forEach(r => r.checked = false);
     document.getElementById('nm-tipo-conta').value = '';
     document.getElementById('nm-tipo-pix').value = '';
     selecionarTipoPagamento('conta_bancaria');
