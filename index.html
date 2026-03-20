@@ -1065,6 +1065,22 @@ function showPage(name) {
   if (name === 'fiscal') carregarFiscal();
   if (name === 'seguranca') carregarSeguranca();
   if (name === 'nova') document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
+
+  // Reaplicar read-only se necessário
+  if (permissoesAtual && permissoesAtual[name] === 1) {
+    setTimeout(() => {
+      const pagEl = document.getElementById('page-' + name);
+      if (!pagEl) return;
+      pagEl.querySelectorAll('input, select, textarea').forEach(el => {
+        el.setAttribute('disabled', 'disabled');
+        el.style.opacity = '0.6';
+        el.style.cursor = 'not-allowed';
+      });
+      pagEl.querySelectorAll('.btn-primary, .btn-secondary').forEach(el => {
+        el.style.display = 'none';
+      });
+    }, 500);
+  }
 }
 
 // DASHBOARD
@@ -2120,19 +2136,19 @@ async function carregarPerfilUsuario(userId) {
     const perfis = await supabaseRequest('GET', `usuarios_perfil?id=eq.${userId}`);
     if (perfis && perfis.length) {
       console.log('Perfil encontrado:', perfis[0].setor);
-      aplicarPermissoes(perfis[0].setor || 'comercial');
+      aplicarPermissoes(perfis[0].setor || 'comercial', getPermissoesUsuario(perfis[0]));
     } else {
-      // Criar perfil padrão se não existir
       await supabaseRequest('POST', 'usuarios_perfil', {
         id: userId,
         setor: 'comercial',
-        ativo: true
+        ativo: true,
+        permissoes: PERMISSOES_PADRAO['comercial']
       });
-      aplicarPermissoes('comercial');
+      aplicarPermissoes('comercial', PERMISSOES_PADRAO['comercial']);
     }
   } catch(e) {
     console.error('Erro ao carregar perfil:', e);
-    aplicarPermissoes('comercial');
+    aplicarPermissoes('comercial', PERMISSOES_PADRAO['comercial']);
   }
 }
 
@@ -2149,23 +2165,57 @@ async function carregarSeguranca() {
   }
 }
 
+const ABAS_SISTEMA = [
+  { id: 'dashboard',   label: '📊 Dashboard' },
+  { id: 'nova',        label: '➕ Nova Cotação' },
+  { id: 'lista',       label: '📋 Todas as Cotações' },
+  { id: 'lotes',       label: '📦 Lotes' },
+  { id: 'status-lote', label: '🚛 Status do Lote' },
+  { id: 'clientes',    label: '👥 Clientes' },
+  { id: 'fiscal',      label: '💼 Fiscal' },
+  { id: 'seguranca',   label: '🔒 Segurança' },
+];
+
+// Permissões padrão por setor: 0=oculto, 1=só ver, 2=acesso total
+const PERMISSOES_PADRAO = {
+  administrativo: { dashboard:2, nova:2, lista:2, lotes:2, 'status-lote':2, clientes:2, fiscal:2, seguranca:2 },
+  comercial:      { dashboard:2, nova:2, lista:2, lotes:2, 'status-lote':2, clientes:2, fiscal:0, seguranca:0 },
+  logistico:      { dashboard:2, nova:0, lista:1, lotes:2, 'status-lote':2, clientes:0, fiscal:0, seguranca:0 },
+  fiscal:         { dashboard:2, nova:0, lista:1, lotes:0, 'status-lote':2, clientes:0, fiscal:2, seguranca:0 },
+};
+
+function getPermissoesUsuario(u) {
+  const padrao = PERMISSOES_PADRAO[u.setor] || PERMISSOES_PADRAO['comercial'];
+  const custom = (u.permissoes && typeof u.permissoes === 'object') ? u.permissoes : {};
+  return { ...padrao, ...custom };
+}
+
 function renderUsuarios(perfis) {
   if (!perfis.length) {
     document.getElementById('usuarios-table').innerHTML = '<div class="empty"><div class="empty-icon">👥</div><p>Nenhum usuário encontrado.</p></div>';
     return;
   }
   const cores = { administrativo:'#f97316', comercial:'#3b82f6', logistico:'#22c55e', fiscal:'#8b5cf6' };
-  document.getElementById('usuarios-table').innerHTML = `<table>
-    <thead><tr>
-      <th>Nome</th><th>Setor</th><th>Status</th><th>Ações</th>
-    </tr></thead>
-    <tbody>
-      ${perfis.map(u => `<tr>
-        <td><strong>${u.nome || 'Sem nome'}</strong></td>
-        <td><span style="display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${cores[u.setor]||'#888'}22;color:${cores[u.setor]||'#888'}">${(u.setor||'').toUpperCase()}</span></td>
-        <td>${u.ativo ? '<span class="badge badge-aprovada">Ativo</span>' : '<span class="badge badge-reprovada">Inativo</span>'}</td>
-        <td style="display:flex;gap:6px;">
-          <select onchange="alterarSetor('${u.id}', this.value)" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;">
+
+  document.getElementById('usuarios-table').innerHTML = perfis.map(u => {
+    const perms = getPermissoesUsuario(u);
+    const nivelLabel = { 0: '🚫 Oculto', 1: '👁️ Só ver', 2: '✏️ Total' };
+    const nivelCor   = { 0: 'var(--red)', 1: 'var(--yellow)', 2: 'var(--green)' };
+
+    return `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:${cores[u.setor]||'#888'}22;display:flex;align-items:center;justify-content:center;font-size:16px;">👤</div>
+          <div>
+            <div style="font-weight:700;font-size:14px">${u.nome || 'Sem nome'}</div>
+            <div style="font-size:11px;color:var(--muted)">${u.nome || ''}</div>
+          </div>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${cores[u.setor]||'#888'}22;color:${cores[u.setor]||'#888'}">${(u.setor||'').toUpperCase()}</span>
+          ${u.ativo ? '<span class="badge badge-aprovada">Ativo</span>' : '<span class="badge badge-reprovada">Inativo</span>'}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <select onchange="alterarSetor('${u.id}', this.value)" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;">
             <option value="comercial" ${u.setor==='comercial'?'selected':''}>Comercial</option>
             <option value="logistico" ${u.setor==='logistico'?'selected':''}>Logístico</option>
             <option value="fiscal" ${u.setor==='fiscal'?'selected':''}>Fiscal</option>
@@ -2174,16 +2224,63 @@ function renderUsuarios(perfis) {
           <button onclick="toggleAtivo('${u.id}', ${u.ativo})" style="background:${u.ativo?'rgba(239,68,68,0.1)':'rgba(34,197,94,0.1)'};color:${u.ativo?'#ef4444':'#22c55e'};border:1px solid ${u.ativo?'rgba(239,68,68,0.3)':'rgba(34,197,94,0.3)'};border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">
             ${u.ativo ? 'Desativar' : 'Ativar'}
           </button>
-        </td>
-      </tr>`).join('')}
-    </tbody>
-  </table>`;
+        </div>
+      </div>
+
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:10px;">Permissões por Aba</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">
+        ${ABAS_SISTEMA.map(aba => {
+          const nivel = perms[aba.id] ?? 0;
+          return `
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <span style="font-size:12px;font-weight:500">${aba.label}</span>
+            <select onchange="alterarPermissao('${u.id}', '${aba.id}', parseInt(this.value))"
+              style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:${nivelCor[nivel]};font-size:11px;font-weight:700;padding:3px 6px;cursor:pointer;min-width:90px;">
+              <option value="0" ${nivel===0?'selected':''} style="color:var(--red)">🚫 Oculto</option>
+              <option value="1" ${nivel===1?'selected':''} style="color:var(--yellow)">👁️ Só ver</option>
+              <option value="2" ${nivel===2?'selected':''} style="color:var(--green)">✏️ Total</option>
+            </select>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <div style="margin-top:10px;display:flex;justify-content:flex-end;">
+        <button onclick="resetarPermissoes('${u.id}', '${u.setor}')" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;">
+          🔄 Resetar para padrão do setor
+        </button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 async function alterarSetor(userId, novoSetor) {
   try {
-    await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userId}`, { setor: novoSetor });
-    showToast('Setor atualizado!', 'success');
+    // Ao mudar setor, reseta permissões para o padrão do novo setor
+    const novasPerms = PERMISSOES_PADRAO[novoSetor] || PERMISSOES_PADRAO['comercial'];
+    await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userId}`, { setor: novoSetor, permissoes: novasPerms });
+    showToast('Setor atualizado! Permissões resetadas para o padrão.', 'success');
+    carregarSeguranca();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function alterarPermissao(userId, aba, nivel) {
+  try {
+    const perfis = await supabaseRequest('GET', `usuarios_perfil?id=eq.${userId}`) || [];
+    if (!perfis.length) return;
+    const u = perfis[0];
+    const permsAtuais = getPermissoesUsuario(u);
+    permsAtuais[aba] = nivel;
+    await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userId}`, { permissoes: permsAtuais });
+    showToast('Permissão atualizada!', 'success');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function resetarPermissoes(userId, setor) {
+  try {
+    const padrao = PERMISSOES_PADRAO[setor] || PERMISSOES_PADRAO['comercial'];
+    await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userId}`, { permissoes: padrao });
+    showToast('Permissões resetadas para o padrão do setor!', 'success');
+    carregarSeguranca();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 
@@ -2244,42 +2341,61 @@ const PERMISSOES = {
 
 let setorAtual = null;
 let userAtual = null;
+let permissoesAtual = {};
 
-function aplicarPermissoes(setor) {
+function aplicarPermissoes(setor, perms) {
   setorAtual = setor;
-  const permitidas = PERMISSOES[setor] || PERMISSOES['comercial'];
-  const abas = {
-    'dashboard': 0, 'nova': 1, 'lista': 2, 'lotes': 3,
-    'status-lote': 4, 'clientes': 5, 'fiscal': 6, 'seguranca': 7
-  };
-  const botoesNav = document.querySelectorAll('nav button');
+  permissoesAtual = perms || PERMISSOES_PADRAO[setor] || PERMISSOES_PADRAO['comercial'];
+
   const paginas = ['dashboard','nova','lista','lotes','status-lote','clientes','fiscal','seguranca'];
+  const botoesNav = document.querySelectorAll('nav button');
 
   paginas.forEach((p, i) => {
     const btn = botoesNav[i];
     if (!btn) return;
-    if (permitidas.includes(p)) {
-      btn.style.display = '';
-    } else {
-      btn.style.display = 'none';
-    }
+    const nivel = permissoesAtual[p] ?? 0;
+    btn.style.display = nivel > 0 ? '' : 'none';
   });
 
-  // Mostrar badge do setor no header
+  // Badge do setor
   const badge = document.getElementById('setor-badge');
-  const cores = {
-    administrativo: '#f97316',
-    comercial: '#3b82f6',
-    logistico: '#22c55e',
-    fiscal: '#8b5cf6'
-  };
+  const cores = { administrativo:'#f97316', comercial:'#3b82f6', logistico:'#22c55e', fiscal:'#8b5cf6' };
   if (badge) {
     badge.textContent = setor.toUpperCase();
     badge.style.background = cores[setor] || '#888';
   }
 
-  // Navegar para primeira aba permitida
-  showPage(permitidas[0]);
+  // Aplicar read-only nas páginas com nível 1
+  paginas.forEach(p => {
+    const nivel = permissoesAtual[p] ?? 0;
+    const pagEl = document.getElementById('page-' + p);
+    if (!pagEl) return;
+    if (nivel === 1) {
+      // Só ver: desabilita inputs, selects, textareas e botões de ação
+      pagEl.querySelectorAll('input, select, textarea').forEach(el => {
+        el.setAttribute('disabled', 'disabled');
+        el.style.opacity = '0.6';
+        el.style.cursor = 'not-allowed';
+      });
+      pagEl.querySelectorAll('.btn-primary, .btn-secondary').forEach(el => {
+        el.style.display = 'none';
+      });
+    } else if (nivel === 2) {
+      // Acesso total: garante que está habilitado
+      pagEl.querySelectorAll('input, select, textarea').forEach(el => {
+        el.removeAttribute('disabled');
+        el.style.opacity = '';
+        el.style.cursor = '';
+      });
+      pagEl.querySelectorAll('.btn-primary, .btn-secondary').forEach(el => {
+        el.style.display = '';
+      });
+    }
+  });
+
+  // Navegar para primeira aba visível
+  const primeiraVisivel = paginas.find(p => (permissoesAtual[p] ?? 0) > 0) || 'dashboard';
+  showPage(primeiraVisivel);
 }
 
 // INIT
