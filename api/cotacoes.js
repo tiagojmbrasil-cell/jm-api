@@ -1,4 +1,4 @@
-// v3
+// v4
 import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -32,6 +32,21 @@ export default async function handler(req, res) {
         }]);
       }
       return res.status(200).json({ success: true, userId });
+    } catch(e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
+  // ============ DELETAR USUÁRIO (rota especial) ============
+  if (req.query.acao === 'deletar_usuario') {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId obrigatório' });
+    try {
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      if (authError) return res.status(500).json({ error: authError.message });
+      await supabase.from('usuarios_perfil').delete().eq('id', userId);
+      return res.status(200).json({ success: true });
     } catch(e) {
       return res.status(500).json({ error: e.message });
     }
