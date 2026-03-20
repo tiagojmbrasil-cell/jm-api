@@ -697,10 +697,13 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
               <input type="checkbox" id="nm-ck-cnh" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
               Habilitação do motorista (CNH)
             </label>
-            <label style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-              📎 Anexar
-              <input type="file" id="nm-arq-cnh" accept="image/*,.pdf" style="display:none;">
-            </label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <label id="label-nm-arq-cnh" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span>
+                <input type="file" id="nm-arq-cnh" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('nm-arq-cnh','label-nm-arq-cnh')">
+              </label>
+              <button type="button" onclick="limparAnexo('nm-arq-cnh','label-nm-arq-cnh')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
 
           <!-- ANTT -->
@@ -709,10 +712,13 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
               <input type="checkbox" id="nm-ck-antt" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
               Registro na ANTT
             </label>
-            <label style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-              📎 Anexar
-              <input type="file" id="nm-arq-antt" accept="image/*,.pdf" style="display:none;">
-            </label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <label id="label-nm-arq-antt" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span>
+                <input type="file" id="nm-arq-antt" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('nm-arq-antt','label-nm-arq-antt')">
+              </label>
+              <button type="button" onclick="limparAnexo('nm-arq-antt','label-nm-arq-antt')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
 
           <!-- Doc Caminhão -->
@@ -721,10 +727,13 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
               <input type="checkbox" id="nm-ck-doc-caminhao" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
               Documentação do caminhão e carretas (com nome do proprietário)
             </label>
-            <label style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-              📎 Anexar
-              <input type="file" id="nm-arq-doc-caminhao" accept="image/*,.pdf" style="display:none;">
-            </label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <label id="label-nm-arq-doc-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span>
+                <input type="file" id="nm-arq-doc-caminhao" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('nm-arq-doc-caminhao','label-nm-arq-doc-caminhao')">
+              </label>
+              <button type="button" onclick="limparAnexo('nm-arq-doc-caminhao','label-nm-arq-doc-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
 
           <!-- Comprovante Residência -->
@@ -733,10 +742,13 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
               <input type="checkbox" id="nm-ck-residencia" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
               Comprovante de residência (nome e endereço atualizados)
             </label>
-            <label style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-              📎 Anexar
-              <input type="file" id="nm-arq-residencia" accept="image/*,.pdf" style="display:none;">
-            </label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <label id="label-nm-arq-residencia" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span>
+                <input type="file" id="nm-arq-residencia" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('nm-arq-residencia','label-nm-arq-residencia')">
+              </label>
+              <button type="button" onclick="limparAnexo('nm-arq-residencia','label-nm-arq-residencia')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
 
           <!-- Foto Caminhão -->
@@ -745,10 +757,13 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
               <input type="checkbox" id="nm-ck-foto-caminhao" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
               Foto do caminhão e carretas com as placas visíveis
             </label>
-            <label style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-              📎 Anexar
-              <input type="file" id="nm-arq-foto-caminhao" accept="image/*" multiple style="display:none;">
-            </label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <label id="label-nm-arq-foto-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span>
+                <input type="file" id="nm-arq-foto-caminhao" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('nm-arq-foto-caminhao','label-nm-arq-foto-caminhao')">
+              </label>
+              <button type="button" onclick="limparAnexo('nm-arq-foto-caminhao','label-nm-arq-foto-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
 
           <!-- Selfie CNH -->
@@ -757,10 +772,13 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
               <input type="checkbox" id="nm-ck-selfie-cnh" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
               Foto do motorista (selfie segurando a CNH)
             </label>
-            <label style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-              📎 Anexar
-              <input type="file" id="nm-arq-selfie-cnh" accept="image/*" style="display:none;">
-            </label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <label id="label-nm-arq-selfie-cnh" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span>
+                <input type="file" id="nm-arq-selfie-cnh" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('nm-arq-selfie-cnh','label-nm-arq-selfie-cnh')">
+              </label>
+              <button type="button" onclick="limparAnexo('nm-arq-selfie-cnh','label-nm-arq-selfie-cnh')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
 
           <!-- Selfie Placa -->
@@ -769,10 +787,13 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
               <input type="checkbox" id="nm-ck-selfie-placa" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
               Foto do motorista (selfie ao lado direito do veículo, mostrando a placa)
             </label>
-            <label style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-              📎 Anexar
-              <input type="file" id="nm-arq-selfie-placa" accept="image/*" style="display:none;">
-            </label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <label id="label-nm-arq-selfie-placa" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span>
+                <input type="file" id="nm-arq-selfie-placa" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('nm-arq-selfie-placa','label-nm-arq-selfie-placa')">
+              </label>
+              <button type="button" onclick="limparAnexo('nm-arq-selfie-placa','label-nm-arq-selfie-placa')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
 
           <!-- Ref Profissional -->
@@ -808,10 +829,13 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
               <input type="checkbox" id="nm-ck-lonas" style="width:16px;height:16px;min-width:16px;accent-color:var(--accent);cursor:pointer;">
               Fotos das lonas que serão utilizadas no transporte
             </label>
-            <label style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-              📎 Anexar
-              <input type="file" id="nm-arq-lonas" accept="image/*" multiple style="display:none;">
-            </label>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <label id="label-nm-arq-lonas" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span>
+                <input type="file" id="nm-arq-lonas" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('nm-arq-lonas','label-nm-arq-lonas')">
+              </label>
+              <button type="button" onclick="limparAnexo('nm-arq-lonas','label-nm-arq-lonas')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
 
         </div>
@@ -1709,7 +1733,8 @@ async function carregarMotoristas() {
                 <option value="aguardando_descarga" ${m.status==='aguardando_descarga'?'selected':''}>Aguardando Descarga</option>
               </select>
             </td>
-            <td><button onclick="removerMotorista(${m.id})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🗑</button></td>
+            <td><button onclick="removerMotorista(${m.id})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🗑</button>
+            <button onclick="abrirEditarMotorista(${m.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;margin-left:4px;">✏️ Editar</button></td>
           </tr>`).join('')}
         </tbody>
       </table>`;
@@ -2852,29 +2877,107 @@ function aplicarPermissoes(setor, perms) {
 sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Atualiza label dos botões de anexo com nome do arquivo selecionado
-document.addEventListener('change', function(e) {
-  if (e.target.type === 'file' && e.target.style.display === 'none') {
-    const label = e.target.closest('label');
-    if (!label) return;
-    const file = e.target.files[0];
-    const span = label.querySelector('span') || label.childNodes[0];
-    const nomeArquivo = file ? (file.name.length > 18 ? file.name.substring(0,16)+'...' : file.name) : null;
-    // Atualiza texto do label mantendo o ícone
-    const textoAtual = label.textContent.trim();
-    if (nomeArquivo) {
-      label.style.background = 'rgba(34,197,94,0.1)';
-      label.style.borderColor = 'rgba(34,197,94,0.3)';
-      label.style.color = '#22c55e';
-      // Troca texto para nome do arquivo
-      label.childNodes.forEach(n => { if(n.nodeType === 3) n.textContent = ' ' + nomeArquivo + ' '; });
-    } else {
-      label.style.background = 'rgba(249,115,22,0.1)';
-      label.style.borderColor = 'rgba(249,115,22,0.3)';
-      label.style.color = 'var(--accent)';
-      label.childNodes.forEach(n => { if(n.nodeType === 3) n.textContent = ' Anexar '; });
-    }
+// ============ EDITAR MOTORISTA ============
+let motoristaEditandoId = null;
+
+async function abrirEditarMotorista(id) {
+  const motoristas = await supabaseRequest('GET', `lote_motoristas?id=eq.${id}`) || [];
+  if (!motoristas.length) return;
+  const m = motoristas[0];
+  motoristaEditandoId = id;
+
+  document.getElementById('em-nome').value = m.nome || '';
+  document.getElementById('em-placa').value = m.placa || '';
+  document.getElementById('em-contato').value = m.contato || '';
+  document.getElementById('em-cpf').value = m.cpf || '';
+  document.getElementById('em-peso').value = m.peso_saida || '';
+  document.getElementById('em-nome-titular').value = m.nome_titular || '';
+  document.getElementById('em-cpf-titular').value = m.cpf_titular || '';
+  document.getElementById('em-banco').value = m.banco || '';
+  document.getElementById('em-agencia').value = m.agencia || '';
+  document.getElementById('em-conta').value = m.numero_conta || '';
+  document.getElementById('em-tipo-conta').value = m.tipo_conta || '';
+  document.getElementById('em-tipo-pix').value = m.tipo_chave_pix || '';
+  document.getElementById('em-pix').value = m.chave_pix || '';
+  selecionarTipoPagamentoEditar(m.tipo_pagamento || 'conta_bancaria');
+  document.getElementById('modal-editar-motorista-overlay').classList.add('open');
+}
+
+function fecharEditarMotorista() {
+  document.getElementById('modal-editar-motorista-overlay').classList.remove('open');
+  motoristaEditandoId = null;
+}
+
+function selecionarTipoPagamentoEditar(tipo) {
+  document.getElementById('em-tipo-pagamento').value = tipo;
+  const isPix = tipo === 'chave_pix';
+  document.getElementById('em-campos-conta').style.display = isPix ? 'none' : 'grid';
+  document.getElementById('em-campos-pix').style.display = isPix ? 'grid' : 'none';
+  document.getElementById('em-btn-conta').style.border = isPix ? '2px solid var(--border)' : '2px solid var(--accent)';
+  document.getElementById('em-btn-conta').style.background = isPix ? 'var(--surface)' : 'rgba(249,115,22,0.12)';
+  document.getElementById('em-btn-conta').style.color = isPix ? 'var(--muted)' : 'var(--accent)';
+  document.getElementById('em-btn-pix').style.border = isPix ? '2px solid var(--accent)' : '2px solid var(--border)';
+  document.getElementById('em-btn-pix').style.background = isPix ? 'rgba(249,115,22,0.12)' : 'var(--surface)';
+  document.getElementById('em-btn-pix').style.color = isPix ? 'var(--accent)' : 'var(--muted)';
+}
+
+async function salvarEdicaoMotorista() {
+  if (!motoristaEditandoId) return;
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristaEditandoId}`, {
+      nome: document.getElementById('em-nome').value || null,
+      placa: document.getElementById('em-placa').value || null,
+      contato: document.getElementById('em-contato').value || null,
+      cpf: document.getElementById('em-cpf').value || null,
+      peso_saida: parseFloat(document.getElementById('em-peso').value) || null,
+      tipo_pagamento: document.getElementById('em-tipo-pagamento').value,
+      nome_titular: document.getElementById('em-nome-titular').value || null,
+      cpf_titular: document.getElementById('em-cpf-titular').value || null,
+      banco: document.getElementById('em-banco').value || null,
+      agencia: document.getElementById('em-agencia').value || null,
+      numero_conta: document.getElementById('em-conta').value || null,
+      tipo_conta: document.getElementById('em-tipo-conta').value || null,
+      tipo_chave_pix: document.getElementById('em-tipo-pix').value || null,
+      chave_pix: document.getElementById('em-pix').value || null,
+    });
+    showToast('✅ Motorista atualizado!', 'success');
+    fecharEditarMotorista();
+    await carregarMotoristas();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+// ============ ANEXOS — botões limpos ============
+function atualizarBotaoAnexo(inputId, labelId) {
+  const input = document.getElementById(inputId);
+  const label = document.getElementById(labelId);
+  if (!input || !label) return;
+  const file = input.files[0];
+  const span = label.querySelector('span');
+  if (file) {
+    const nome = file.name.length > 18 ? file.name.substring(0,16)+'...' : file.name;
+    if (span) span.textContent = '✅ ' + nome;
+    label.style.background = 'rgba(34,197,94,0.1)';
+    label.style.borderColor = 'rgba(34,197,94,0.3)';
+    label.style.color = '#22c55e';
+  } else {
+    if (span) span.textContent = '📎 Anexar';
+    label.style.background = 'rgba(249,115,22,0.1)';
+    label.style.borderColor = 'rgba(249,115,22,0.3)';
+    label.style.color = 'var(--accent)';
   }
-});
+}
+
+function limparAnexo(inputId, labelId) {
+  const input = document.getElementById(inputId);
+  const label = document.getElementById(labelId);
+  if (!input || !label) return;
+  input.value = '';
+  const span = label.querySelector('span');
+  if (span) span.textContent = '📎 Anexar';
+  label.style.background = 'rgba(249,115,22,0.1)';
+  label.style.borderColor = 'rgba(249,115,22,0.3)';
+  label.style.color = 'var(--accent)';
+}
 
 
 sb.auth.getSession().then(async ({ data: { session } }) => {
@@ -2885,5 +2988,55 @@ sb.auth.getSession().then(async ({ data: { session } }) => {
   }
 });
 </script>
+<!-- MODAL EDITAR MOTORISTA -->
+<div class="modal-overlay" id="modal-editar-motorista-overlay" onclick="if(event.target===this)fecharEditarMotorista()">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-title">
+      <span>✏️ Editar Motorista</span>
+      <button class="modal-close" onclick="fecharEditarMotorista()">✕</button>
+    </div>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="form-group"><label>Nome</label><input type="text" id="em-nome" placeholder="Nome do motorista"></div>
+      <div class="form-group"><label>Placa</label><input type="text" id="em-placa" placeholder="ABC-1234"></div>
+      <div class="form-group"><label>Contato / Telefone</label><input type="text" id="em-contato" placeholder="(34) 99999-9999"></div>
+      <div class="form-group"><label>CPF</label><input type="text" id="em-cpf" placeholder="000.000.000-00"></div>
+      <div class="form-group"><label>Peso Saída (ton)</label><input type="number" id="em-peso" placeholder="Ex: 40" step="0.1" min="0"></div>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">Dados Bancários</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button type="button" id="em-btn-conta" onclick="selecionarTipoPagamentoEditar('conta_bancaria')" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:rgba(249,115,22,0.12);color:var(--accent);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">🏦 Conta Bancária</button>
+      <button type="button" id="em-btn-pix" onclick="selecionarTipoPagamentoEditar('chave_pix')" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">⚡ Chave PIX</button>
+    </div>
+    <input type="hidden" id="em-tipo-pagamento" value="conta_bancaria">
+    <div id="em-campos-conta" class="form-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="form-group"><label>Nome do Titular</label><input type="text" id="em-nome-titular" placeholder="Nome completo"></div>
+      <div class="form-group"><label>CPF/CNPJ do Titular</label><input type="text" id="em-cpf-titular" placeholder="CPF ou CNPJ"></div>
+      <div class="form-group"><label>Banco</label><input type="text" id="em-banco" placeholder="Ex: Bradesco, Itaú..."></div>
+      <div class="form-group"><label>Agência</label><input type="text" id="em-agencia" placeholder="Ex: 1234"></div>
+      <div class="form-group"><label>Número da Conta</label><input type="text" id="em-conta" placeholder="Ex: 12345-6"></div>
+      <div class="form-group"><label>Tipo de Conta</label>
+        <select id="em-tipo-conta"><option value="">Selecione...</option><option value="corrente">Corrente</option><option value="poupanca">Poupança</option></select>
+      </div>
+    </div>
+    <div id="em-campos-pix" class="form-grid" style="grid-template-columns:1fr 1fr;display:none;">
+      <div class="form-group"><label>Tipo de Chave PIX</label>
+        <select id="em-tipo-pix">
+          <option value="">Selecione...</option>
+          <option value="telefone">📱 Telefone</option>
+          <option value="cpf">🪪 CPF</option>
+          <option value="cnpj">🏢 CNPJ</option>
+          <option value="email">✉️ E-mail</option>
+          <option value="aleatoria">🔑 Chave Aleatória</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Chave PIX</label><input type="text" id="em-pix" placeholder="Chave PIX"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="fecharEditarMotorista()">Cancelar</button>
+      <button class="btn-primary" onclick="salvarEdicaoMotorista()">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
