@@ -1,4 +1,4 @@
-// v2
+// v3
 import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -9,6 +9,34 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // ============ CRIAR USUÁRIO (rota especial) ============
+  if (req.query.acao === 'criar_usuario') {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
+    const { email, senha, nome, setor } = req.body;
+    if (!email || !senha) return res.status(400).json({ error: 'Email e senha obrigatórios' });
+    try {
+      const { data, error } = await supabase.auth.admin.createUser({
+        email,
+        password: senha,
+        email_confirm: true
+      });
+      if (error) return res.status(500).json({ error: error.message });
+      const userId = data.user?.id;
+      if (userId) {
+        await supabase.from('usuarios_perfil').insert([{
+          id: userId,
+          nome,
+          setor: setor || 'comercial',
+          ativo: true
+        }]);
+      }
+      return res.status(200).json({ success: true, userId });
+    } catch(e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
   const { tabela, id, filtros } = req.query;
   if (!tabela) return res.status(400).json({ error: 'Tabela não informada' });
   const tabelasPermitidas = [
