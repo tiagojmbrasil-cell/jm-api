@@ -1670,7 +1670,7 @@ function trocarAbaMotorista(aba, skipReload) {
 
 async function abrirMotoristas(id) {
   loteAtualId = parseInt(id);
-  loteAtualDados = lotes.find(l => l.id === id);
+  loteAtualDados = lotes.find(l => parseInt(l.id) === parseInt(id));
   if (!loteAtualDados) return;
   document.getElementById('modal-motoristas-titulo').textContent = 'Motoristas — Lote #' + id;
   document.getElementById('ml-cliente').textContent = loteAtualDados.cliente || '—';
@@ -1740,7 +1740,7 @@ async function carregarMotoristas() {
     // Verificar se lote está completo
     if (pesoTotal > 0 && totalCarregado >= pesoTotal) {
       await supabaseRequest('PATCH', `lotes?id=eq.${loteAtualId}`, { status: 'finalizado' });
-      const l = lotes.find(x => x.id === loteAtualId);
+      const l = lotes.find(x => parseInt(x.id) === parseInt(loteAtualId));
       if (l) l.status = 'finalizado';
       showToast('🎉 Lote finalizado! 100% carregado!', 'success');
     }
@@ -1825,18 +1825,21 @@ async function adicionarMotorista() {
     const motoristaId = resultado[0]?.id;
 
     // Faz upload dos arquivos se houver
-    if (motoristaId) {
-      const arquivosParaUpload = [
-        { id: 'nm-arq-cnh',          tipo: 'cnh' },
-        { id: 'nm-arq-antt',         tipo: 'antt' },
-        { id: 'nm-arq-doc-caminhao', tipo: 'doc_caminhao' },
-        { id: 'nm-arq-residencia',   tipo: 'residencia' },
-        { id: 'nm-arq-foto-caminhao',tipo: 'foto_caminhao' },
-        { id: 'nm-arq-selfie-cnh',   tipo: 'selfie_cnh' },
-        { id: 'nm-arq-selfie-placa', tipo: 'selfie_placa' },
-        { id: 'nm-arq-lonas',        tipo: 'lonas' },
-      ];
-
+    const arquivosParaUpload = [
+      { id: 'nm-arq-cnh',           tipo: 'cnh' },
+      { id: 'nm-arq-antt',          tipo: 'antt' },
+      { id: 'nm-arq-doc-caminhao',  tipo: 'doc_caminhao' },
+      { id: 'nm-arq-residencia',    tipo: 'residencia' },
+      { id: 'nm-arq-foto-caminhao', tipo: 'foto_caminhao' },
+      { id: 'nm-arq-selfie-cnh',    tipo: 'selfie_cnh' },
+      { id: 'nm-arq-selfie-placa',  tipo: 'selfie_placa' },
+      { id: 'nm-arq-lonas',         tipo: 'lonas' },
+    ];
+    const temArquivos = arquivosParaUpload.some(({ id }) => {
+      const el = document.getElementById(id);
+      return el && el.files && el.files.length > 0;
+    });
+    if (motoristaId && temArquivos) {
       const anexos = [];
       for (const { id, tipo } of arquivosParaUpload) {
         const input = document.getElementById(id);
@@ -1848,8 +1851,6 @@ async function adicionarMotorista() {
           }
         }
       }
-
-      // Salva as URLs no banco
       if (anexos.length > 0) {
         await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristaId}`, { anexos });
       }
@@ -1903,7 +1904,6 @@ function fecharModalMotoristasBtn() {
   document.getElementById('modal-motoristas-overlay').classList.remove('open');
   loteAtualId = null;
   loteAtualDados = null;
-  lotes = [];
   carregarLotes();
 }
 
