@@ -1688,7 +1688,14 @@ async function carregarMotoristas() {
   try {
     const motoristas = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}&order=criado_em.asc`) || [];
     const totalCarregado = motoristas.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
-    const pesoTotal = parseFloat(loteAtualDados.peso_ton || 0);
+
+    // Busca loteAtualDados do banco se não estiver em memória
+    if (!loteAtualDados && loteAtualId) {
+      const lotesDb = await supabaseRequest('GET', `lotes?id=eq.${loteAtualId}`) || [];
+      if (lotesDb.length) loteAtualDados = lotesDb[0];
+    }
+
+    const pesoTotal = parseFloat(loteAtualDados?.peso_ton || 0);
     const restante = Math.max(0, pesoTotal - totalCarregado);
     const pct = pesoTotal > 0 ? Math.min(100, (totalCarregado / pesoTotal) * 100) : 0;
 
