@@ -1682,7 +1682,6 @@ async function abrirMotoristas(id) {
     selecionarTipoPagamento('conta_bancaria');
   document.getElementById('modal-motoristas-overlay').classList.add('open');
   trocarAbaMotorista('adicionar');
-  await carregarMotoristas();
 }
 
 async function carregarMotoristas() {
@@ -1867,7 +1866,7 @@ async function adicionarMotorista() {
     document.getElementById('nm-tipo-conta').value = '';
     document.getElementById('nm-tipo-pix').value = '';
     selecionarTipoPagamento('conta_bancaria');
-    await carregarMotoristas();
+    trocarAbaMotorista('inseridos'); // vai para aba inseridos e carrega automaticamente
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 async function removerMotorista(id) {
