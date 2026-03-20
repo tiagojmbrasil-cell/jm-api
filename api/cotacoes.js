@@ -1,4 +1,4 @@
-// v4
+// v5
 import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -61,13 +61,23 @@ export default async function handler(req, res) {
   if (!tabelasPermitidas.includes(tabela)) {
     return res.status(403).json({ error: 'Tabela não permitida' });
   }
+
+  // Converte valor para número se possível (corrige lote_id e id enviados como string)
+  function castVal(val) {
+    if (val === null || val === undefined) return val;
+    const n = Number(val);
+    return (!isNaN(n) && val !== '') ? n : val;
+  }
+
   try {
     if (req.method === 'GET') {
       let query = supabase.from(tabela).select('*');
-      if (id) query = query.eq('id', id);
+      if (id) query = query.eq('id', castVal(id));
       if (filtros) {
         const f = JSON.parse(filtros);
-        Object.entries(f).forEach(([key, val]) => { query = query.eq(key, val); });
+        Object.entries(f).forEach(([key, val]) => {
+          query = query.eq(key, castVal(val));
+        });
       }
       query = query.order('criado_em', { ascending: false });
       const { data, error } = await query;
@@ -81,13 +91,13 @@ export default async function handler(req, res) {
     }
     if (req.method === 'PATCH') {
       if (!id) return res.status(400).json({ error: 'ID obrigatório para atualização' });
-      const { data, error } = await supabase.from(tabela).update(req.body).eq('id', id).select();
+      const { data, error } = await supabase.from(tabela).update(req.body).eq('id', castVal(id)).select();
       if (error) return res.status(500).json({ error: error.message });
       return res.status(200).json(data);
     }
     if (req.method === 'DELETE') {
       if (!id) return res.status(400).json({ error: 'ID obrigatório para exclusão' });
-      const { error } = await supabase.from(tabela).delete().eq('id', id);
+      const { error } = await supabase.from(tabela).delete().eq('id', castVal(id));
       if (error) return res.status(500).json({ error: error.message });
       return res.status(200).json({ success: true });
     }
