@@ -2300,15 +2300,14 @@ async function criarUsuario() {
   if (!email || !senha) { showToast('Email e senha são obrigatórios', 'error'); return; }
   if (senha.length < 6) { showToast('Senha deve ter mínimo 6 caracteres', 'error'); return; }
   try {
-    const { data, error } = await sb.auth.admin ? 
-      await sb.auth.admin.createUser({ email, password: senha, email_confirm: true }) :
-      await sb.auth.signUp({ email, password: senha });
-    if (error) throw new Error(error.message);
-    const userId = data.user?.id;
-    if (userId) {
-      await supabaseRequest('POST', 'usuarios_perfil', { id: userId, nome, setor, ativo: true });
-    }
-    showToast('✅ Usuário criado!', 'success');
+    const resp = await fetch(API_URL + '?acao=criar_usuario', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha, nome, setor })
+    });
+    const result = await resp.json();
+    if (!resp.ok) throw new Error(result.error || 'Erro ao criar usuário');
+    showToast('✅ Usuário criado com sucesso!', 'success');
     document.getElementById('nu-nome').value = '';
     document.getElementById('nu-email').value = '';
     document.getElementById('nu-senha').value = '';
