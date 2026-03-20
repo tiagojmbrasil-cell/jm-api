@@ -2657,6 +2657,9 @@ function aplicarPermissoes(setor, perms) {
   showPage(primeiraVisivel);
 }
 
+// INIT
+sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // Atualiza label dos botões de anexo com nome do arquivo selecionado
 document.addEventListener('change', function(e) {
   if (e.target.type === 'file' && e.target.style.display === 'none') {
