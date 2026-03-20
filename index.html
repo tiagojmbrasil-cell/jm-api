@@ -129,8 +129,9 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
 </script>
 
 <header>
-  <div class="logo">
-    <span style="color:#22c55e">JM</span><span style="color:#eab308"> BRASIL</span>
+  <div class="logo" style="gap:12px;">
+    <span><span style="color:#22c55e">JM</span><span style="color:#eab308"> BRASIL</span></span>
+    <span id="setor-badge" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;color:#fff;letter-spacing:0.8px;"></span>
   </div>
   <nav>
     <button class="active" onclick="showPage('dashboard')">Dashboard</button>
@@ -140,6 +141,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     <button onclick="showPage('status-lote')">Status do Lote</button>
     <button onclick="showPage('clientes')">Clientes</button>
     <button onclick="showPage('fiscal')">Fiscal</button>
+    <button id="nav-seguranca" onclick="showPage('seguranca')" style="display:none">Segurança</button>
   </nav>
   <button class="btn-logout" onclick="fazerLogout()">Sair</button>
 </header>
@@ -893,6 +895,70 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
   </div>
 </div>
 
+<!-- SEGURANÇA -->
+<div class="page" id="page-seguranca">
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat total"><div class="stat-label">Total Usuários</div><div class="stat-value" id="seg-total">—</div></div>
+    <div class="stat aprovadas"><div class="stat-label">Ativos</div><div class="stat-value" id="seg-ativos">—</div></div>
+    <div class="stat reprovadas"><div class="stat-label">Inativos</div><div class="stat-value" id="seg-inativos">—</div></div>
+  </div>
+
+  <!-- Gerenciar Usuários -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="form-title"><span></span> Gerenciar Usuários</div>
+    <div id="usuarios-table"><div class="loading">Carregando...</div></div>
+  </div>
+
+  <!-- Adicionar Usuário -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="form-title"><span></span> Adicionar Novo Usuário</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nome</label>
+        <input type="text" id="nu-nome" placeholder="Nome completo">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="nu-email" placeholder="email@empresa.com">
+      </div>
+      <div class="form-group">
+        <label>Senha Inicial</label>
+        <input type="password" id="nu-senha" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="form-group">
+        <label>Setor</label>
+        <select id="nu-setor">
+          <option value="comercial">Comercial</option>
+          <option value="logistico">Logístico</option>
+          <option value="fiscal">Fiscal</option>
+          <option value="administrativo">Administrativo</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" onclick="criarUsuario()">+ Criar Usuário</button>
+    </div>
+  </div>
+
+  <!-- Alterar Minha Senha -->
+  <div class="card">
+    <div class="form-title"><span></span> Alterar Senha</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nova Senha</label>
+        <input type="password" id="alt-senha" placeholder="Nova senha">
+      </div>
+      <div class="form-group">
+        <label>Confirmar Nova Senha</label>
+        <input type="password" id="alt-senha2" placeholder="Confirme a nova senha">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" onclick="alterarSenha()">🔒 Alterar Senha</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -971,8 +1037,10 @@ async function fazerLogin() {
   btn.textContent = 'Entrar';
   btn.disabled = false;
   if (error) { erro.textContent = 'Email ou senha incorretos'; erro.style.display = 'block'; return; }
+  const user = (await sb.auth.getUser()).data.user;
+  userAtual = user;
+  await carregarPerfilUsuario(user.id);
   document.getElementById('login-screen').style.display = 'none';
-  carregarDashboard();
 }
 
 async function fazerLogout() {
@@ -987,7 +1055,7 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  const idx = ['dashboard','nova','lista','lotes','status-lote','clientes','fiscal'].indexOf(name);
+  const idx = ['dashboard','nova','lista','lotes','status-lote','clientes','fiscal','seguranca'].indexOf(name);
   if (idx >= 0) document.querySelectorAll('nav button')[idx].classList.add('active');
   if (name === 'dashboard') carregarDashboard();
   if (name === 'lista') carregarLista();
@@ -995,6 +1063,7 @@ function showPage(name) {
   if (name === 'status-lote') carregarStatusLote();
   if (name === 'clientes') carregarClientes();
   if (name === 'fiscal') carregarFiscal();
+  if (name === 'seguranca') carregarSeguranca();
   if (name === 'nova') document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
 }
 
@@ -2044,13 +2113,182 @@ function badgeTipoPagamento(tipo) {
   return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;color:var(--blue);background:rgba(59,130,246,0.12);">🏦 Conta Bancária</span>`;
 }
 
+
+// ============ PERFIL E PERMISSÕES ============
+async function carregarPerfilUsuario(userId) {
+  try {
+    const perfis = await supabaseRequest('GET', `usuarios_perfil?id=eq.${userId}&select=*`);
+    if (perfis && perfis.length) {
+      aplicarPermissoes(perfis[0].setor || 'comercial');
+    } else {
+      // Criar perfil padrão se não existir
+      await supabaseRequest('POST', 'usuarios_perfil', {
+        id: userId,
+        setor: 'comercial',
+        ativo: true
+      });
+      aplicarPermissoes('comercial');
+    }
+  } catch(e) {
+    console.error('Erro ao carregar perfil:', e);
+    aplicarPermissoes('comercial');
+  }
+}
+
+// ============ SEGURANÇA ============
+async function carregarSeguranca() {
+  try {
+    const perfis = await supabaseRequest('GET', 'usuarios_perfil?order=criado_em.desc') || [];
+    document.getElementById('seg-total').textContent = perfis.length;
+    document.getElementById('seg-ativos').textContent = perfis.filter(u => u.ativo).length;
+    document.getElementById('seg-inativos').textContent = perfis.filter(u => !u.ativo).length;
+    renderUsuarios(perfis);
+  } catch(e) {
+    document.getElementById('usuarios-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar usuários.</p></div>';
+  }
+}
+
+function renderUsuarios(perfis) {
+  if (!perfis.length) {
+    document.getElementById('usuarios-table').innerHTML = '<div class="empty"><div class="empty-icon">👥</div><p>Nenhum usuário encontrado.</p></div>';
+    return;
+  }
+  const cores = { administrativo:'#f97316', comercial:'#3b82f6', logistico:'#22c55e', fiscal:'#8b5cf6' };
+  document.getElementById('usuarios-table').innerHTML = `<table>
+    <thead><tr>
+      <th>Nome</th><th>Setor</th><th>Status</th><th>Ações</th>
+    </tr></thead>
+    <tbody>
+      ${perfis.map(u => `<tr>
+        <td><strong>${u.nome || 'Sem nome'}</strong></td>
+        <td><span style="display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${cores[u.setor]||'#888'}22;color:${cores[u.setor]||'#888'}">${(u.setor||'').toUpperCase()}</span></td>
+        <td>${u.ativo ? '<span class="badge badge-aprovada">Ativo</span>' : '<span class="badge badge-reprovada">Inativo</span>'}</td>
+        <td style="display:flex;gap:6px;">
+          <select onchange="alterarSetor('${u.id}', this.value)" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;">
+            <option value="comercial" ${u.setor==='comercial'?'selected':''}>Comercial</option>
+            <option value="logistico" ${u.setor==='logistico'?'selected':''}>Logístico</option>
+            <option value="fiscal" ${u.setor==='fiscal'?'selected':''}>Fiscal</option>
+            <option value="administrativo" ${u.setor==='administrativo'?'selected':''}>Administrativo</option>
+          </select>
+          <button onclick="toggleAtivo('${u.id}', ${u.ativo})" style="background:${u.ativo?'rgba(239,68,68,0.1)':'rgba(34,197,94,0.1)'};color:${u.ativo?'#ef4444':'#22c55e'};border:1px solid ${u.ativo?'rgba(239,68,68,0.3)':'rgba(34,197,94,0.3)'};border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">
+            ${u.ativo ? 'Desativar' : 'Ativar'}
+          </button>
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+async function alterarSetor(userId, novoSetor) {
+  try {
+    await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userId}`, { setor: novoSetor });
+    showToast('Setor atualizado!', 'success');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function toggleAtivo(userId, ativo) {
+  try {
+    await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userId}`, { ativo: !ativo });
+    showToast(ativo ? 'Usuário desativado!' : 'Usuário ativado!', 'success');
+    carregarSeguranca();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function criarUsuario() {
+  const nome = document.getElementById('nu-nome').value.trim();
+  const email = document.getElementById('nu-email').value.trim();
+  const senha = document.getElementById('nu-senha').value;
+  const setor = document.getElementById('nu-setor').value;
+  if (!email || !senha) { showToast('Email e senha são obrigatórios', 'error'); return; }
+  if (senha.length < 6) { showToast('Senha deve ter mínimo 6 caracteres', 'error'); return; }
+  try {
+    const { data, error } = await sb.auth.admin ? 
+      await sb.auth.admin.createUser({ email, password: senha, email_confirm: true }) :
+      await sb.auth.signUp({ email, password: senha });
+    if (error) throw new Error(error.message);
+    const userId = data.user?.id;
+    if (userId) {
+      await supabaseRequest('POST', 'usuarios_perfil', { id: userId, nome, setor, ativo: true });
+    }
+    showToast('✅ Usuário criado!', 'success');
+    document.getElementById('nu-nome').value = '';
+    document.getElementById('nu-email').value = '';
+    document.getElementById('nu-senha').value = '';
+    carregarSeguranca();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function alterarSenha() {
+  const senha = document.getElementById('alt-senha').value;
+  const senha2 = document.getElementById('alt-senha2').value;
+  if (!senha || !senha2) { showToast('Preencha os dois campos', 'error'); return; }
+  if (senha !== senha2) { showToast('Senhas não conferem', 'error'); return; }
+  if (senha.length < 6) { showToast('Senha deve ter mínimo 6 caracteres', 'error'); return; }
+  try {
+    const { error } = await sb.auth.updateUser({ password: senha });
+    if (error) throw new Error(error.message);
+    showToast('✅ Senha alterada com sucesso!', 'success');
+    document.getElementById('alt-senha').value = '';
+    document.getElementById('alt-senha2').value = '';
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+// PERMISSÕES POR SETOR
+const PERMISSOES = {
+  administrativo: ['dashboard','nova','lista','lotes','status-lote','clientes','fiscal','seguranca'],
+  comercial:      ['dashboard','nova','lista','lotes','status-lote','clientes'],
+  logistico:      ['dashboard','lotes','status-lote'],
+  fiscal:         ['dashboard','status-lote','fiscal']
+};
+
+let setorAtual = null;
+let userAtual = null;
+
+function aplicarPermissoes(setor) {
+  setorAtual = setor;
+  const permitidas = PERMISSOES[setor] || PERMISSOES['comercial'];
+  const abas = {
+    'dashboard': 0, 'nova': 1, 'lista': 2, 'lotes': 3,
+    'status-lote': 4, 'clientes': 5, 'fiscal': 6, 'seguranca': 7
+  };
+  const botoesNav = document.querySelectorAll('nav button');
+  const paginas = ['dashboard','nova','lista','lotes','status-lote','clientes','fiscal','seguranca'];
+
+  paginas.forEach((p, i) => {
+    const btn = botoesNav[i];
+    if (!btn) return;
+    if (permitidas.includes(p)) {
+      btn.style.display = '';
+    } else {
+      btn.style.display = 'none';
+    }
+  });
+
+  // Mostrar badge do setor no header
+  const badge = document.getElementById('setor-badge');
+  const cores = {
+    administrativo: '#f97316',
+    comercial: '#3b82f6',
+    logistico: '#22c55e',
+    fiscal: '#8b5cf6'
+  };
+  if (badge) {
+    badge.textContent = setor.toUpperCase();
+    badge.style.background = cores[setor] || '#888';
+  }
+
+  // Navegar para primeira aba permitida
+  showPage(permitidas[0]);
+}
+
 // INIT
 sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-sb.auth.getSession().then(({ data: { session } }) => {
+sb.auth.getSession().then(async ({ data: { session } }) => {
   if (session) {
+    userAtual = session.user;
+    await carregarPerfilUsuario(session.user.id);
     document.getElementById('login-screen').style.display = 'none';
-    carregarDashboard();
   }
 });
 </script>
