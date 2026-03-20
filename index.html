@@ -1082,6 +1082,46 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       </div>
     </div>
 
+    <!-- Seção Check List -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;" id="mf-secao-checklist">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:14px;">📋 Check List — Documentação</div>
+
+      <!-- Valores -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">VALOR FRETE MOTORISTA</div><div style="font-weight:600;color:var(--accent)" id="mf-ck-valor-frete">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">VALOR DA CARGA</div><div style="font-weight:600;color:var(--accent)" id="mf-ck-valor-carga">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CANAL DE CONTATO</div><div style="font-weight:600" id="mf-ck-canal">—</div></div>
+      </div>
+
+      <!-- Documentos -->
+      <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Documentos Recebidos</div>
+      <div id="mf-ck-docs" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
+
+      <!-- Forma de Pagamento -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Forma de Pagamento</div>
+          <div id="mf-ck-pgto" style="font-size:13px;font-weight:500;">—</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Prazo do Saldo</div>
+          <div id="mf-ck-prazo" style="font-size:13px;font-weight:500;">—</div>
+        </div>
+        <div style="grid-column:1/-1" id="mf-ck-excecao-pgto-row" style="display:none;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">EXCEÇÃO PAGAMENTO</div>
+          <div style="font-weight:500" id="mf-ck-excecao-pgto">—</div>
+        </div>
+        <div style="grid-column:1/-1" id="mf-ck-excecao-prazo-row" style="display:none;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">EXCEÇÃO PRAZO</div>
+          <div style="font-weight:500" id="mf-ck-excecao-prazo">—</div>
+        </div>
+      </div>
+
+      <!-- Recolhimento -->
+      <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Recolhimento</div>
+      <div id="mf-ck-recolhimento" style="font-size:13px;font-weight:500;">—</div>
+    </div>
+
     <!-- Alterar status -->
     <div class="status-select-row">
       <label>Alterar Status:</label>
@@ -2292,6 +2332,60 @@ function abrirFiscalModal(id) {
   document.getElementById('mf-secao-pix').style.display = isPix ? 'grid' : 'none';
 
   document.getElementById('modal-fiscal-overlay').classList.add('open');
+
+  // ---- CHECKLIST ----
+  const ck = m.checklist || {};
+  const fmt = v => v ? 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '—';
+
+  document.getElementById('mf-ck-valor-frete').textContent = fmt(ck.valor_frete_motorista);
+  document.getElementById('mf-ck-valor-carga').textContent = fmt(ck.valor_carga);
+  document.getElementById('mf-ck-canal').textContent = ck.canal_contato || '—';
+
+  // Documentos com ícone ✅ / ❌
+  const docs = [
+    ['doc_cnh',        'Habilitação (CNH)'],
+    ['doc_antt',       'Registro na ANTT'],
+    ['doc_caminhao',   'Documentação Caminhão/Carretas'],
+    ['doc_residencia', 'Comprovante de Residência'],
+    ['doc_foto_caminhao', 'Foto Caminhão/Carretas'],
+    ['doc_selfie_cnh', 'Selfie segurando CNH'],
+    ['doc_selfie_placa','Selfie ao lado do veículo'],
+    ['doc_ref_prof',   '3 Referências Profissionais'],
+    ['doc_ref_pessoal','3 Referências Pessoais'],
+    ['doc_proprietario','Contato do Proprietário'],
+    ['doc_lonas',      'Fotos das Lonas'],
+  ];
+  document.getElementById('mf-ck-docs').innerHTML = docs.map(([key, label]) => {
+    const ok = ck[key] === true;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border-radius:6px;border:1px solid var(--border);">
+      <span style="font-size:14px;">${ok ? '✅' : '❌'}</span>
+      <span style="font-size:13px;color:${ok ? 'var(--text)' : 'var(--muted)'};">${label}</span>
+    </div>`;
+  }).join('');
+
+  // Forma de pagamento
+  let pgto = [];
+  if (ck.pgto_adiantamento70) pgto.push('Adiantamento 70%');
+  if (ck.pgto_saldo30) pgto.push('Saldo 30%');
+  document.getElementById('mf-ck-pgto').textContent = pgto.length ? pgto.join(' + ') : '—';
+  const excPgto = document.getElementById('mf-ck-excecao-pgto');
+  const excPgtoRow = document.getElementById('mf-ck-excecao-pgto-row');
+  if (ck.pgto_excecao) { excPgto.textContent = ck.pgto_excecao + (ck.pgto_assinatura ? ' (Resp: ' + ck.pgto_assinatura + ')' : ''); excPgtoRow.style.display = ''; }
+  else { excPgtoRow.style.display = 'none'; }
+
+  // Prazo do saldo
+  const prazoMap = { '5':'05 dias após descarga', '7':'07 dias após descarga', '8+':'08+ dias após descarga' };
+  document.getElementById('mf-ck-prazo').textContent = prazoMap[ck.prazo_saldo] || '—';
+  const excPrazo = document.getElementById('mf-ck-excecao-prazo');
+  const excPrazoRow = document.getElementById('mf-ck-excecao-prazo-row');
+  if (ck.prazo_excecao) { excPrazo.textContent = ck.prazo_excecao + (ck.prazo_assinatura ? ' (Resp: ' + ck.prazo_assinatura + ')' : ''); excPrazoRow.style.display = ''; }
+  else { excPrazoRow.style.display = 'none'; }
+
+  // Recolhimento
+  let rec = [];
+  if (ck.recolhimento_pf) rec.push('Pessoa Física (INSS + SEST SENAT)');
+  if (ck.recolhimento_pj) rec.push('Pessoa Jurídica (Taxa R$ 88,00)');
+  document.getElementById('mf-ck-recolhimento').textContent = rec.length ? rec.join(' | ') : '—';
 }
 
 async function atualizarStatusFiscal() {
