@@ -1097,6 +1097,12 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Documentos Recebidos</div>
       <div id="mf-ck-docs" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
 
+      <!-- Anexos -->
+      <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📎 Arquivos Anexados</div>
+      <div id="mf-ck-anexos" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+        <div style="font-size:13px;color:var(--muted);">Nenhum arquivo anexado.</div>
+      </div>
+
       <!-- Forma de Pagamento -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
         <div>
@@ -1720,7 +1726,126 @@ async function carregarMotoristas() {
   }
 }
 
+async function uploadAnexo(file, motoristaId, tipo) {
+  const ext = file.name.split('.').pop();
+  const path = `${motoristaId}/${tipo}_${Date.now()}.${ext}`;
+  const { data, error } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
+  if (error) throw new Error('Erro upload ' + tipo + ': ' + error.message);
+  const { data: urlData } = sb.storage.from('motoristas-docs').getPublicUrl(path);
+  return { tipo, nome: file.name, url: urlData.publicUrl };
+}
+
 async function adicionarMotorista() {
+  const nome = document.getElementById('nm-nome').value.trim();
+  const peso = document.getElementById('nm-peso').value;
+  if (!nome) { showToast('Informe o nome do motorista', 'error'); return; }
+  if (!peso) { showToast('Informe o peso saída', 'error'); return; }
+
+  const pesoTotal = parseFloat(loteAtualDados.peso_ton || 0);
+  const motoristas = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}`) || [];
+  const totalCarregado = motoristas.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
+  const restante = pesoTotal - totalCarregado;
+
+  if (pesoTotal > 0 && parseFloat(peso) > restante) {
+    showToast(`Peso excede o restante (${restante.toFixed(2)} ton)`, 'error'); return;
+  }
+
+  const prazoSaldoEl = document.querySelector('input[name="nm-ck-prazo-saldo"]:checked');
+  const checklist = {
+    valor_frete_motorista: document.getElementById('nm-ck-valor-frete').value || null,
+    valor_carga: document.getElementById('nm-ck-valor-carga').value || null,
+    canal_contato: document.getElementById('nm-ck-canal').value || null,
+    doc_cnh: document.getElementById('nm-ck-cnh').checked,
+    doc_antt: document.getElementById('nm-ck-antt').checked,
+    doc_caminhao: document.getElementById('nm-ck-doc-caminhao').checked,
+    doc_residencia: document.getElementById('nm-ck-residencia').checked,
+    doc_foto_caminhao: document.getElementById('nm-ck-foto-caminhao').checked,
+    doc_selfie_cnh: document.getElementById('nm-ck-selfie-cnh').checked,
+    doc_selfie_placa: document.getElementById('nm-ck-selfie-placa').checked,
+    doc_ref_prof: document.getElementById('nm-ck-ref-prof').checked,
+    doc_ref_pessoal: document.getElementById('nm-ck-ref-pessoal').checked,
+    doc_proprietario: document.getElementById('nm-ck-proprietario').checked,
+    doc_lonas: document.getElementById('nm-ck-lonas').checked,
+    pgto_adiantamento70: document.getElementById('nm-ck-adiantamento').checked,
+    pgto_saldo30: document.getElementById('nm-ck-saldo').checked,
+    pgto_excecao: document.getElementById('nm-ck-excecao-pgto').value || null,
+    pgto_assinatura: document.getElementById('nm-ck-assinatura-pgto').value || null,
+    prazo_saldo: prazoSaldoEl ? prazoSaldoEl.value : null,
+    prazo_excecao: document.getElementById('nm-ck-excecao-prazo').value || null,
+    prazo_assinatura: document.getElementById('nm-ck-assinatura-prazo').value || null,
+    recolhimento_pf: document.getElementById('nm-ck-pessoa-fisica').checked,
+    recolhimento_pj: document.getElementById('nm-ck-pessoa-juridica').checked,
+  };
+
+  try {
+    // Salva o motorista primeiro para obter o ID
+    const resultado = await supabaseRequest('POST', 'lote_motoristas', {
+      lote_id: loteAtualId,
+      nome,
+      placa: document.getElementById('nm-placa').value || null,
+      contato: document.getElementById('nm-contato').value || null,
+      cpf: document.getElementById('nm-cpf').value || null,
+      peso_saida: parseFloat(peso),
+      status: 'em_negociacao',
+      tipo_pagamento: document.getElementById('nm-tipo-pagamento').value || 'conta_bancaria',
+      nome_titular: document.getElementById('nm-nome-titular').value || null,
+      cpf_titular: document.getElementById('nm-cpf-titular').value || null,
+      banco: document.getElementById('nm-banco').value || null,
+      agencia: document.getElementById('nm-agencia').value || null,
+      numero_conta: document.getElementById('nm-conta').value || null,
+      tipo_conta: document.getElementById('nm-tipo-conta').value || null,
+      tipo_chave_pix: document.getElementById('nm-tipo-pix').value || null,
+      chave_pix: document.getElementById('nm-pix').value || null,
+      checklist: checklist,
+    });
+
+    const motoristaId = resultado[0]?.id;
+
+    // Faz upload dos arquivos se houver
+    if (motoristaId) {
+      const arquivosParaUpload = [
+        { id: 'nm-arq-cnh',          tipo: 'cnh' },
+        { id: 'nm-arq-antt',         tipo: 'antt' },
+        { id: 'nm-arq-doc-caminhao', tipo: 'doc_caminhao' },
+        { id: 'nm-arq-residencia',   tipo: 'residencia' },
+        { id: 'nm-arq-foto-caminhao',tipo: 'foto_caminhao' },
+        { id: 'nm-arq-selfie-cnh',   tipo: 'selfie_cnh' },
+        { id: 'nm-arq-selfie-placa', tipo: 'selfie_placa' },
+        { id: 'nm-arq-lonas',        tipo: 'lonas' },
+      ];
+
+      const anexos = [];
+      for (const { id, tipo } of arquivosParaUpload) {
+        const input = document.getElementById(id);
+        if (input && input.files.length > 0) {
+          showToast(`Enviando ${tipo}...`, 'success');
+          for (const file of input.files) {
+            const anexo = await uploadAnexo(file, motoristaId, tipo);
+            anexos.push(anexo);
+          }
+        }
+      }
+
+      // Salva as URLs no banco
+      if (anexos.length > 0) {
+        await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristaId}`, { anexos });
+      }
+    }
+
+    showToast('✅ Motorista adicionado!', 'success');
+    ['nm-nome','nm-placa','nm-contato','nm-cpf','nm-peso','nm-nome-titular','nm-cpf-titular','nm-banco','nm-agencia','nm-conta','nm-pix',
+     'nm-ck-valor-frete','nm-ck-valor-carga','nm-ck-canal','nm-ck-excecao-pgto','nm-ck-assinatura-pgto','nm-ck-excecao-prazo','nm-ck-assinatura-prazo'
+    ].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    ['nm-ck-cnh','nm-ck-antt','nm-ck-doc-caminhao','nm-ck-residencia','nm-ck-foto-caminhao','nm-ck-selfie-cnh','nm-ck-selfie-placa',
+     'nm-ck-ref-prof','nm-ck-ref-pessoal','nm-ck-proprietario','nm-ck-lonas','nm-ck-adiantamento','nm-ck-saldo','nm-ck-pessoa-fisica','nm-ck-pessoa-juridica'
+    ].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
+    document.querySelectorAll('input[name="nm-ck-prazo-saldo"]').forEach(r => r.checked = false);
+    document.getElementById('nm-tipo-conta').value = '';
+    document.getElementById('nm-tipo-pix').value = '';
+    selecionarTipoPagamento('conta_bancaria');
+    await carregarMotoristas();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
   const nome = document.getElementById('nm-nome').value.trim();
   const peso = document.getElementById('nm-peso').value;
   if (!nome) { showToast('Informe o nome do motorista', 'error'); return; }
@@ -2386,6 +2511,36 @@ function abrirFiscalModal(id) {
   if (ck.recolhimento_pf) rec.push('Pessoa Física (INSS + SEST SENAT)');
   if (ck.recolhimento_pj) rec.push('Pessoa Jurídica (Taxa R$ 88,00)');
   document.getElementById('mf-ck-recolhimento').textContent = rec.length ? rec.join(' | ') : '—';
+
+  // Anexos
+  const nomeAnexo = {
+    cnh: 'CNH', antt: 'ANTT', doc_caminhao: 'Doc. Caminhão/Carretas',
+    residencia: 'Comp. Residência', foto_caminhao: 'Foto Caminhão/Carretas',
+    selfie_cnh: 'Selfie com CNH', selfie_placa: 'Selfie ao lado do veículo', lonas: 'Fotos das Lonas'
+  };
+  const anexos = m.anexos || [];
+  const containerAnexos = document.getElementById('mf-ck-anexos');
+  if (anexos.length === 0) {
+    containerAnexos.innerHTML = '<div style="font-size:13px;color:var(--muted);">Nenhum arquivo anexado.</div>';
+  } else {
+    containerAnexos.innerHTML = anexos.map(a => {
+      const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome);
+      const label = nomeAnexo[a.tipo] || a.tipo;
+      return `
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;gap:10px;">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+          <span style="font-size:16px;">${isImg ? '🖼️' : '📄'}</span>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--text);">${label}</div>
+            <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">${a.nome}</div>
+          </div>
+        </div>
+        <a href="${a.url}" target="_blank" style="display:flex;align-items:center;gap:5px;background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;">
+          ${isImg ? '🔍 Ver' : '⬇️ Abrir'}
+        </a>
+      </div>`;
+    }).join('');
+  }
 }
 
 async function atualizarStatusFiscal() {
