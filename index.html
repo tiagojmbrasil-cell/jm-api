@@ -139,6 +139,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     <button onclick="showPage('lista')">Todas as Cotações</button>
     <button onclick="showPage('lotes')">Lotes</button>
     <button onclick="showPage('motoristas')">Motoristas</button>
+    <button onclick="showPage('gr')">GR</button>
     <button onclick="showPage('status-lote')">Status do Lote</button>
     <button onclick="showPage('clientes')">Clientes</button>
     <button onclick="showPage('fiscal')">Fiscal</button>
@@ -990,6 +991,113 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
   </div>
 </div>
 
+<!-- GR - GERENCIAMENTO DE RISCO -->
+<div class="page" id="page-gr">
+  <div class="card">
+    <div class="table-header">
+      <h2>Gerenciamento de Risco</h2>
+      <div class="filters">
+        <input type="text" id="filtro-gr-busca" placeholder="🔍 Buscar motorista, CPF ou lote..." oninput="filtrarGR()">
+        <select id="filtro-gr-status" onchange="filtrarGR()">
+          <option value="">Todos os status GR</option>
+          <option value="pendente">⏳ Pendente</option>
+          <option value="aprovado">✅ Aprovado</option>
+          <option value="reprovado">❌ Reprovado</option>
+        </select>
+      </div>
+    </div>
+    <div id="gr-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- MODAL GR -->
+<div class="modal-overlay" id="modal-gr-overlay" onclick="if(event.target===this)fecharModalGR()">
+  <div class="modal" style="max-width:720px;">
+    <div class="modal-title">
+      <span id="mgr-titulo">Análise GR — Motorista</span>
+      <button class="modal-close" onclick="fecharModalGR()">✕</button>
+    </div>
+
+    <!-- Status GR atual -->
+    <div id="mgr-status-bar" style="margin-bottom:16px;"></div>
+
+    <!-- Dados do Motorista -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">🧑 Dados do Motorista</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">NOME</div><div style="font-weight:600" id="mgr-nome">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CPF</div><div style="font-weight:600" id="mgr-cpf">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PLACA</div><div style="font-weight:600" id="mgr-placa">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CONTATO</div><div style="font-weight:600" id="mgr-contato">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PESO SAÍDA</div><div style="font-weight:600;color:var(--accent)" id="mgr-peso">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PAGAMENTO</div><div id="mgr-pagamento">—</div></div>
+      </div>
+    </div>
+
+    <!-- Dados do Lote -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">🚛 Dados do Lote</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">LOTE</div><div style="font-weight:600" id="mgr-lote">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CLIENTE</div><div style="font-weight:600" id="mgr-cliente">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PRODUTO</div><div style="font-weight:600" id="mgr-produto">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">AGÊNCIA</div><div style="font-weight:600" id="mgr-agencia-lote">—</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">ROTA</div><div style="font-weight:600" id="mgr-rota">—</div></div>
+      </div>
+    </div>
+
+    <!-- Checklist -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📋 Checklist de Documentação</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">VALOR FRETE MOTORISTA</div><div style="font-weight:600" id="mgr-ck-valor-frete">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">VALOR DA CARGA</div><div style="font-weight:600" id="mgr-ck-valor-carga">—</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CANAL DE CONTATO</div><div style="font-weight:600" id="mgr-ck-canal">—</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;">DOCUMENTOS</div>
+      <div id="mgr-ck-docs" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">FORMA DE PAGAMENTO</div><div style="font-weight:600" id="mgr-ck-pgto">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PRAZO DO SALDO</div><div style="font-weight:600" id="mgr-ck-prazo">—</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">RECOLHIMENTO</div><div style="font-weight:600" id="mgr-ck-recolhimento">—</div></div>
+      </div>
+    </div>
+
+    <!-- Arquivos Anexados -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📎 Arquivos Anexados</div>
+      <div id="mgr-anexos" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+
+    <!-- Decisão GR -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:14px;">🔍 Decisão GR</div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <button onclick="definirDecisaoGR('aprovado')" id="btn-gr-aprovar"
+          style="flex:1;padding:12px;border-radius:8px;border:2px solid var(--green);background:rgba(34,197,94,0.12);color:var(--green);font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;">
+          ✅ Aprovar Motorista
+        </button>
+        <button onclick="definirDecisaoGR('reprovado')" id="btn-gr-reprovar"
+          style="flex:1;padding:12px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;">
+          ❌ Reprovar Motorista
+        </button>
+      </div>
+      <input type="hidden" id="mgr-decisao" value="">
+      <div id="mgr-motivo-row" style="display:none;">
+        <div class="form-group">
+          <label>Motivo da Reprovação</label>
+          <textarea id="mgr-motivo" placeholder="Descreva o motivo da reprovação..." style="min-height:80px;"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="fecharModalGR()">Cancelar</button>
+      <button class="btn-primary" onclick="salvarDecisaoGR()">💾 Salvar Decisão</button>
+    </div>
+  </div>
+</div>
+
 <!-- FISCAL -->
 <div class="page" id="page-fiscal">
   <div class="card">
@@ -1117,6 +1225,15 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       <div id="mf-ck-recolhimento" style="font-size:13px;font-weight:500;">—</div>
     </div>
 
+    <!-- Status GR -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">🔍 Gerenciamento de Risco (GR)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">STATUS GR</div><div id="mf-gr-status">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">MOTIVO REPROVAÇÃO</div><div style="font-weight:600;font-size:13px" id="mf-gr-motivo">—</div></div>
+      </div>
+    </div>
+
     <!-- Alterar status -->
     <div class="status-select-row">
       <label>Alterar Status:</label>
@@ -1173,6 +1290,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
           <option value="comercial">Comercial</option>
           <option value="logistico">Logístico</option>
           <option value="fiscal">Fiscal</option>
+          <option value="gr">GR</option>
           <option value="administrativo">Administrativo</option>
         </select>
       </div>
@@ -1289,12 +1407,13 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  const idx = ['dashboard','nova','lista','lotes','motoristas','status-lote','clientes','fiscal','seguranca'].indexOf(name);
+  const idx = ['dashboard','nova','lista','lotes','motoristas','gr','status-lote','clientes','fiscal','seguranca'].indexOf(name);
   if (idx >= 0) document.querySelectorAll('nav button')[idx].classList.add('active');
   if (name === 'dashboard') carregarDashboard();
   if (name === 'lista') carregarLista();
   if (name === 'lotes') { carregarLotes(); carregarClientesSelect('l-cliente'); document.getElementById('l-data').value = new Date().toISOString().split('T')[0]; }
   if (name === 'motoristas') carregarMotoristasPagina();
+  if (name === 'gr') carregarGR();
   if (name === 'status-lote') carregarStatusLote();
   if (name === 'clientes') carregarClientes();
   if (name === 'fiscal') carregarFiscal();
@@ -2359,6 +2478,7 @@ function renderFiscal(dados) {
         <th>Lote / Cliente</th>
         <th>Rota</th>
         <th>Peso Saída</th>
+        <th>Status GR</th>
         <th>Pagamento</th>
         <th>Dados Bancários / PIX</th>
         <th>Titular</th>
@@ -2387,6 +2507,7 @@ function renderFiscal(dados) {
             </td>
             <td style="font-size:12px;color:var(--muted)">${m.lote ? (m.lote.origem||'—') + ' → ' + (m.lote.destino||'—') : '—'}</td>
             <td style="font-size:12px;color:var(--accent);font-weight:600">${m.peso_saida ? m.peso_saida + ' ton' : '—'}</td>
+            <td>${badgeGR(m.gr_status || 'pendente')}</td>
             <td>${badgeTipoPagamento(m.tipo_pagamento)}</td>
             <td style="font-size:12px">${dadosPagamento}</td>
             <td style="font-size:12px">
@@ -2433,6 +2554,12 @@ async function abrirFiscalModal(id) {
   document.getElementById('mf-tipo-pix').textContent = nomeTipoPix(m.tipo_chave_pix);
   document.getElementById('mf-pix').textContent = m.chave_pix || '—';
   document.getElementById('mf-badge-pagamento').innerHTML = badgeTipoPagamento(m.tipo_pagamento);
+
+  // Status GR no modal fiscal
+  const grStatusEl = document.getElementById('mf-gr-status');
+  if (grStatusEl) grStatusEl.innerHTML = badgeGR(m.gr_status || 'pendente');
+  const grMotivoEl = document.getElementById('mf-gr-motivo');
+  if (grMotivoEl) grMotivoEl.textContent = m.gr_motivo || '—';
 
   const isPix = m.tipo_pagamento === 'chave_pix';
   document.getElementById('mf-secao-conta').style.display = isPix ? 'none' : 'grid';
@@ -2664,6 +2791,7 @@ const ABAS_SISTEMA = [
   { id: 'lista',       label: '📋 Todas as Cotações' },
   { id: 'lotes',       label: '📦 Lotes' },
   { id: 'motoristas',  label: '🚛 Motoristas' },
+  { id: 'gr',          label: '🔍 GR' },
   { id: 'status-lote', label: '📍 Status do Lote' },
   { id: 'clientes',    label: '👥 Clientes' },
   { id: 'fiscal',      label: '💼 Fiscal' },
@@ -2672,10 +2800,11 @@ const ABAS_SISTEMA = [
 
 // Permissões padrão por setor: 0=oculto, 1=só ver, 2=acesso total
 const PERMISSOES_PADRAO = {
-  administrativo: { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, 'status-lote':2, clientes:2, fiscal:2, seguranca:2 },
-  comercial:      { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, 'status-lote':2, clientes:2, fiscal:0, seguranca:0 },
-  logistico:      { dashboard:2, nova:0, lista:1, lotes:2, motoristas:2, 'status-lote':2, clientes:0, fiscal:0, seguranca:0 },
-  fiscal:         { dashboard:2, nova:0, lista:1, lotes:0, motoristas:1, 'status-lote':2, clientes:0, fiscal:2, seguranca:0 },
+  administrativo: { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, gr:2, 'status-lote':2, clientes:2, fiscal:2, seguranca:2 },
+  comercial:      { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, gr:0, 'status-lote':2, clientes:2, fiscal:0, seguranca:0 },
+  logistico:      { dashboard:2, nova:0, lista:1, lotes:2, motoristas:2, gr:1, 'status-lote':2, clientes:0, fiscal:0, seguranca:0 },
+  fiscal:         { dashboard:2, nova:0, lista:1, lotes:0, motoristas:1, gr:0, 'status-lote':2, clientes:0, fiscal:2, seguranca:0 },
+  gr:             { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:2, 'status-lote':1, clientes:0, fiscal:0, seguranca:0 },
 };
 
 function getPermissoesUsuario(u) {
@@ -2689,7 +2818,7 @@ function renderUsuarios(perfis) {
     document.getElementById('usuarios-table').innerHTML = '<div class="empty"><div class="empty-icon">👥</div><p>Nenhum usuário encontrado.</p></div>';
     return;
   }
-  const cores = { administrativo:'#f97316', comercial:'#3b82f6', logistico:'#22c55e', fiscal:'#8b5cf6' };
+  const cores = { administrativo:'#f97316', comercial:'#3b82f6', logistico:'#22c55e', fiscal:'#8b5cf6', gr:'#ec4899' };
 
   document.getElementById('usuarios-table').innerHTML = perfis.map(u => {
     const perms = getPermissoesUsuario(u);
@@ -2713,6 +2842,7 @@ function renderUsuarios(perfis) {
             <option value="comercial" ${u.setor==='comercial'?'selected':''}>Comercial</option>
             <option value="logistico" ${u.setor==='logistico'?'selected':''}>Logístico</option>
             <option value="fiscal" ${u.setor==='fiscal'?'selected':''}>Fiscal</option>
+            <option value="gr" ${u.setor==='gr'?'selected':''}>GR</option>
             <option value="administrativo" ${u.setor==='administrativo'?'selected':''}>Administrativo</option>
           </select>
           <button onclick="toggleAtivo('${u.id}', ${u.ativo})" style="background:${u.ativo?'rgba(239,68,68,0.1)':'rgba(34,197,94,0.1)'};color:${u.ativo?'#ef4444':'#22c55e'};border:1px solid ${u.ativo?'rgba(239,68,68,0.3)':'rgba(34,197,94,0.3)'};border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">
@@ -2858,7 +2988,7 @@ function aplicarPermissoes(setor, perms) {
   setorAtual = setor;
   permissoesAtual = perms || PERMISSOES_PADRAO[setor] || PERMISSOES_PADRAO['comercial'];
 
-  const paginas = ['dashboard','nova','lista','lotes','motoristas','status-lote','clientes','fiscal','seguranca'];
+  const paginas = ['dashboard','nova','lista','lotes','motoristas','gr','status-lote','clientes','fiscal','seguranca'];
   const botoesNav = document.querySelectorAll('nav button');
 
   paginas.forEach((p, i) => {
@@ -2870,7 +3000,7 @@ function aplicarPermissoes(setor, perms) {
 
   // Badge do setor
   const badge = document.getElementById('setor-badge');
-  const cores = { administrativo:'#f97316', comercial:'#3b82f6', logistico:'#22c55e', fiscal:'#8b5cf6' };
+  const cores = { administrativo:'#f97316', comercial:'#3b82f6', logistico:'#22c55e', fiscal:'#8b5cf6', gr:'#ec4899' };
   if (badge) {
     badge.textContent = setor.toUpperCase();
     badge.style.background = cores[setor] || '#888';
@@ -2907,6 +3037,238 @@ function aplicarPermissoes(setor, perms) {
   // Navegar para primeira aba visível
   const primeiraVisivel = paginas.find(p => (permissoesAtual[p] ?? 0) > 0) || 'dashboard';
   showPage(primeiraVisivel);
+}
+
+// ============ GR - GERENCIAMENTO DE RISCO ============
+let grData = [];
+let grMotoristaSelecionadoId = null;
+
+async function carregarGR() {
+  try {
+    document.getElementById('gr-table').innerHTML = '<div class="loading">Carregando...</div>';
+    const motoristas = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500') || [];
+    const loteIds = [...new Set(motoristas.map(m => m.lote_id))];
+    const lotesMap = {};
+    await Promise.all(loteIds.map(async lid => {
+      const l = await supabaseRequest('GET', `lotes?id=eq.${lid}`) || [];
+      if (l.length) lotesMap[lid] = l[0];
+    }));
+    grData = motoristas.map(m => ({ ...m, lote: lotesMap[m.lote_id] || null }));
+    filtrarGR();
+  } catch(e) {
+    document.getElementById('gr-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
+  }
+}
+
+function filtrarGR() {
+  const busca = (document.getElementById('filtro-gr-busca').value || '').toLowerCase();
+  const status = document.getElementById('filtro-gr-status').value;
+  const filtrados = grData.filter(m => {
+    const matchBusca = !busca ||
+      (m.nome||'').toLowerCase().includes(busca) ||
+      (m.cpf||'').includes(busca) ||
+      String(m.lote_id).includes(busca) ||
+      (m.placa||'').toLowerCase().includes(busca);
+    const matchStatus = !status || (m.gr_status || 'pendente') === status;
+    return matchBusca && matchStatus;
+  });
+  renderGR(filtrados);
+}
+
+function badgeGR(status) {
+  const map = {
+    pendente:  { label: '⏳ Pendente',  cor: 'var(--yellow)', bg: 'rgba(234,179,8,0.12)' },
+    aprovado:  { label: '✅ Aprovado',  cor: 'var(--green)',  bg: 'rgba(34,197,94,0.12)' },
+    reprovado: { label: '❌ Reprovado', cor: 'var(--red)',    bg: 'rgba(239,68,68,0.12)' },
+  };
+  const s = map[status] || map['pendente'];
+  return `<span style="display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;color:${s.cor};background:${s.bg};">${s.label}</span>`;
+}
+
+function renderGR(dados) {
+  if (!dados.length) {
+    document.getElementById('gr-table').innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p>Nenhum motorista encontrado.</p></div>';
+    return;
+  }
+  document.getElementById('gr-table').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>#</th><th>Motorista</th><th>CPF</th><th>Placa</th>
+        <th>Lote / Cliente</th><th>Peso Saída</th><th>Status GR</th><th>Motivo</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${dados.map(m => `<tr>
+          <td style="color:var(--muted);font-size:12px">#${m.id}</td>
+          <td><strong>${m.nome || '—'}</strong></td>
+          <td style="font-size:12px">${m.cpf || '—'}</td>
+          <td style="font-size:12px">${m.placa || '—'}</td>
+          <td style="font-size:12px">
+            <span style="color:var(--muted)">Lote ${m.lote_id}</span><br>
+            <strong>${m.lote ? m.lote.cliente || '—' : '—'}</strong>
+          </td>
+          <td style="font-size:12px;color:var(--accent);font-weight:600">${m.peso_saida ? m.peso_saida + ' ton' : '—'}</td>
+          <td>${badgeGR(m.gr_status || 'pendente')}</td>
+          <td style="font-size:12px;color:var(--muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.gr_motivo || '—'}</td>
+          <td>
+            <button onclick="abrirModalGR(${m.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-weight:600;">🔍 Analisar</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function abrirModalGR(id) {
+  const m = grData.find(x => x.id === id);
+  if (!m) return;
+  grMotoristaSelecionadoId = id;
+
+  document.getElementById('mgr-titulo').textContent = 'Análise GR — ' + (m.nome || '#' + id);
+  document.getElementById('mgr-status-bar').innerHTML = badgeGR(m.gr_status || 'pendente');
+  document.getElementById('mgr-nome').textContent = m.nome || '—';
+  document.getElementById('mgr-cpf').textContent = m.cpf || '—';
+  document.getElementById('mgr-placa').textContent = m.placa || '—';
+  document.getElementById('mgr-contato').textContent = m.contato || '—';
+  document.getElementById('mgr-peso').textContent = m.peso_saida ? m.peso_saida + ' ton' : '—';
+  document.getElementById('mgr-pagamento').innerHTML = badgeTipoPagamento(m.tipo_pagamento);
+  document.getElementById('mgr-lote').textContent = 'Lote #' + m.lote_id;
+  document.getElementById('mgr-cliente').textContent = m.lote ? (m.lote.cliente || '—') : '—';
+  document.getElementById('mgr-produto').textContent = m.lote ? (m.lote.produto || '—') : '—';
+  document.getElementById('mgr-agencia-lote').textContent = m.lote ? (m.lote.agencia || '—') : '—';
+  document.getElementById('mgr-rota').textContent = m.lote ? ((m.lote.origem||'—') + ' → ' + (m.lote.destino||'—')) : '—';
+
+  // Checklist
+  const ck = m.checklist || {};
+  const fmt = v => v ? 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '—';
+  document.getElementById('mgr-ck-valor-frete').textContent = fmt(ck.valor_frete_motorista);
+  document.getElementById('mgr-ck-valor-carga').textContent = fmt(ck.valor_carga);
+  document.getElementById('mgr-ck-canal').textContent = ck.canal_contato || '—';
+
+  // Documentos
+  const nomeDocLabel = { cnh:'Habilitação (CNH)', antt:'Registro na ANTT', doc_caminhao:'Doc. Caminhão/Carretas', residencia:'Comprovante de Residência', foto_caminhao:'Foto Caminhão/Carretas', selfie_cnh:'Selfie segurando CNH', selfie_placa:'Selfie ao lado do veículo', lonas:'Fotos das Lonas' };
+  const anexos = m.anexos || [];
+  document.getElementById('mgr-ck-docs').innerHTML = Object.keys(nomeDocLabel).map(tipo => {
+    const docsDoTipo = anexos.filter(a => a.tipo === tipo);
+    const temAnexo = docsDoTipo.length > 0;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surface);border-radius:6px;border:1px solid ${temAnexo ? 'rgba(34,197,94,0.3)' : 'var(--border)'};">
+      <span style="font-size:13px;">${nomeDocLabel[tipo]}</span>
+      <span style="font-size:12px;font-weight:600;color:${temAnexo ? 'var(--green)' : 'var(--muted)'};">${temAnexo ? '✅ Anexado' : '— Não anexado'}</span>
+    </div>`;
+  }).join('');
+
+  // Pgto e prazo
+  let pgto = [];
+  if (ck.pgto_adiantamento70) pgto.push('Adiantamento 70%');
+  if (ck.pgto_saldo30) pgto.push('Saldo 30%');
+  document.getElementById('mgr-ck-pgto').textContent = pgto.length ? pgto.join(' + ') : '—';
+  const prazoMap = { '5':'05 dias após descarga', '7':'07 dias após descarga', '8+':'08+ dias após descarga' };
+  document.getElementById('mgr-ck-prazo').textContent = prazoMap[ck.prazo_saldo] || '—';
+  let rec = [];
+  if (ck.recolhimento_pf) rec.push('Pessoa Física');
+  if (ck.recolhimento_pj) rec.push('Pessoa Jurídica');
+  document.getElementById('mgr-ck-recolhimento').textContent = rec.length ? rec.join(' | ') : '—';
+
+  // Arquivos anexados com links
+  const containerAnexos = document.getElementById('mgr-anexos');
+  if (!anexos.length) {
+    containerAnexos.innerHTML = '<div style="font-size:13px;color:var(--muted);">Nenhum arquivo anexado.</div>';
+  } else {
+    containerAnexos.innerHTML = '<div style="font-size:13px;color:var(--muted);">Carregando arquivos...</div>';
+    try {
+      const paths = anexos.map(a => a.path || a.url).filter(Boolean);
+      const { data: signedUrls } = await sb.storage.from('motoristas-docs').createSignedUrls(paths, 3600);
+      const urlMap = {};
+      (signedUrls || []).forEach(s => { urlMap[s.path] = s.signedUrl; });
+      const nomeAnexo = { cnh:'CNH', antt:'ANTT', doc_caminhao:'Doc. Caminhão', residencia:'Comp. Residência', foto_caminhao:'Foto Caminhão', selfie_cnh:'Selfie CNH', selfie_placa:'Selfie Placa', lonas:'Lonas' };
+      containerAnexos.innerHTML = anexos.map(a => {
+        const url = urlMap[a.path || a.url] || a.path || a.url;
+        const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome);
+        return `<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;gap:10px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span>${isImg ? '🖼️' : '📄'}</span>
+            <div>
+              <div style="font-size:12px;font-weight:600;">${nomeAnexo[a.tipo] || a.tipo}</div>
+              <div style="font-size:11px;color:var(--muted);">${a.nome}</div>
+            </div>
+          </div>
+          <a href="${url}" target="_blank" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;text-decoration:none;">${isImg ? '🔍 Ver' : '⬇️ Abrir'}</a>
+        </div>`;
+      }).join('');
+    } catch(e) { containerAnexos.innerHTML = '<div style="color:var(--red);font-size:13px;">Erro ao carregar arquivos.</div>'; }
+  }
+
+  // Decisão atual
+  const decisaoAtual = m.gr_status || 'pendente';
+  document.getElementById('mgr-decisao').value = decisaoAtual === 'pendente' ? '' : decisaoAtual;
+  document.getElementById('mgr-motivo').value = m.gr_motivo || '';
+  atualizarBotoesGR(decisaoAtual === 'pendente' ? '' : decisaoAtual);
+
+  document.getElementById('modal-gr-overlay').classList.add('open');
+}
+
+function definirDecisaoGR(decisao) {
+  document.getElementById('mgr-decisao').value = decisao;
+  atualizarBotoesGR(decisao);
+}
+
+function atualizarBotoesGR(decisao) {
+  const btnAprovar = document.getElementById('btn-gr-aprovar');
+  const btnReprovar = document.getElementById('btn-gr-reprovar');
+  const motivoRow = document.getElementById('mgr-motivo-row');
+
+  if (decisao === 'aprovado') {
+    btnAprovar.style.borderColor = 'var(--green)';
+    btnAprovar.style.background = 'rgba(34,197,94,0.2)';
+    btnAprovar.style.color = 'var(--green)';
+    btnReprovar.style.borderColor = 'var(--border)';
+    btnReprovar.style.background = 'var(--surface)';
+    btnReprovar.style.color = 'var(--muted)';
+    motivoRow.style.display = 'none';
+  } else if (decisao === 'reprovado') {
+    btnReprovar.style.borderColor = 'var(--red)';
+    btnReprovar.style.background = 'rgba(239,68,68,0.2)';
+    btnReprovar.style.color = 'var(--red)';
+    btnAprovar.style.borderColor = 'var(--border)';
+    btnAprovar.style.background = 'var(--surface)';
+    btnAprovar.style.color = 'var(--muted)';
+    motivoRow.style.display = '';
+  } else {
+    btnAprovar.style.borderColor = 'var(--green)';
+    btnAprovar.style.background = 'rgba(34,197,94,0.12)';
+    btnAprovar.style.color = 'var(--green)';
+    btnReprovar.style.borderColor = 'var(--border)';
+    btnReprovar.style.background = 'var(--surface)';
+    btnReprovar.style.color = 'var(--muted)';
+    motivoRow.style.display = 'none';
+  }
+}
+
+async function salvarDecisaoGR() {
+  const decisao = document.getElementById('mgr-decisao').value;
+  if (!decisao) { showToast('Selecione Aprovar ou Reprovar', 'error'); return; }
+  if (decisao === 'reprovado' && !document.getElementById('mgr-motivo').value.trim()) {
+    showToast('Informe o motivo da reprovação', 'error'); return;
+  }
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${grMotoristaSelecionadoId}`, {
+      gr_status: decisao,
+      gr_motivo: decisao === 'reprovado' ? document.getElementById('mgr-motivo').value.trim() : null,
+      gr_analisado_em: new Date().toISOString(),
+    });
+    const m = grData.find(x => x.id === grMotoristaSelecionadoId);
+    if (m) {
+      m.gr_status = decisao;
+      m.gr_motivo = decisao === 'reprovado' ? document.getElementById('mgr-motivo').value.trim() : null;
+    }
+    showToast(decisao === 'aprovado' ? '✅ Motorista aprovado!' : '❌ Motorista reprovado!', 'success');
+    document.getElementById('mgr-status-bar').innerHTML = badgeGR(decisao);
+    filtrarGR();
+    fecharModalGR();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+function fecharModalGR() {
+  document.getElementById('modal-gr-overlay').classList.remove('open');
+  grMotoristaSelecionadoId = null;
 }
 
 // INIT
