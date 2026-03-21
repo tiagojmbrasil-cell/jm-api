@@ -1708,6 +1708,13 @@ async function carregarMotoristas() {
     document.getElementById('ml-barra').style.width = pct + '%';
     document.getElementById('ml-barra').style.background = pct >= 100 ? 'var(--green)' : pct > 60 ? 'var(--yellow)' : 'var(--accent)';
 
+    // Atualiza o array lotes em memória para refletir o peso carregado
+    const loteIdx = lotes.findIndex(x => parseInt(x.id) === parseInt(loteAtualId));
+    if (loteIdx >= 0) {
+      lotes[loteIdx]._carregado = totalCarregado;
+      lotes[loteIdx]._restante = restante;
+    }
+
     if (!motoristas.length) {
       document.getElementById('lista-motoristas').innerHTML = '<div class="empty"><div class="empty-icon">🚛</div><p>Nenhum motorista adicionado ainda.</p></div>';
       return;
@@ -1892,6 +1899,16 @@ async function adicionarMotorista() {
 
     // Recarregar motoristas do lote — isso recalcula o peso corretamente
     await carregarMotoristas();
+
+    // Verificar se lote atingiu 100% e finalizar
+    const motoristasAtualizados = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}`) || [];
+    const totalAtualizado = motoristasAtualizados.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
+    const pesoTotalLote = parseFloat(loteAtualDados?.peso_ton || 0);
+    if (pesoTotalLote > 0 && totalAtualizado >= pesoTotalLote) {
+      await supabaseRequest('PATCH', `lotes?id=eq.${loteAtualId}`, { status: 'finalizado' });
+      if (loteAtualDados) loteAtualDados.status = 'finalizado';
+      showToast('🎉 Lote finalizado! 100% carregado!', 'success');
+    }
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 async function removerMotorista(id) {
@@ -1904,11 +1921,12 @@ async function removerMotorista(id) {
 }
 
 function fecharModalMotoristas(e) { if (e.target === document.getElementById('modal-motoristas-overlay')) fecharModalMotoristasBtn(); }
-function fecharModalMotoristasBtn() {
+async function fecharModalMotoristasBtn() {
   document.getElementById('modal-motoristas-overlay').classList.remove('open');
   loteAtualId = null;
   loteAtualDados = null;
-  carregarLotes();
+  lotes = []; // força recarregar do banco
+  await carregarLotes();
 }
 
 // ============ PÁGINA MOTORISTAS ============
@@ -2004,7 +2022,8 @@ async function carregarStatusLote() {
     statusLoteData = await Promise.all(data.map(async l => {
       const motoristas = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${l.id}`) || [];
       const carregado = motoristas.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
-      return { ...l, motoristas, carregado, restante: Math.max(0, parseFloat(l.peso_ton || 0) - carregado) };
+      const pesoTon = parseFloat(l.peso_ton || 0);
+      return { ...l, motoristas, carregado, restante: Math.max(0, pesoTon - carregado) };
     }));
 
     document.getElementById('sl-total').textContent = statusLoteData.length;
