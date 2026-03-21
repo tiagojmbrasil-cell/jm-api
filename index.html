@@ -1215,12 +1215,10 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
 
 <!-- SEGURANÇA -->
 <div class="page" id="page-seguranca">
-  <div class="stats" style="grid-template-columns:repeat(5,1fr)">
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
     <div class="stat total"><div class="stat-label">Total Usuários</div><div class="stat-value" id="seg-total">—</div></div>
     <div class="stat aprovadas"><div class="stat-label">Ativos</div><div class="stat-value" id="seg-ativos">—</div></div>
     <div class="stat reprovadas"><div class="stat-label">Inativos</div><div class="stat-value" id="seg-inativos">—</div></div>
-    <div class="stat pendentes"><div class="stat-label">Ações Hoje</div><div class="stat-value" id="seg-acoes-hoje">—</div></div>
-    <div class="stat" style="border-top:2px solid var(--blue);"><div class="stat-label">Total de Logs</div><div class="stat-value" style="color:var(--blue)" id="seg-total-logs">—</div></div>
   </div>
 
   <!-- Monitoramento de Ações -->
@@ -2738,13 +2736,6 @@ async function carregarLogs() {
   try {
     const logs = await supabaseRequest('GET', 'log_atividades?order=criado_em.desc&limit=200') || [];
     todosLogs = logs;
-
-    // Atualiza stats
-    const hoje = new Date().toISOString().split('T')[0];
-    const hojeCount = logs.filter(l => (l.criado_em||'').startsWith(hoje)).length;
-    document.getElementById('seg-acoes-hoje').textContent = hojeCount;
-    document.getElementById('seg-total-logs').textContent = logs.length;
-
     filtrarLogs();
   } catch(e) {
     document.getElementById('logs-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar logs.</p></div>';
