@@ -1246,48 +1246,40 @@ let sb = null;
 const API_URL = 'https://jm-api-ef3c.vercel.app/api/cotacoes';
 
 async function supabaseRequest(method, path, body = null) {
-  // Extrai tabela e filtros do path estilo Supabase REST
-  const [tabelaComFiltros] = path.split('?');
-  const tabela = tabelaComFiltros;
-  const queryString = path.includes('?') ? path.split('?')[1] : '';
-  
-  // Monta URL da nossa API
-  let url = API_URL + '?tabela=' + tabelaComFiltros;
-  
-  // Extrai id de filtros como id=eq.X (converte para número se possível)
-  const idMatch = queryString.match(/id=eq\.([^&]+)/);
-  if (idMatch) url += '&id=' + idMatch[1];
-  
-  // Extrai outros filtros simples
+  const [tabela, queryStringRaw] = path.split('?');
+  const queryString = queryStringRaw || '';
+
+  let url = API_URL + '?tabela=' + tabela;
+
   const filtros = {};
+
+  // Processa cada parâmetro da query
   const params = new URLSearchParams(queryString);
   params.forEach((val, key) => {
-    if (key !== 'order' && key !== 'limit' && key !== 'select' && !key.includes('id')) {
-      const eqMatch = val.match(/^eq\.(.+)/);
-      if (eqMatch) filtros[key] = eqMatch[1];
-      else if (key.includes('=eq.')) {
-        const parts = key.split('=eq.');
-        filtros[parts[0]] = parts[1];
-      }
-    }
-    if (key.includes('_id') && val.startsWith('eq.')) filtros[key] = val.replace('eq.','');
-  });
-  
-  // Trata filtros especiais como lote_id=eq.X (converte para número)
-  const loteIdMatch = queryString.match(/lote_id=eq\.([^&]+)/);
-  if (loteIdMatch) filtros['lote_id'] = parseInt(loteIdMatch[1]) || loteIdMatch[1];
-  
-  const nomeMatch = queryString.match(/nome=eq\.([^&]+)/);
-  if (nomeMatch) filtros['nome'] = decodeURIComponent(nomeMatch[1]);
+    if (key === 'order' || key === 'limit' || key === 'select') return;
 
-  if (Object.keys(filtros).length > 0) url += '&filtros=' + encodeURIComponent(JSON.stringify(filtros));
+    // id principal (sem underscore) vai como &id=X
+    if (key === 'id' && val.startsWith('eq.')) {
+      url += '&id=' + val.replace('eq.', '');
+      return;
+    }
+
+    // Qualquer outro filtro com eq. vai pro objeto filtros
+    if (val.startsWith('eq.')) {
+      filtros[key] = val.replace('eq.', '');
+    }
+  });
+
+  if (Object.keys(filtros).length > 0) {
+    url += '&filtros=' + encodeURIComponent(JSON.stringify(filtros));
+  }
 
   const res = await fetch(url, {
     method,
     headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : null
   });
-  
+
   const text = await res.text();
   if (!res.ok) {
     let msg = 'Erro na requisição';
