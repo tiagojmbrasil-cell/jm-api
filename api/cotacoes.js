@@ -1,4 +1,4 @@
-// v5
+// v6
 import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
   if (!tabela) return res.status(400).json({ error: 'Tabela não informada' });
   const tabelasPermitidas = [
     'cotacoes', 'cotacoes_view', 'clientes', 'vendedores',
-    'lotes', 'lote_motoristas', 'clientes_cadastro', 'usuarios_perfil'
+    'lotes', 'lote_motoristas', 'clientes_cadastro', 'usuarios_perfil', 'motoristas'
   ];
   if (!tabelasPermitidas.includes(tabela)) {
     return res.status(403).json({ error: 'Tabela não permitida' });
