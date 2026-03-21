@@ -1215,10 +1215,34 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
 
 <!-- SEGURANÇA -->
 <div class="page" id="page-seguranca">
-  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+  <div class="stats" style="grid-template-columns:repeat(5,1fr)">
     <div class="stat total"><div class="stat-label">Total Usuários</div><div class="stat-value" id="seg-total">—</div></div>
     <div class="stat aprovadas"><div class="stat-label">Ativos</div><div class="stat-value" id="seg-ativos">—</div></div>
     <div class="stat reprovadas"><div class="stat-label">Inativos</div><div class="stat-value" id="seg-inativos">—</div></div>
+    <div class="stat pendentes"><div class="stat-label">Ações Hoje</div><div class="stat-value" id="seg-acoes-hoje">—</div></div>
+    <div class="stat" style="border-top:2px solid var(--blue);"><div class="stat-label">Total de Logs</div><div class="stat-value" style="color:var(--blue)" id="seg-total-logs">—</div></div>
+  </div>
+
+  <!-- Monitoramento de Ações -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="table-header">
+      <h2 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;">📋 Monitoramento de Ações</h2>
+      <div class="filters">
+        <input type="text" id="log-filtro-busca" placeholder="🔍 Buscar usuário ou ação..." oninput="filtrarLogs()" style="width:220px;">
+        <select id="log-filtro-tipo" onchange="filtrarLogs()" style="width:auto;font-size:13px;padding:8px 12px;">
+          <option value="">Todas as ações</option>
+          <option value="cotacao">Cotações</option>
+          <option value="lote">Lotes</option>
+          <option value="motorista">Motoristas</option>
+          <option value="cliente">Clientes</option>
+          <option value="usuario">Usuários</option>
+          <option value="login">Login/Logout</option>
+          <option value="fiscal">Fiscal</option>
+        </select>
+        <button onclick="carregarLogs()" class="btn-secondary" style="padding:8px 14px;font-size:13px;">🔄 Atualizar</button>
+      </div>
+    </div>
+    <div id="logs-table"><div class="loading">Carregando logs...</div></div>
   </div>
 
   <!-- Gerenciar Usuários -->
@@ -1351,10 +1375,12 @@ async function fazerLogin() {
   const user = (await sb.auth.getUser()).data.user;
   userAtual = user;
   await carregarPerfilUsuario(user.id);
+  registrarLog('login', 'Login realizado', `Email: ${user.email}`);
   document.getElementById('login-screen').style.display = 'none';
 }
 
 async function fazerLogout() {
+  registrarLog('login', 'Logout realizado', `Email: ${userAtual?.email || '—'}`);
   await sb.auth.signOut();
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-email').value = '';
@@ -1376,7 +1402,7 @@ function showPage(name) {
   if (name === 'status-lote') carregarStatusLote();
   if (name === 'clientes') carregarClientes();
   if (name === 'fiscal') carregarFiscal();
-  if (name === 'seguranca') carregarSeguranca();
+  if (name === 'seguranca') { carregarSeguranca(); carregarLogs(); }
   if (name === 'nova') document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
 
   // Reaplicar read-only se necessário
@@ -1475,6 +1501,7 @@ async function salvarCotacao() {
       data_cotacao: document.getElementById('f-data').value || null,
       observacao: document.getElementById('f-obs').value || null,
     });
+    registrarLog('cotacao', 'Cotação salva', `Cliente: ${document.getElementById('f-cliente')?.value||'—'}`);
     showToast('✅ Cotação salva!', 'success');
     resetForm();
     cotacoes = [];
@@ -1558,6 +1585,7 @@ async function salvarLote() {
 
       observacao: document.getElementById('l-obs').value || null,
     });
+    registrarLog('lote', 'Lote criado', `Cliente: ${document.getElementById('l-cliente')?.value||'—'}`);
     showToast('✅ Lote salvo!', 'success');
     resetLote();
     lotes = [];
@@ -1627,6 +1655,7 @@ async function excluirLote(id) {
     await supabaseRequest('DELETE', `lotes?id=eq.${id}`);
     lotes = lotes.filter(l => l.id !== id);
     renderLotes(lotes);
+    registrarLog('lote', 'Lote excluído', `ID: ${id}`);
     showToast('Lote excluído!', 'success');
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
@@ -1855,6 +1884,7 @@ async function adicionarMotorista() {
       gr_motivo: m.gr_motivo,
     });
 
+    registrarLog('motorista', 'Motorista adicionado', `Nome: ${document.getElementById('nm-nome')?.value||'—'}, Lote: ${loteAtualId}`);
     showToast('✅ Motorista adicionado ao lote!', 'success');
     document.getElementById('nm-peso').value = '';
     document.getElementById('nm-motorista-selecionado-id').value = '';
@@ -1868,6 +1898,7 @@ async function removerMotorista(id) {
   if (!confirm('Remover este motorista?')) return;
   try {
     await supabaseRequest('DELETE', `lote_motoristas?id=eq.${id}`);
+    registrarLog('motorista', 'Motorista removido', `ID: ${id}`);
     showToast('Motorista removido!', 'success');
     await carregarMotoristas();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
@@ -2130,6 +2161,7 @@ async function salvarCliente() {
       clienteEditandoId = null;
     } else {
       await supabaseRequest('POST', 'clientes_cadastro', dados);
+      registrarLog('cliente', 'Cliente cadastrado', `Nome: ${dados?.nome||'—'}`);
       showToast('✅ Cliente salvo!', 'success');
     }
     resetCliente();
@@ -2589,6 +2621,7 @@ async function atualizarStatusFiscal() {
       document.getElementById('mf-status-bar').innerHTML = badgeMotorista(novoStatus);
       document.getElementById('mf-status').innerHTML = badgeMotorista(novoStatus);
     }
+    registrarLog('fiscal', 'Status fiscal atualizado', `ID: ${motoristFiscalId}, Novo status: ${novoStatus}`);
     showToast('Status atualizado!', 'success');
     renderFiscal(fiscalData);
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
@@ -2677,6 +2710,99 @@ async function carregarPerfilUsuario(userId) {
     console.error('Erro ao carregar perfil:', e);
     aplicarPermissoes('comercial', PERMISSOES_PADRAO['comercial']);
   }
+}
+
+// ============ MONITORAMENTO DE LOGS ============
+let todosLogs = [];
+
+async function registrarLog(tipo, acao, detalhes = '') {
+  try {
+    const nome = userAtual?.email || 'desconhecido';
+    await supabaseRequest('POST', 'log_atividades', {
+      usuario_email: nome,
+      usuario_nome: userAtual?.user_metadata?.nome || nome,
+      setor: setorAtual || '—',
+      tipo,
+      acao,
+      detalhes: String(detalhes).substring(0, 500),
+      criado_em: new Date().toISOString()
+    });
+  } catch(e) {
+    // Silencioso - não interrompe fluxo
+    console.warn('Log não registrado:', e.message);
+  }
+}
+
+async function carregarLogs() {
+  document.getElementById('logs-table').innerHTML = '<div class="loading">Carregando...</div>';
+  try {
+    const logs = await supabaseRequest('GET', 'log_atividades?order=criado_em.desc&limit=200') || [];
+    todosLogs = logs;
+
+    // Atualiza stats
+    const hoje = new Date().toISOString().split('T')[0];
+    const hojeCount = logs.filter(l => (l.criado_em||'').startsWith(hoje)).length;
+    document.getElementById('seg-acoes-hoje').textContent = hojeCount;
+    document.getElementById('seg-total-logs').textContent = logs.length;
+
+    filtrarLogs();
+  } catch(e) {
+    document.getElementById('logs-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar logs.</p></div>';
+  }
+}
+
+function filtrarLogs() {
+  const busca = (document.getElementById('log-filtro-busca')?.value || '').toLowerCase();
+  const tipo = document.getElementById('log-filtro-tipo')?.value || '';
+  const filtrados = todosLogs.filter(l => {
+    const matchBusca = !busca ||
+      (l.usuario_email||'').toLowerCase().includes(busca) ||
+      (l.usuario_nome||'').toLowerCase().includes(busca) ||
+      (l.acao||'').toLowerCase().includes(busca) ||
+      (l.detalhes||'').toLowerCase().includes(busca);
+    const matchTipo = !tipo || (l.tipo||'') === tipo;
+    return matchBusca && matchTipo;
+  });
+  renderLogs(filtrados);
+}
+
+function renderLogs(lista) {
+  if (!lista.length) {
+    document.getElementById('logs-table').innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>Nenhuma ação registrada.</p></div>';
+    return;
+  }
+  const tipoCor = {
+    cotacao: 'var(--accent)', lote: 'var(--blue)', motorista: '#22c55e',
+    cliente: '#8b5cf6', usuario: '#ef4444', login: 'var(--yellow)', fiscal: '#06b6d4'
+  };
+  const tipoIcon = {
+    cotacao: '📄', lote: '📦', motorista: '🚛',
+    cliente: '👥', usuario: '👤', login: '🔐', fiscal: '💼'
+  };
+  document.getElementById('logs-table').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Data/Hora</th><th>Usuário</th><th>Setor</th><th>Tipo</th><th>Ação</th><th>Detalhes</th>
+      </tr></thead>
+      <tbody>
+        ${lista.map(l => {
+          const cor = tipoCor[l.tipo] || 'var(--muted)';
+          const icon = tipoIcon[l.tipo] || '📌';
+          const dt = l.criado_em ? new Date(l.criado_em).toLocaleString('pt-BR') : '—';
+          return `<tr>
+            <td style="font-size:12px;color:var(--muted);white-space:nowrap;">${dt}</td>
+            <td>
+              <div style="font-weight:600;font-size:13px;">${l.usuario_nome||'—'}</div>
+              <div style="font-size:11px;color:var(--muted);">${l.usuario_email||''}</div>
+            </td>
+            <td><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(99,102,241,0.15);color:#818cf8;">${(l.setor||'—').toUpperCase()}</span></td>
+            <td><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:${cor}22;color:${cor};">${icon} ${(l.tipo||'—').toUpperCase()}</span></td>
+            <td style="font-size:13px;font-weight:500;">${l.acao||'—'}</td>
+            <td style="font-size:12px;color:var(--muted);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${l.detalhes||''}">${l.detalhes||'—'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
 }
 
 // ============ SEGURANÇA ============
@@ -2836,6 +2962,7 @@ async function excluirUsuario(userId, nomeUsuario) {
     });
     const result = await resp.json();
     if (!resp.ok) throw new Error(result.error || 'Erro ao excluir usuário');
+    registrarLog('usuario', 'Usuário excluído', `Nome: ${nomeUsuario}`);
     showToast('✅ Usuário excluído com sucesso!', 'success');
     carregarSeguranca();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
@@ -2856,6 +2983,7 @@ async function criarUsuario() {
     });
     const result = await resp.json();
     if (!resp.ok) throw new Error(result.error || 'Erro ao criar usuário');
+    registrarLog('usuario', 'Usuário criado', `Email: ${email}, Setor: ${setor}`);
     showToast('✅ Usuário criado com sucesso!', 'success');
     document.getElementById('nu-nome').value = '';
     document.getElementById('nu-email').value = '';
@@ -2873,6 +3001,7 @@ async function alterarSenha() {
   try {
     const { error } = await sb.auth.updateUser({ password: senha });
     if (error) throw new Error(error.message);
+    registrarLog('usuario', 'Senha alterada', 'Própria senha alterada');
     showToast('✅ Senha alterada com sucesso!', 'success');
     document.getElementById('alt-senha').value = '';
     document.getElementById('alt-senha2').value = '';
