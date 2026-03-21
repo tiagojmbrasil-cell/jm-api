@@ -578,18 +578,6 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       </div>
     </div>
 
-    <!-- ABAS -->
-    <div style="display:flex;gap:0;margin-bottom:16px;background:var(--surface2);border-radius:10px;padding:4px;">
-      <button id="aba-btn-adicionar" onclick="trocarAbaMotorista('adicionar')"
-        style="flex:1;padding:10px 16px;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;background:var(--accent);color:#fff;">
-        ➕ Adicionar Motorista
-      </button>
-      <button id="aba-btn-inseridos" onclick="trocarAbaMotorista('inseridos')"
-        style="flex:1;padding:10px 16px;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;background:transparent;color:var(--muted);">
-        🚛 Motoristas Inseridos
-      </button>
-    </div>
-
     <!-- ABA ADICIONAR MOTORISTA -->
     <div id="aba-adicionar">
     <div style="background:var(--surface2);border-radius:8px;padding:16px;margin-bottom:16px;">
@@ -892,9 +880,6 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     </div>
 
     <!-- ABA MOTORISTAS INSERIDOS -->
-    <div id="aba-inseridos" style="display:none;">
-      <div id="lista-motoristas"><div class="loading">Carregando...</div></div>
-    </div>
   </div>
 </div>
 
@@ -1686,16 +1671,6 @@ let loteAtualId = null;
 let loteAtualDados = null;
 let statusLoteData = [];
 
-function trocarAbaMotorista(aba, skipReload) {
-  const isAdicionar = aba === 'adicionar';
-  document.getElementById('aba-adicionar').style.display = isAdicionar ? '' : 'none';
-  document.getElementById('aba-inseridos').style.display = isAdicionar ? 'none' : '';
-  document.getElementById('aba-btn-adicionar').style.background = isAdicionar ? 'var(--accent)' : 'transparent';
-  document.getElementById('aba-btn-adicionar').style.color = isAdicionar ? '#fff' : 'var(--muted)';
-  document.getElementById('aba-btn-inseridos').style.background = isAdicionar ? 'transparent' : 'var(--accent)';
-  document.getElementById('aba-btn-inseridos').style.color = isAdicionar ? 'var(--muted)' : '#fff';
-  if (!isAdicionar && !skipReload) carregarMotoristas();
-}
 
 async function abrirMotoristas(id) {
   loteAtualId = parseInt(id);
@@ -1710,7 +1685,7 @@ async function abrirMotoristas(id) {
     document.getElementById('nm-tipo-pix').value = '';
     selecionarTipoPagamento('conta_bancaria');
   document.getElementById('modal-motoristas-overlay').classList.add('open');
-  trocarAbaMotorista('adicionar');
+  await carregarMotoristas();
 }
 
 async function carregarMotoristas() {
@@ -1917,23 +1892,6 @@ async function adicionarMotorista() {
 
     // Recarregar motoristas do lote — isso recalcula o peso corretamente
     await carregarMotoristas();
-
-    // Verificar se lote precisa ser finalizado
-    const motoristasAtual = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}`) || [];
-    const totalAtual = motoristasAtual.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
-    const pesoTotalAtual = parseFloat(loteAtualDados.peso_ton || 0);
-    if (pesoTotalAtual > 0 && totalAtual >= pesoTotalAtual) {
-      await supabaseRequest('PATCH', `lotes?id=eq.${loteAtualId}`, { status: 'finalizado' });
-      showToast('🎉 Lote finalizado! 100% carregado!', 'success');
-    }
-
-    // Ir para aba inseridos
-    document.getElementById('aba-adicionar').style.display = 'none';
-    document.getElementById('aba-inseridos').style.display = '';
-    document.getElementById('aba-btn-adicionar').style.background = 'transparent';
-    document.getElementById('aba-btn-adicionar').style.color = 'var(--muted)';
-    document.getElementById('aba-btn-inseridos').style.background = 'var(--accent)';
-    document.getElementById('aba-btn-inseridos').style.color = '#fff';
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 async function removerMotorista(id) {
