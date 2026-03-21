@@ -907,9 +907,18 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
               <button type="button" onclick="limparAnexo('gr-arq-lonas','label-gr-arq-lonas')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
             </div>
           </div>
-        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><span style="font-size:13px;">Três contatos de referência profissional</span><div style="width:80px;"></div></div>
-        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><span style="font-size:13px;">Três contatos de referência pessoal</span><div style="width:80px;"></div></div>
-        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><span style="font-size:13px;">Solicitar o contato do proprietário ou responsável pelo veículo</span><div style="width:80px;"></div></div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <div style="font-size:13px;margin-bottom:6px;">Três contatos de referência profissional</div>
+          <input type="text" id="gr-ck-ref-prof" placeholder="Ex: João (34) 99999-1111, Maria (34) 99999-2222..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;">
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <div style="font-size:13px;margin-bottom:6px;">Três contatos de referência pessoal</div>
+          <input type="text" id="gr-ck-ref-pessoal" placeholder="Ex: Carlos (34) 99999-3333, Ana (34) 99999-4444..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;">
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <div style="font-size:13px;margin-bottom:6px;">Contato do proprietário ou responsável pelo veículo</div>
+          <input type="text" id="gr-ck-proprietario" placeholder="Nome e telefone do proprietário..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;">
+        </div>
       </div>
 
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Forma de Pagamento</div>
@@ -1007,6 +1016,9 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">FORMA DE PAGAMENTO</div><div style="font-weight:600" id="mgr-ck-pgto">—</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PRAZO DO SALDO</div><div style="font-weight:600" id="mgr-ck-prazo">—</div></div>
         <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">RECOLHIMENTO</div><div style="font-weight:600" id="mgr-ck-recolhimento">—</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">REFERÊNCIAS PROFISSIONAIS</div><div style="font-weight:600" id="mgr-ck-ref-prof">—</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">REFERÊNCIAS PESSOAIS</div><div style="font-weight:600" id="mgr-ck-ref-pessoal">—</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CONTATO DO PROPRIETÁRIO</div><div style="font-weight:600" id="mgr-ck-proprietario">—</div></div>
       </div>
     </div>
 
@@ -2941,7 +2953,8 @@ let grMotoristaSelecionadoId = null;
 function abrirCadastroMotoristaGR() {
   // Reset form
   ['gr-nome','gr-placa','gr-contato','gr-cpf','gr-nome-titular','gr-cpf-titular','gr-banco','gr-agencia','gr-conta','gr-pix',
-   'gr-ck-valor-frete','gr-ck-valor-carga','gr-ck-canal','gr-ck-excecao-pgto','gr-ck-assinatura-pgto','gr-ck-excecao-prazo','gr-ck-assinatura-prazo'
+   'gr-ck-valor-frete','gr-ck-valor-carga','gr-ck-canal','gr-ck-excecao-pgto','gr-ck-assinatura-pgto','gr-ck-excecao-prazo','gr-ck-assinatura-prazo',
+   'gr-ck-ref-prof','gr-ck-ref-pessoal','gr-ck-proprietario'
   ].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   ['gr-ck-adiantamento','gr-ck-saldo','gr-ck-pessoa-fisica','gr-ck-pessoa-juridica'
   ].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
@@ -2991,6 +3004,9 @@ async function salvarMotoristaGR() {
     prazo_assinatura: document.getElementById('gr-ck-assinatura-prazo').value || null,
     recolhimento_pf: document.getElementById('gr-ck-pessoa-fisica').checked,
     recolhimento_pj: document.getElementById('gr-ck-pessoa-juridica').checked,
+    ref_profissional: document.getElementById('gr-ck-ref-prof').value || null,
+    ref_pessoal: document.getElementById('gr-ck-ref-pessoal').value || null,
+    contato_proprietario: document.getElementById('gr-ck-proprietario').value || null,
   };
 
   try {
@@ -3166,6 +3182,9 @@ async function abrirModalGR(id) {
   if (ck.recolhimento_pf) rec.push('Pessoa Física');
   if (ck.recolhimento_pj) rec.push('Pessoa Jurídica');
   document.getElementById('mgr-ck-recolhimento').textContent = rec.length ? rec.join(' | ') : '—';
+  document.getElementById('mgr-ck-ref-prof').textContent = ck.ref_profissional || '—';
+  document.getElementById('mgr-ck-ref-pessoal').textContent = ck.ref_pessoal || '—';
+  document.getElementById('mgr-ck-proprietario').textContent = ck.contato_proprietario || '—';
 
   // Arquivos anexados com links
   const containerAnexos = document.getElementById('mgr-anexos');
