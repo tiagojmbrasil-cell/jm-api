@@ -579,270 +579,24 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       </div>
     </div>
 
-    <!-- ABA ADICIONAR MOTORISTA -->
+    <!-- SELECIONAR MOTORISTA APROVADO -->
     <div id="aba-adicionar">
     <div style="background:var(--surface2);border-radius:8px;padding:16px;margin-bottom:16px;">
-      <div class="form-grid" style="grid-template-columns:1fr 1fr;">
-        <div class="form-group">
-          <label>Nome</label>
-          <input type="text" id="nm-nome" placeholder="Nome do motorista">
-        </div>
-        <div class="form-group">
-          <label>Placa do Veículo</label>
-          <input type="text" id="nm-placa" placeholder="Ex: ABC-1234">
-        </div>
-        <div class="form-group">
-          <label>Contato / Telefone</label>
-          <input type="text" id="nm-contato" placeholder="Ex: (34) 99999-9999">
-        </div>
-        <div class="form-group">
-          <label>CPF</label>
-          <input type="text" id="nm-cpf" placeholder="Ex: 000.000.000-00">
-        </div>
-        <div class="form-group">
-          <label>Peso Saída (ton)</label>
-          <input type="number" id="nm-peso" placeholder="Ex: 40" step="0.1" min="0">
-        </div>
+      <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Selecionar Motorista Aprovado pela GR</div>
+      <div id="lista-motoristas-aprovados" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;max-height:300px;overflow-y:auto;">
+        <div class="loading">Carregando motoristas aprovados...</div>
       </div>
-      <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 10px;">Dados Bancários</div>
-      <div style="display:flex;gap:8px;margin-bottom:14px;">
-        <button type="button" id="btn-tipo-conta-bancaria" onclick="selecionarTipoPagamento('conta_bancaria')"
-          style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:rgba(249,115,22,0.12);color:var(--accent);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;">
-          🏦 Conta Bancária
-        </button>
-        <button type="button" id="btn-tipo-chave-pix" onclick="selecionarTipoPagamento('chave_pix')"
-          style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;">
-          ⚡ Chave PIX
-        </button>
+      <input type="hidden" id="nm-motorista-selecionado-id" value="">
+      <div id="nm-motorista-selecionado-info" style="display:none;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;">
+        <strong id="nm-motorista-selecionado-nome"></strong>
+        <span style="color:var(--muted)" id="nm-motorista-selecionado-detalhe"></span>
       </div>
-      <input type="hidden" id="nm-tipo-pagamento" value="conta_bancaria">
-      <div id="campos-conta-bancaria" class="form-grid" style="grid-template-columns:1fr 1fr;">
-        <div class="form-group"><label>Nome do Titular</label><input type="text" id="nm-nome-titular" placeholder="Nome completo do titular"></div>
-        <div class="form-group"><label>CPF/CNPJ do Titular</label><input type="text" id="nm-cpf-titular" placeholder="CPF ou CNPJ"></div>
-        <div class="form-group"><label>Banco</label><input type="text" id="nm-banco" placeholder="Ex: Bradesco, Itaú, Nubank..."></div>
-        <div class="form-group"><label>Agência</label><input type="text" id="nm-agencia" placeholder="Ex: 1234"></div>
-        <div class="form-group"><label>Número da Conta</label><input type="text" id="nm-conta" placeholder="Ex: 12345-6"></div>
-        <div class="form-group"><label>Tipo de Conta</label>
-          <select id="nm-tipo-conta"><option value="">Selecione...</option><option value="corrente">Corrente</option><option value="poupanca">Poupança</option></select>
-        </div>
+      <div class="form-group">
+        <label>Peso Saída (ton)</label>
+        <input type="number" id="nm-peso" placeholder="Ex: 40" step="0.1" min="0">
       </div>
-      <div id="campos-chave-pix" class="form-grid" style="grid-template-columns:1fr 1fr;display:none;">
-        <div class="form-group"><label>Tipo de Chave PIX</label>
-          <select id="nm-tipo-pix" onchange="atualizarPlaceholderPix()">
-            <option value="">Selecione o tipo...</option>
-            <option value="telefone">📱 Número de Telefone</option>
-            <option value="cpf">🪪 CPF</option>
-            <option value="cnpj">🏢 CNPJ</option>
-            <option value="email">✉️ E-mail</option>
-            <option value="aleatoria">🔑 Chave Aleatória</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Chave PIX</label><input type="text" id="nm-pix" placeholder="Selecione o tipo acima"></div>
-      </div>
-    </div>
-      <!-- ========== CHECK LIST DOCUMENTAÇÃO ========== -->
-      <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:16px;">
-        <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">📋 Check List — Documentação para Gerenciamento do Risco</div>
-
-        <!-- Dados do checklist -->
-        <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px;">
-          <div class="form-group">
-            <label>Valor do Frete do Motorista (R$)</label>
-            <input type="number" id="nm-ck-valor-frete" placeholder="R$ 0,00" step="0.01" min="0">
-          </div>
-          <div class="form-group">
-            <label>Valor da Carga (R$)</label>
-            <input type="number" id="nm-ck-valor-carga" placeholder="R$ 0,00" step="0.01" min="0">
-          </div>
-          <div class="form-group full">
-            <label>Canal de Contato do Motorista</label>
-            <input type="text" id="nm-ck-canal" placeholder="Ex: WhatsApp, Fretebras, indicação...">
-          </div>
-        </div>
-
-        <!-- Documentos + Anexo lado a lado -->
-        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Documentos Recebidos</div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
-
-          <!-- CNH -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;color:var(--text);">Habilitação do motorista (CNH)</span>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <label id="label-nm-arq-cnh" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-                <span>📎 Anexar</span>
-                <input type="file" id="nm-arq-cnh" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('nm-arq-cnh','label-nm-arq-cnh')">
-              </label>
-              <button type="button" onclick="limparAnexo('nm-arq-cnh','label-nm-arq-cnh')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
-            </div>
-          </div>
-
-          <!-- ANTT -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;color:var(--text);">Registro na ANTT</span>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <label id="label-nm-arq-antt" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-                <span>📎 Anexar</span>
-                <input type="file" id="nm-arq-antt" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('nm-arq-antt','label-nm-arq-antt')">
-              </label>
-              <button type="button" onclick="limparAnexo('nm-arq-antt','label-nm-arq-antt')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
-            </div>
-          </div>
-
-          <!-- Doc Caminhão -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;color:var(--text);">Documentação do caminhão e carretas (com nome do proprietário)</span>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <label id="label-nm-arq-doc-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-                <span>📎 Anexar</span>
-                <input type="file" id="nm-arq-doc-caminhao" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('nm-arq-doc-caminhao','label-nm-arq-doc-caminhao')">
-              </label>
-              <button type="button" onclick="limparAnexo('nm-arq-doc-caminhao','label-nm-arq-doc-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
-            </div>
-          </div>
-
-          <!-- Comprovante Residência -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;color:var(--text);">Comprovante de residência (nome e endereço atualizados)</span>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <label id="label-nm-arq-residencia" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-                <span>📎 Anexar</span>
-                <input type="file" id="nm-arq-residencia" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('nm-arq-residencia','label-nm-arq-residencia')">
-              </label>
-              <button type="button" onclick="limparAnexo('nm-arq-residencia','label-nm-arq-residencia')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
-            </div>
-          </div>
-
-          <!-- Foto Caminhão -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;color:var(--text);">Foto do caminhão e carretas com as placas visíveis</span>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <label id="label-nm-arq-foto-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-                <span>📎 Anexar</span>
-                <input type="file" id="nm-arq-foto-caminhao" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('nm-arq-foto-caminhao','label-nm-arq-foto-caminhao')">
-              </label>
-              <button type="button" onclick="limparAnexo('nm-arq-foto-caminhao','label-nm-arq-foto-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
-            </div>
-          </div>
-
-          <!-- Selfie CNH -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;color:var(--text);">Foto do motorista (selfie segurando a CNH)</span>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <label id="label-nm-arq-selfie-cnh" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-                <span>📎 Anexar</span>
-                <input type="file" id="nm-arq-selfie-cnh" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('nm-arq-selfie-cnh','label-nm-arq-selfie-cnh')">
-              </label>
-              <button type="button" onclick="limparAnexo('nm-arq-selfie-cnh','label-nm-arq-selfie-cnh')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
-            </div>
-          </div>
-
-          <!-- Selfie Placa -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;color:var(--text);">Foto do motorista (selfie ao lado direito do veículo, mostrando a placa)</span>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <label id="label-nm-arq-selfie-placa" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-                <span>📎 Anexar</span>
-                <input type="file" id="nm-arq-selfie-placa" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('nm-arq-selfie-placa','label-nm-arq-selfie-placa')">
-              </label>
-              <button type="button" onclick="limparAnexo('nm-arq-selfie-placa','label-nm-arq-selfie-placa')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
-            </div>
-          </div>
-
-          <!-- Ref Profissional -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;color:var(--text);">Três contatos de referência profissional</span>
-            <div style="width:80px;"></div>
-          </div>
-
-          <!-- Ref Pessoal -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;color:var(--text);">Três contatos de referência pessoal</span>
-            <div style="width:80px;"></div>
-          </div>
-
-          <!-- Proprietário -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;color:var(--text);">Solicitar o contato do proprietário ou responsável pelo veículo</span>
-            <div style="width:80px;"></div>
-          </div>
-
-          <!-- Lonas -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;color:var(--text);">Fotos das lonas que serão utilizadas no transporte</span>
-            <div style="display:flex;align-items:center;gap:4px;">
-              <label id="label-nm-arq-lonas" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-                <span>📎 Anexar</span>
-                <input type="file" id="nm-arq-lonas" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('nm-arq-lonas','label-nm-arq-lonas')">
-              </label>
-              <button type="button" onclick="limparAnexo('nm-arq-lonas','label-nm-arq-lonas')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Forma de Pagamento -->
-        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Forma de Pagamento</div>
-        <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;">
-            <input type="checkbox" id="nm-ck-adiantamento" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
-            Adiantamento 70%
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;">
-            <input type="checkbox" id="nm-ck-saldo" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
-            Saldo 30%
-          </label>
-        </div>
-        <div class="form-group" style="margin-bottom:14px;">
-          <label>Exceção — Pagamento diferente (informar e responsável que autorizou)</label>
-          <input type="text" id="nm-ck-excecao-pgto" placeholder="Descreva o pagamento diferente, se houver">
-        </div>
-        <div class="form-group" style="margin-bottom:14px;">
-          <label>Assinatura do Responsável (exceção pagamento)</label>
-          <input type="text" id="nm-ck-assinatura-pgto" placeholder="Nome do responsável que autorizou">
-        </div>
-
-        <!-- Prazo de Pagamento do Saldo -->
-        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Prazo de Pagamento (Saldo)</div>
-        <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;">
-            <input type="radio" name="nm-ck-prazo-saldo" value="5" style="accent-color:var(--accent);cursor:pointer;">
-            05 dias após a descarga
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;">
-            <input type="radio" name="nm-ck-prazo-saldo" value="7" style="accent-color:var(--accent);cursor:pointer;">
-            07 dias após a descarga
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;">
-            <input type="radio" name="nm-ck-prazo-saldo" value="8+" style="accent-color:var(--accent);cursor:pointer;">
-            08 dias ou mais após a descarga
-          </label>
-        </div>
-        <div class="form-group" style="margin-bottom:14px;">
-          <label>Exceção — Prazo menor que 05 dias (informar prazo e responsável)</label>
-          <input type="text" id="nm-ck-excecao-prazo" placeholder="Informe o prazo e o responsável que autorizou">
-        </div>
-        <div class="form-group" style="margin-bottom:14px;">
-          <label>Assinatura do Responsável (exceção prazo)</label>
-          <input type="text" id="nm-ck-assinatura-prazo" placeholder="Nome do responsável que autorizou">
-        </div>
-
-        <!-- Recolhimento -->
-        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Recolhimento do Motorista</div>
-        <div style="display:flex;gap:16px;flex-wrap:wrap;">
-          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;flex:1;min-width:220px;">
-            <input type="checkbox" id="nm-ck-pessoa-fisica" style="width:16px;height:16px;min-width:16px;margin-top:2px;accent-color:var(--accent);cursor:pointer;">
-            <span><strong>Pessoa Física:</strong> INSS (Valor total do frete motorista s/pedágio × 20% × 11%)<br>SEST SENAT (Valor total do frete motorista s/pedágio × 20% × 2,5%)</span>
-          </label>
-          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:13px;color:var(--text);font-weight:400;text-transform:none;letter-spacing:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;flex:1;min-width:220px;">
-            <input type="checkbox" id="nm-ck-pessoa-juridica" style="width:16px;height:16px;min-width:16px;margin-top:2px;accent-color:var(--accent);cursor:pointer;">
-            <span><strong>Pessoa Jurídica:</strong> Taxa administrativa de carga no valor de R$ 88,00</span>
-          </label>
-        </div>
-      </div>
-      <!-- ========== FIM CHECK LIST ========== -->
-
       <div style="margin-top:14px;">
-        <button onclick="adicionarMotorista()" class="btn-primary" style="width:100%;padding:12px;">+ Adicionar Motorista</button>
+        <button onclick="adicionarMotorista()" class="btn-primary" style="width:100%;padding:12px;">+ Adicionar ao Lote</button>
       </div>
     </div>
     </div>
@@ -997,16 +751,142 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     <div class="table-header">
       <h2>Gerenciamento de Risco</h2>
       <div class="filters">
-        <input type="text" id="filtro-gr-busca" placeholder="🔍 Buscar motorista, CPF ou lote..." oninput="filtrarGR()">
+        <input type="text" id="filtro-gr-busca" placeholder="🔍 Buscar motorista, CPF..." oninput="filtrarGR()">
         <select id="filtro-gr-status" onchange="filtrarGR()">
           <option value="">Todos os status GR</option>
           <option value="pendente">⏳ Pendente</option>
           <option value="aprovado">✅ Aprovado</option>
           <option value="reprovado">❌ Reprovado</option>
         </select>
+        <button class="btn-primary" onclick="abrirCadastroMotoristaGR()" style="padding:8px 16px;font-size:13px;">+ Cadastrar Motorista</button>
       </div>
     </div>
     <div id="gr-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- MODAL CADASTRAR MOTORISTA GR -->
+<div class="modal-overlay" id="modal-cadastro-motorista-overlay" onclick="if(event.target===this)fecharCadastroMotoristaGR()">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-title">
+      <span>🚛 Cadastrar Motorista — GR</span>
+      <button class="modal-close" onclick="fecharCadastroMotoristaGR()">✕</button>
+    </div>
+
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="form-group"><label>Nome</label><input type="text" id="gr-nome" placeholder="Nome do motorista"></div>
+      <div class="form-group"><label>Placa do Veículo</label><input type="text" id="gr-placa" placeholder="Ex: ABC-1234"></div>
+      <div class="form-group"><label>Contato / Telefone</label><input type="text" id="gr-contato" placeholder="Ex: (34) 99999-9999"></div>
+      <div class="form-group"><label>CPF</label><input type="text" id="gr-cpf" placeholder="Ex: 000.000.000-00"></div>
+    </div>
+
+    <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">Dados Bancários</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button type="button" id="gr-btn-conta" onclick="selecionarTipoPagamentoGR('conta_bancaria')"
+        style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:rgba(249,115,22,0.12);color:var(--accent);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
+        🏦 Conta Bancária
+      </button>
+      <button type="button" id="gr-btn-pix" onclick="selecionarTipoPagamentoGR('chave_pix')"
+        style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
+        ⚡ Chave PIX
+      </button>
+    </div>
+    <input type="hidden" id="gr-tipo-pagamento" value="conta_bancaria">
+    <div id="gr-campos-conta" class="form-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="form-group"><label>Nome do Titular</label><input type="text" id="gr-nome-titular" placeholder="Nome completo do titular"></div>
+      <div class="form-group"><label>CPF/CNPJ do Titular</label><input type="text" id="gr-cpf-titular" placeholder="CPF ou CNPJ"></div>
+      <div class="form-group"><label>Banco</label><input type="text" id="gr-banco" placeholder="Ex: Bradesco, Itaú..."></div>
+      <div class="form-group"><label>Agência</label><input type="text" id="gr-agencia" placeholder="Ex: 1234"></div>
+      <div class="form-group"><label>Número da Conta</label><input type="text" id="gr-conta" placeholder="Ex: 12345-6"></div>
+      <div class="form-group"><label>Tipo de Conta</label>
+        <select id="gr-tipo-conta"><option value="">Selecione...</option><option value="corrente">Corrente</option><option value="poupanca">Poupança</option></select>
+      </div>
+    </div>
+    <div id="gr-campos-pix" class="form-grid" style="grid-template-columns:1fr 1fr;display:none;">
+      <div class="form-group"><label>Tipo de Chave PIX</label>
+        <select id="gr-tipo-pix">
+          <option value="">Selecione o tipo...</option>
+          <option value="telefone">📱 Telefone</option>
+          <option value="cpf">🪪 CPF</option>
+          <option value="cnpj">🏢 CNPJ</option>
+          <option value="email">✉️ E-mail</option>
+          <option value="aleatoria">🔑 Chave Aleatória</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Chave PIX</label><input type="text" id="gr-pix" placeholder="Chave PIX"></div>
+    </div>
+
+    <!-- CHECK LIST -->
+    <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:16px;">
+      <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">📋 Check List — Documentação</div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px;">
+        <div class="form-group"><label>Valor do Frete do Motorista (R$)</label><input type="number" id="gr-ck-valor-frete" placeholder="R$ 0,00" step="0.01" min="0"></div>
+        <div class="form-group"><label>Valor da Carga (R$)</label><input type="number" id="gr-ck-valor-carga" placeholder="R$ 0,00" step="0.01" min="0"></div>
+        <div class="form-group full"><label>Canal de Contato do Motorista</label><input type="text" id="gr-ck-canal" placeholder="Ex: WhatsApp, Fretebras, indicação..."></div>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Documentos Recebidos</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+        ${['cnh:Habilitação do motorista (CNH):image/*,.pdf','antt:Registro na ANTT:image/*,.pdf','doc-caminhao:Documentação do caminhão e carretas:image/*,.pdf','residencia:Comprovante de residência:image/*,.pdf','foto-caminhao:Foto do caminhão e carretas com as placas visíveis:image/*','selfie-cnh:Foto do motorista (selfie segurando a CNH):image/*','selfie-placa:Foto do motorista (selfie ao lado do veículo, mostrando a placa):image/*','lonas:Fotos das lonas que serão utilizadas:image/*'].map(doc => {
+          const [id, label, accept] = doc.split(':');
+          return `<div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <span style="font-size:13px;">${label}</span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-gr-arq-${id}" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span>
+                <input type="file" id="gr-arq-${id}" accept="${accept}" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-${id}','label-gr-arq-${id}')">
+              </label>
+              <button type="button" onclick="limparAnexo('gr-arq-${id}','label-gr-arq-${id}')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
+          </div>`;
+        }).join('')}
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><span style="font-size:13px;">Três contatos de referência profissional</span><div style="width:80px;"></div></div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><span style="font-size:13px;">Três contatos de referência pessoal</span><div style="width:80px;"></div></div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;"><span style="font-size:13px;">Solicitar o contato do proprietário ou responsável pelo veículo</span><div style="width:80px;"></div></div>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Forma de Pagamento</div>
+      <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;">
+          <input type="checkbox" id="gr-ck-adiantamento" style="width:16px;height:16px;accent-color:var(--accent);">Adiantamento 70%
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;">
+          <input type="checkbox" id="gr-ck-saldo" style="width:16px;height:16px;accent-color:var(--accent);">Saldo 30%
+        </label>
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px;">
+        <div class="form-group"><label>Exceção — Pagamento diferente</label><input type="text" id="gr-ck-excecao-pgto" placeholder="Descreva, se houver"></div>
+        <div class="form-group"><label>Assinatura do Responsável</label><input type="text" id="gr-ck-assinatura-pgto" placeholder="Nome do responsável"></div>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Prazo de Pagamento (Saldo)</div>
+      <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;"><input type="radio" name="gr-ck-prazo-saldo" value="5" style="accent-color:var(--accent);">05 dias após a descarga</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;"><input type="radio" name="gr-ck-prazo-saldo" value="7" style="accent-color:var(--accent);">07 dias após a descarga</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;"><input type="radio" name="gr-ck-prazo-saldo" value="8+" style="accent-color:var(--accent);">08 dias ou mais</label>
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px;">
+        <div class="form-group"><label>Exceção — Prazo menor que 05 dias</label><input type="text" id="gr-ck-excecao-prazo" placeholder="Prazo e responsável"></div>
+        <div class="form-group"><label>Assinatura do Responsável</label><input type="text" id="gr-ck-assinatura-prazo" placeholder="Nome do responsável"></div>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Recolhimento do Motorista</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;flex:1;min-width:220px;">
+          <input type="checkbox" id="gr-ck-pessoa-fisica" style="width:16px;height:16px;min-width:16px;margin-top:2px;accent-color:var(--accent);">
+          <span><strong>Pessoa Física:</strong> INSS (Valor total × 20% × 11%)<br>SEST SENAT (Valor total × 20% × 2,5%)</span>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;flex:1;min-width:220px;">
+          <input type="checkbox" id="gr-ck-pessoa-juridica" style="width:16px;height:16px;min-width:16px;margin-top:2px;accent-color:var(--accent);">
+          <span><strong>Pessoa Jurídica:</strong> Taxa administrativa de R$ 88,00</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="fecharCadastroMotoristaGR()">Cancelar</button>
+      <button class="btn-primary" onclick="salvarMotoristaGR()">💾 Cadastrar Motorista</button>
+    </div>
   </div>
 </div>
 
@@ -1758,12 +1638,12 @@ async function abrirMotoristas(id) {
   document.getElementById('ml-cliente').textContent = loteAtualDados.cliente || '—';
   document.getElementById('ml-produto').textContent = loteAtualDados.produto || '—';
   document.getElementById('ml-peso-total').textContent = loteAtualDados.peso_ton || '0';
-  ['nm-nome','nm-placa','nm-contato','nm-cpf','nm-peso','nm-nome-titular','nm-cpf-titular','nm-banco','nm-agencia','nm-conta','nm-pix'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('nm-tipo-conta').value = '';
-    document.getElementById('nm-tipo-pix').value = '';
-    selecionarTipoPagamento('conta_bancaria');
+  document.getElementById('nm-peso').value = '';
+  document.getElementById('nm-motorista-selecionado-id').value = '';
+  document.getElementById('nm-motorista-selecionado-info').style.display = 'none';
   document.getElementById('modal-motoristas-overlay').classList.add('open');
   await carregarMotoristas();
+  await carregarMotoristasAprovadosParaLote();
 }
 
 async function carregarMotoristas() {
@@ -1814,129 +1694,97 @@ async function uploadAnexo(file, motoristaId, tipo) {
   return { tipo, nome: file.name, path: path };
 }
 
+async function carregarMotoristasAprovadosParaLote() {
+  try {
+    const motoristas = await supabaseRequest('GET', 'motoristas?gr_status=eq.aprovado') || [];
+    const container = document.getElementById('lista-motoristas-aprovados');
+    if (!motoristas.length) {
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">Nenhum motorista aprovado pela GR encontrado.</div>';
+      return;
+    }
+    container.innerHTML = motoristas.map(m => `
+      <div onclick="selecionarMotoristaParaLote(${m.id}, '${(m.nome||'').replace(/'/g,"\\'")}', '${m.placa||''}', '${m.cpf||''}')"
+        style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;cursor:pointer;transition:all 0.15s;"
+        onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div>
+          <div style="font-weight:700;font-size:14px;">${m.nome || '—'}</div>
+          <div style="font-size:12px;color:var(--muted);">CPF: ${m.cpf || '—'} · Placa: ${m.placa || '—'}</div>
+        </div>
+        <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;color:var(--green);background:rgba(34,197,94,0.12);">✅ Aprovado</span>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('lista-motoristas-aprovados').innerHTML = '<div style="color:var(--red);font-size:13px;">Erro ao carregar motoristas.</div>';
+  }
+}
+
+function selecionarMotoristaParaLote(id, nome, placa, cpf) {
+  document.getElementById('nm-motorista-selecionado-id').value = id;
+  document.getElementById('nm-motorista-selecionado-nome').textContent = nome;
+  document.getElementById('nm-motorista-selecionado-detalhe').textContent = ` · CPF: ${cpf} · Placa: ${placa}`;
+  document.getElementById('nm-motorista-selecionado-info').style.display = '';
+  // Highlight selecionado
+  document.querySelectorAll('#lista-motoristas-aprovados > div').forEach(el => {
+    el.style.borderColor = 'var(--border)';
+    el.style.background = 'var(--surface)';
+  });
+  event.currentTarget.style.borderColor = 'var(--green)';
+  event.currentTarget.style.background = 'rgba(34,197,94,0.08)';
+}
+
 async function adicionarMotorista() {
-  const nome = document.getElementById('nm-nome').value.trim();
+  const motoristaId = document.getElementById('nm-motorista-selecionado-id').value;
   const peso = document.getElementById('nm-peso').value;
-  if (!nome) { showToast('Informe o nome do motorista', 'error'); return; }
+  if (!motoristaId) { showToast('Selecione um motorista aprovado', 'error'); return; }
   if (!peso) { showToast('Informe o peso saída', 'error'); return; }
 
   const pesoTotal = parseFloat(loteAtualDados.peso_ton || 0);
-  const motoristas = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}`) || [];
-  const totalCarregado = motoristas.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
+  const motoristasExistentes = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}`) || [];
+  const totalCarregado = motoristasExistentes.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
   const restante = pesoTotal - totalCarregado;
 
   if (pesoTotal > 0 && parseFloat(peso) > restante) {
     showToast(`Peso excede o restante (${restante.toFixed(2)} ton)`, 'error'); return;
   }
 
-  const prazoSaldoEl = document.querySelector('input[name="nm-ck-prazo-saldo"]:checked');
-  const checklist = {
-    valor_frete_motorista: document.getElementById('nm-ck-valor-frete').value || null,
-    valor_carga: document.getElementById('nm-ck-valor-carga').value || null,
-    canal_contato: document.getElementById('nm-ck-canal').value || null,
-    pgto_adiantamento70: document.getElementById('nm-ck-adiantamento').checked,
-    pgto_saldo30: document.getElementById('nm-ck-saldo').checked,
-    pgto_excecao: document.getElementById('nm-ck-excecao-pgto').value || null,
-    pgto_assinatura: document.getElementById('nm-ck-assinatura-pgto').value || null,
-    prazo_saldo: prazoSaldoEl ? prazoSaldoEl.value : null,
-    prazo_excecao: document.getElementById('nm-ck-excecao-prazo').value || null,
-    prazo_assinatura: document.getElementById('nm-ck-assinatura-prazo').value || null,
-    recolhimento_pf: document.getElementById('nm-ck-pessoa-fisica').checked,
-    recolhimento_pj: document.getElementById('nm-ck-pessoa-juridica').checked,
-  };
-
   try {
-    // Salva o motorista primeiro para obter o ID
-    const resultado = await supabaseRequest('POST', 'lote_motoristas', {
+    // Busca dados completos do motorista aprovado
+    const motoristaDados = await supabaseRequest('GET', `motoristas?id=eq.${motoristaId}`) || [];
+    const m = motoristaDados[0];
+    if (!m) { showToast('Motorista não encontrado', 'error'); return; }
+
+    await supabaseRequest('POST', 'lote_motoristas', {
       lote_id: loteAtualId,
-      nome,
-      placa: document.getElementById('nm-placa').value || null,
-      contato: document.getElementById('nm-contato').value || null,
-      cpf: document.getElementById('nm-cpf').value || null,
+      motorista_id: m.id,
+      nome: m.nome,
+      placa: m.placa,
+      contato: m.contato,
+      cpf: m.cpf,
       peso_saida: parseFloat(peso),
       status: 'em_negociacao',
-      tipo_pagamento: document.getElementById('nm-tipo-pagamento').value || 'conta_bancaria',
-      nome_titular: document.getElementById('nm-nome-titular').value || null,
-      cpf_titular: document.getElementById('nm-cpf-titular').value || null,
-      banco: document.getElementById('nm-banco').value || null,
-      agencia: document.getElementById('nm-agencia').value || null,
-      numero_conta: document.getElementById('nm-conta').value || null,
-      tipo_conta: document.getElementById('nm-tipo-conta').value || null,
-      tipo_chave_pix: document.getElementById('nm-tipo-pix').value || null,
-      chave_pix: document.getElementById('nm-pix').value || null,
-      checklist: checklist,
+      tipo_pagamento: m.tipo_pagamento,
+      nome_titular: m.nome_titular,
+      cpf_titular: m.cpf_titular,
+      banco: m.banco,
+      agencia: m.agencia,
+      numero_conta: m.numero_conta,
+      tipo_conta: m.tipo_conta,
+      tipo_chave_pix: m.tipo_chave_pix,
+      chave_pix: m.chave_pix,
+      checklist: m.checklist || {},
+      anexos: m.anexos || [],
+      gr_status: 'aprovado',
+      gr_motivo: m.gr_motivo,
     });
 
-    const motoristaId = resultado[0]?.id;
-
-    // Faz upload dos arquivos se houver
-    const arquivosParaUpload = [
-      { id: 'nm-arq-cnh',           tipo: 'cnh' },
-      { id: 'nm-arq-antt',          tipo: 'antt' },
-      { id: 'nm-arq-doc-caminhao',  tipo: 'doc_caminhao' },
-      { id: 'nm-arq-residencia',    tipo: 'residencia' },
-      { id: 'nm-arq-foto-caminhao', tipo: 'foto_caminhao' },
-      { id: 'nm-arq-selfie-cnh',    tipo: 'selfie_cnh' },
-      { id: 'nm-arq-selfie-placa',  tipo: 'selfie_placa' },
-      { id: 'nm-arq-lonas',         tipo: 'lonas' },
-    ];
-    const temArquivos = arquivosParaUpload.some(({ id }) => {
-      const el = document.getElementById(id);
-      return el && el.files && el.files.length > 0;
-    });
-    if (motoristaId && temArquivos) {
-      const anexos = [];
-      for (const { id, tipo } of arquivosParaUpload) {
-        const input = document.getElementById(id);
-        if (input && input.files.length > 0) {
-          showToast(`Enviando ${tipo}...`, 'success');
-          for (const file of input.files) {
-            const anexo = await uploadAnexo(file, motoristaId, tipo);
-            anexos.push(anexo);
-          }
-        }
-      }
-      if (anexos.length > 0) {
-        await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristaId}`, { anexos });
-      }
-    }
-
-    showToast('✅ Motorista adicionado!', 'success');
-
-    // Limpar campos de texto
-    ['nm-nome','nm-placa','nm-contato','nm-cpf','nm-peso','nm-nome-titular','nm-cpf-titular','nm-banco','nm-agencia','nm-conta','nm-pix',
-     'nm-ck-valor-frete','nm-ck-valor-carga','nm-ck-canal','nm-ck-excecao-pgto','nm-ck-assinatura-pgto','nm-ck-excecao-prazo','nm-ck-assinatura-prazo'
-    ].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-
-    // Limpar checkboxes de pagamento e recolhimento
-    ['nm-ck-adiantamento','nm-ck-saldo','nm-ck-pessoa-fisica','nm-ck-pessoa-juridica'
-    ].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
-    document.querySelectorAll('input[name="nm-ck-prazo-saldo"]').forEach(r => r.checked = false);
-    document.getElementById('nm-tipo-conta').value = '';
-    document.getElementById('nm-tipo-pix').value = '';
-    selecionarTipoPagamento('conta_bancaria');
-
-    // Limpar botões de anexo
-    [['nm-arq-cnh','label-nm-arq-cnh'],['nm-arq-antt','label-nm-arq-antt'],
-     ['nm-arq-doc-caminhao','label-nm-arq-doc-caminhao'],['nm-arq-residencia','label-nm-arq-residencia'],
-     ['nm-arq-foto-caminhao','label-nm-arq-foto-caminhao'],['nm-arq-selfie-cnh','label-nm-arq-selfie-cnh'],
-     ['nm-arq-selfie-placa','label-nm-arq-selfie-placa'],['nm-arq-lonas','label-nm-arq-lonas'],
-    ].forEach(([inputId, labelId]) => limparAnexo(inputId, labelId));
-
-    // Recarregar motoristas do lote — isso recalcula o peso corretamente
+    showToast('✅ Motorista adicionado ao lote!', 'success');
+    document.getElementById('nm-peso').value = '';
+    document.getElementById('nm-motorista-selecionado-id').value = '';
+    document.getElementById('nm-motorista-selecionado-info').style.display = 'none';
     await carregarMotoristas();
-
-    // Verificar se lote atingiu 100% e finalizar
-    const motoristasAtualizados = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}`) || [];
-    const totalAtualizado = motoristasAtualizados.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
-    const pesoTotalLote = parseFloat(loteAtualDados?.peso_ton || 0);
-    if (pesoTotalLote > 0 && totalAtualizado >= pesoTotalLote) {
-      await supabaseRequest('PATCH', `lotes?id=eq.${loteAtualId}`, { status: 'finalizado' });
-      if (loteAtualDados) loteAtualDados.status = 'finalizado';
-      showToast('🎉 Lote finalizado! 100% carregado!', 'success');
-    }
+    await carregarMotoristasAprovadosParaLote();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
+
 async function removerMotorista(id) {
   if (!confirm('Remover este motorista?')) return;
   try {
@@ -1961,14 +1809,7 @@ let motoristasPageData = [];
 async function carregarMotoristasPagina() {
   try {
     document.getElementById('motoristas-page-table').innerHTML = '<div class="loading">Carregando...</div>';
-    const motoristas = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500') || [];
-    const loteIds = [...new Set(motoristas.map(m => m.lote_id))];
-    const lotesMap = {};
-    await Promise.all(loteIds.map(async lid => {
-      const l = await supabaseRequest('GET', `lotes?id=eq.${lid}`) || [];
-      if (l.length) lotesMap[lid] = l[0];
-    }));
-    motoristasPageData = motoristas.map(m => ({ ...m, lote: lotesMap[m.lote_id] || null }));
+    motoristasPageData = await supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500') || [];
     filtrarMotoristasPagina();
   } catch(e) {
     document.getElementById('motoristas-page-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
@@ -1998,16 +1839,8 @@ function renderMotoristasPagina(dados) {
   document.getElementById('motoristas-page-table').innerHTML = `
     <table>
       <thead><tr>
-        <th>#</th>
-        <th>Motorista</th>
-        <th>CPF</th>
-        <th>Placa</th>
-        <th>Contato</th>
-        <th>Lote / Cliente</th>
-        <th>Peso Saída</th>
-        <th>Status</th>
-        <th>Pagamento</th>
-        <th></th>
+        <th>#</th><th>Motorista</th><th>CPF</th><th>Placa</th><th>Contato</th>
+        <th>Status GR</th><th>Pagamento</th><th></th>
       </tr></thead>
       <tbody>
         ${dados.map(m => `<tr>
@@ -2016,12 +1849,7 @@ function renderMotoristasPagina(dados) {
           <td style="font-size:12px">${m.cpf || '—'}</td>
           <td style="font-size:12px">${m.placa || '—'}</td>
           <td style="font-size:12px">${m.contato || '—'}</td>
-          <td style="font-size:12px">
-            <span style="color:var(--muted)">Lote ${m.lote_id}</span><br>
-            <strong>${m.lote ? m.lote.cliente || '—' : '—'}</strong>
-          </td>
-          <td style="font-size:12px;color:var(--accent);font-weight:600">${m.peso_saida ? m.peso_saida + ' ton' : '—'}</td>
-          <td>${badgeMotorista(m.status)}</td>
+          <td>${badgeGR(m.gr_status || 'pendente')}</td>
           <td>${badgeTipoPagamento(m.tipo_pagamento)}</td>
           <td style="display:flex;gap:6px;">
             <button onclick="abrirEditarMotorista(${m.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">✏️ Editar</button>
@@ -2035,7 +1863,7 @@ function renderMotoristasPagina(dados) {
 async function removerMotoristaPagina(id) {
   if (!confirm('Remover este motorista?')) return;
   try {
-    await supabaseRequest('DELETE', `lote_motoristas?id=eq.${id}`);
+    await supabaseRequest('DELETE', `motoristas?id=eq.${id}`);
     showToast('Motorista removido!', 'success');
     await carregarMotoristasPagina();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
@@ -3043,17 +2871,126 @@ function aplicarPermissoes(setor, perms) {
 let grData = [];
 let grMotoristaSelecionadoId = null;
 
+function abrirCadastroMotoristaGR() {
+  // Reset form
+  ['gr-nome','gr-placa','gr-contato','gr-cpf','gr-nome-titular','gr-cpf-titular','gr-banco','gr-agencia','gr-conta','gr-pix',
+   'gr-ck-valor-frete','gr-ck-valor-carga','gr-ck-canal','gr-ck-excecao-pgto','gr-ck-assinatura-pgto','gr-ck-excecao-prazo','gr-ck-assinatura-prazo'
+  ].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  ['gr-ck-adiantamento','gr-ck-saldo','gr-ck-pessoa-fisica','gr-ck-pessoa-juridica'
+  ].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
+  document.querySelectorAll('input[name="gr-ck-prazo-saldo"]').forEach(r => r.checked = false);
+  selecionarTipoPagamentoGR('conta_bancaria');
+  document.getElementById('modal-cadastro-motorista-overlay').classList.add('open');
+}
+
+function fecharCadastroMotoristaGR() {
+  document.getElementById('modal-cadastro-motorista-overlay').classList.remove('open');
+}
+
+function selecionarTipoPagamentoGR(tipo) {
+  document.getElementById('gr-tipo-pagamento').value = tipo;
+  const btnConta = document.getElementById('gr-btn-conta');
+  const btnPix = document.getElementById('gr-btn-pix');
+  const campoConta = document.getElementById('gr-campos-conta');
+  const campoPix = document.getElementById('gr-campos-pix');
+  if (tipo === 'conta_bancaria') {
+    btnConta.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:rgba(249,115,22,0.12);color:var(--accent);font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
+    btnPix.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
+    campoConta.style.display = 'grid';
+    campoPix.style.display = 'none';
+  } else {
+    btnPix.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--green);background:rgba(34,197,94,0.12);color:var(--green);font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
+    btnConta.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
+    campoPix.style.display = 'grid';
+    campoConta.style.display = 'none';
+  }
+}
+
+async function salvarMotoristaGR() {
+  const nome = document.getElementById('gr-nome').value.trim();
+  if (!nome) { showToast('Informe o nome do motorista', 'error'); return; }
+
+  const prazoSaldoEl = document.querySelector('input[name="gr-ck-prazo-saldo"]:checked');
+  const checklist = {
+    valor_frete_motorista: document.getElementById('gr-ck-valor-frete').value || null,
+    valor_carga: document.getElementById('gr-ck-valor-carga').value || null,
+    canal_contato: document.getElementById('gr-ck-canal').value || null,
+    pgto_adiantamento70: document.getElementById('gr-ck-adiantamento').checked,
+    pgto_saldo30: document.getElementById('gr-ck-saldo').checked,
+    pgto_excecao: document.getElementById('gr-ck-excecao-pgto').value || null,
+    pgto_assinatura: document.getElementById('gr-ck-assinatura-pgto').value || null,
+    prazo_saldo: prazoSaldoEl ? prazoSaldoEl.value : null,
+    prazo_excecao: document.getElementById('gr-ck-excecao-prazo').value || null,
+    prazo_assinatura: document.getElementById('gr-ck-assinatura-prazo').value || null,
+    recolhimento_pf: document.getElementById('gr-ck-pessoa-fisica').checked,
+    recolhimento_pj: document.getElementById('gr-ck-pessoa-juridica').checked,
+  };
+
+  try {
+    const resultado = await supabaseRequest('POST', 'motoristas', {
+      nome,
+      placa: document.getElementById('gr-placa').value || null,
+      contato: document.getElementById('gr-contato').value || null,
+      cpf: document.getElementById('gr-cpf').value || null,
+      tipo_pagamento: document.getElementById('gr-tipo-pagamento').value || 'conta_bancaria',
+      nome_titular: document.getElementById('gr-nome-titular').value || null,
+      cpf_titular: document.getElementById('gr-cpf-titular').value || null,
+      banco: document.getElementById('gr-banco').value || null,
+      agencia: document.getElementById('gr-agencia').value || null,
+      numero_conta: document.getElementById('gr-conta').value || null,
+      tipo_conta: document.getElementById('gr-tipo-conta').value || null,
+      tipo_chave_pix: document.getElementById('gr-tipo-pix').value || null,
+      chave_pix: document.getElementById('gr-pix').value || null,
+      gr_status: 'pendente',
+      checklist,
+      anexos: [],
+    });
+
+    const motoristaId = resultado[0]?.id;
+
+    // Upload de arquivos
+    if (motoristaId) {
+      const arquivos = [
+        { id: 'gr-arq-cnh', tipo: 'cnh' }, { id: 'gr-arq-antt', tipo: 'antt' },
+        { id: 'gr-arq-doc-caminhao', tipo: 'doc_caminhao' }, { id: 'gr-arq-residencia', tipo: 'residencia' },
+        { id: 'gr-arq-foto-caminhao', tipo: 'foto_caminhao' }, { id: 'gr-arq-selfie-cnh', tipo: 'selfie_cnh' },
+        { id: 'gr-arq-selfie-placa', tipo: 'selfie_placa' }, { id: 'gr-arq-lonas', tipo: 'lonas' },
+      ];
+      const anexos = [];
+      for (const { id, tipo } of arquivos) {
+        const input = document.getElementById(id);
+        if (input && input.files.length > 0) {
+          for (const file of input.files) {
+            const anexo = await uploadAnexoGR(file, motoristaId, tipo);
+            if (anexo) anexos.push(anexo);
+          }
+        }
+      }
+      if (anexos.length > 0) {
+        await supabaseRequest('PATCH', `motoristas?id=eq.${motoristaId}`, { anexos });
+      }
+    }
+
+    showToast('✅ Motorista cadastrado! Aguardando análise GR.', 'success');
+    fecharCadastroMotoristaGR();
+    carregarGR();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function uploadAnexoGR(file, motoristaId, tipo) {
+  try {
+    const ext = file.name.split('.').pop();
+    const path = `motoristas/${motoristaId}/${tipo}_${Date.now()}.${ext}`;
+    const { error } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
+    if (error) throw error;
+    return { tipo, nome: file.name, path };
+  } catch(e) { console.error('Erro upload:', e); return null; }
+}
+
 async function carregarGR() {
   try {
     document.getElementById('gr-table').innerHTML = '<div class="loading">Carregando...</div>';
-    const motoristas = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500') || [];
-    const loteIds = [...new Set(motoristas.map(m => m.lote_id))];
-    const lotesMap = {};
-    await Promise.all(loteIds.map(async lid => {
-      const l = await supabaseRequest('GET', `lotes?id=eq.${lid}`) || [];
-      if (l.length) lotesMap[lid] = l[0];
-    }));
-    grData = motoristas.map(m => ({ ...m, lote: lotesMap[m.lote_id] || null }));
+    grData = await supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500') || [];
     filtrarGR();
   } catch(e) {
     document.getElementById('gr-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
@@ -3093,8 +3030,8 @@ function renderGR(dados) {
   document.getElementById('gr-table').innerHTML = `
     <table>
       <thead><tr>
-        <th>#</th><th>Motorista</th><th>CPF</th><th>Placa</th>
-        <th>Lote / Cliente</th><th>Peso Saída</th><th>Status GR</th><th>Motivo</th><th></th>
+        <th>#</th><th>Motorista</th><th>CPF</th><th>Placa</th><th>Contato</th>
+        <th>Status GR</th><th>Motivo</th><th></th>
       </tr></thead>
       <tbody>
         ${dados.map(m => `<tr>
@@ -3102,11 +3039,7 @@ function renderGR(dados) {
           <td><strong>${m.nome || '—'}</strong></td>
           <td style="font-size:12px">${m.cpf || '—'}</td>
           <td style="font-size:12px">${m.placa || '—'}</td>
-          <td style="font-size:12px">
-            <span style="color:var(--muted)">Lote ${m.lote_id}</span><br>
-            <strong>${m.lote ? m.lote.cliente || '—' : '—'}</strong>
-          </td>
-          <td style="font-size:12px;color:var(--accent);font-weight:600">${m.peso_saida ? m.peso_saida + ' ton' : '—'}</td>
+          <td style="font-size:12px">${m.contato || '—'}</td>
           <td>${badgeGR(m.gr_status || 'pendente')}</td>
           <td style="font-size:12px;color:var(--muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.gr_motivo || '—'}</td>
           <td>
@@ -3128,13 +3061,13 @@ async function abrirModalGR(id) {
   document.getElementById('mgr-cpf').textContent = m.cpf || '—';
   document.getElementById('mgr-placa').textContent = m.placa || '—';
   document.getElementById('mgr-contato').textContent = m.contato || '—';
-  document.getElementById('mgr-peso').textContent = m.peso_saida ? m.peso_saida + ' ton' : '—';
+  document.getElementById('mgr-peso').textContent = '—';
   document.getElementById('mgr-pagamento').innerHTML = badgeTipoPagamento(m.tipo_pagamento);
-  document.getElementById('mgr-lote').textContent = 'Lote #' + m.lote_id;
-  document.getElementById('mgr-cliente').textContent = m.lote ? (m.lote.cliente || '—') : '—';
-  document.getElementById('mgr-produto').textContent = m.lote ? (m.lote.produto || '—') : '—';
-  document.getElementById('mgr-agencia-lote').textContent = m.lote ? (m.lote.agencia || '—') : '—';
-  document.getElementById('mgr-rota').textContent = m.lote ? ((m.lote.origem||'—') + ' → ' + (m.lote.destino||'—')) : '—';
+  document.getElementById('mgr-lote').textContent = '—';
+  document.getElementById('mgr-cliente').textContent = '—';
+  document.getElementById('mgr-produto').textContent = '—';
+  document.getElementById('mgr-agencia-lote').textContent = '—';
+  document.getElementById('mgr-rota').textContent = '—';
 
   // Checklist
   const ck = m.checklist || {};
@@ -3249,7 +3182,7 @@ async function salvarDecisaoGR() {
     showToast('Informe o motivo da reprovação', 'error'); return;
   }
   try {
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${grMotoristaSelecionadoId}`, {
+    await supabaseRequest('PATCH', `motoristas?id=eq.${grMotoristaSelecionadoId}`, {
       gr_status: decisao,
       gr_motivo: decisao === 'reprovado' ? document.getElementById('mgr-motivo').value.trim() : null,
       gr_analisado_em: new Date().toISOString(),
@@ -3277,11 +3210,20 @@ sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // Atualiza label dos botões de anexo com nome do arquivo selecionado
 // ============ EDITAR MOTORISTA ============
 let motoristaEditandoId = null;
+let motoristaEditandoTabela = null;
 
 async function abrirEditarMotorista(id) {
-  const motoristas = await supabaseRequest('GET', `lote_motoristas?id=eq.${id}`) || [];
-  if (!motoristas.length) return;
-  const m = motoristas[0];
+  // Busca primeiro na tabela motoristas, depois em lote_motoristas
+  let m = null;
+  const fromMotoristas = await supabaseRequest('GET', `motoristas?id=eq.${id}`) || [];
+  if (fromMotoristas.length) {
+    m = fromMotoristas[0];
+    motoristaEditandoTabela = 'motoristas';
+  } else {
+    const fromLote = await supabaseRequest('GET', `lote_motoristas?id=eq.${id}`) || [];
+    if (fromLote.length) { m = fromLote[0]; motoristaEditandoTabela = 'lote_motoristas'; }
+  }
+  if (!m) return;
   motoristaEditandoId = id;
 
   document.getElementById('em-nome').value = m.nome || '';
@@ -3304,6 +3246,7 @@ async function abrirEditarMotorista(id) {
 function fecharEditarMotorista() {
   document.getElementById('modal-editar-motorista-overlay').classList.remove('open');
   motoristaEditandoId = null;
+  motoristaEditandoTabela = null;
 }
 
 function selecionarTipoPagamentoEditar(tipo) {
@@ -3321,13 +3264,13 @@ function selecionarTipoPagamentoEditar(tipo) {
 
 async function salvarEdicaoMotorista() {
   if (!motoristaEditandoId) return;
+  const tabela = motoristaEditandoTabela || 'motoristas';
   try {
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristaEditandoId}`, {
+    const dados = {
       nome: document.getElementById('em-nome').value || null,
       placa: document.getElementById('em-placa').value || null,
       contato: document.getElementById('em-contato').value || null,
       cpf: document.getElementById('em-cpf').value || null,
-      peso_saida: parseFloat(document.getElementById('em-peso').value) || null,
       tipo_pagamento: document.getElementById('em-tipo-pagamento').value,
       nome_titular: document.getElementById('em-nome-titular').value || null,
       cpf_titular: document.getElementById('em-cpf-titular').value || null,
@@ -3337,10 +3280,14 @@ async function salvarEdicaoMotorista() {
       tipo_conta: document.getElementById('em-tipo-conta').value || null,
       tipo_chave_pix: document.getElementById('em-tipo-pix').value || null,
       chave_pix: document.getElementById('em-pix').value || null,
-    });
+    };
+    if (tabela === 'lote_motoristas') {
+      dados.peso_saida = parseFloat(document.getElementById('em-peso').value) || null;
+    }
+    await supabaseRequest('PATCH', `${tabela}?id=eq.${motoristaEditandoId}`, dados);
     showToast('✅ Motorista atualizado!', 'success');
     fecharEditarMotorista();
-    await carregarMotoristas();
+    await carregarMotoristasPagina();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 
