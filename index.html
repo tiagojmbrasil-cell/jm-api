@@ -1674,46 +1674,6 @@ async function carregarMotoristas() {
       lotes[loteIdx]._restante = restante;
     }
 
-    if (!motoristas.length) {
-      document.getElementById('lista-motoristas').innerHTML = '<div class="empty"><div class="empty-icon">🚛</div><p>Nenhum motorista adicionado ainda.</p></div>';
-      return;
-    }
-
-    document.getElementById('lista-motoristas').innerHTML = motoristas.map(m => `
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:34px;height:34px;border-radius:50%;background:rgba(249,115,22,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;">🚛</div>
-            <div>
-              <div style="font-weight:700;font-size:14px;">${m.nome || '—'}</div>
-              <div style="font-size:11px;color:var(--muted);">CPF: ${m.cpf || '—'} · Placa: ${m.placa || '—'}</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <select onchange="atualizarStatusMotorista(${m.id}, this.value)" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;cursor:pointer;min-width:160px;">
-              <option value="em_negociacao" ${m.status==='em_negociacao'?'selected':''}>Em Negociação</option>
-              <option value="cadastro" ${m.status==='cadastro'?'selected':''}>Cadastro</option>
-              <option value="validando_gr_interna" ${m.status==='validando_gr_interna'?'selected':''}>Validando GR Interna</option>
-              <option value="validando_gr_externa" ${m.status==='validando_gr_externa'?'selected':''}>Validando GR Externa</option>
-              <option value="liberado_carregar" ${m.status==='liberado_carregar'?'selected':''}>Liberado Carregar</option>
-              <option value="aguardando_nota" ${m.status==='aguardando_nota'?'selected':''}>Aguardando Nota</option>
-              <option value="documento_emitido" ${m.status==='documento_emitido'?'selected':''}>Documento Emitido</option>
-              <option value="carregado" ${m.status==='carregado'?'selected':''}>Carregado</option>
-              <option value="em_transito" ${m.status==='em_transito'?'selected':''}>Em Trânsito</option>
-              <option value="aguardando_coleta" ${m.status==='aguardando_coleta'?'selected':''}>Aguardando Coleta</option>
-              <option value="aguardando_descarga" ${m.status==='aguardando_descarga'?'selected':''}>Aguardando Descarga</option>
-            </select>
-            <button onclick="abrirEditarMotorista(${m.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">✏️ Editar</button>
-            <button onclick="removerMotorista(${m.id})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;">🗑️</button>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px;">
-          <div><span style="color:var(--muted);">Contato:</span> <strong>${m.contato || '—'}</strong></div>
-          <div><span style="color:var(--muted);">Peso:</span> <strong style="color:var(--accent);">${m.peso_saida ? m.peso_saida + ' ton' : '—'}</strong></div>
-          <div><span style="color:var(--muted);">Pagamento:</span> <strong>${m.tipo_pagamento === 'chave_pix' ? '⚡ PIX' : '🏦 Conta'}</strong></div>
-        </div>
-      </div>`).join('');
-
     // Verificar se lote está completo
     if (pesoTotal > 0 && totalCarregado >= pesoTotal) {
       await supabaseRequest('PATCH', `lotes?id=eq.${loteAtualId}`, { status: 'finalizado' });
@@ -1722,7 +1682,7 @@ async function carregarMotoristas() {
       showToast('🎉 Lote finalizado! 100% carregado!', 'success');
     }
   } catch(e) {
-    document.getElementById('lista-motoristas').innerHTML = '<div class="empty"><p>Erro ao carregar.</p></div>';
+    console.error('Erro ao carregar motoristas:', e);
   }
 }
 
