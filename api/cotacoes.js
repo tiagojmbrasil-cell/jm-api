@@ -1,4 +1,4 @@
-// v6
+// v7
 import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -10,34 +10,19 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // ============ CRIAR USUÁRIO (rota especial) ============
   if (req.query.acao === 'criar_usuario') {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
     const { email, senha, nome, setor } = req.body;
     if (!email || !senha) return res.status(400).json({ error: 'Email e senha obrigatórios' });
     try {
-      const { data, error } = await supabase.auth.admin.createUser({
-        email,
-        password: senha,
-        email_confirm: true
-      });
+      const { data, error } = await supabase.auth.admin.createUser({ email, password: senha, email_confirm: true });
       if (error) return res.status(500).json({ error: error.message });
       const userId = data.user?.id;
-      if (userId) {
-        await supabase.from('usuarios_perfil').insert([{
-          id: userId,
-          nome,
-          setor: setor || 'comercial',
-          ativo: true
-        }]);
-      }
+      if (userId) await supabase.from('usuarios_perfil').insert([{ id: userId, nome, setor: setor || 'comercial', ativo: true }]);
       return res.status(200).json({ success: true, userId });
-    } catch(e) {
-      return res.status(500).json({ error: e.message });
-    }
+    } catch(e) { return res.status(500).json({ error: e.message }); }
   }
 
-  // ============ DELETAR USUÁRIO (rota especial) ============
   if (req.query.acao === 'deletar_usuario') {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
     const { userId } = req.body;
@@ -47,22 +32,18 @@ export default async function handler(req, res) {
       if (authError) return res.status(500).json({ error: authError.message });
       await supabase.from('usuarios_perfil').delete().eq('id', userId);
       return res.status(200).json({ success: true });
-    } catch(e) {
-      return res.status(500).json({ error: e.message });
-    }
+    } catch(e) { return res.status(500).json({ error: e.message }); }
   }
 
   const { tabela, id, filtros } = req.query;
   if (!tabela) return res.status(400).json({ error: 'Tabela não informada' });
   const tabelasPermitidas = [
     'cotacoes', 'cotacoes_view', 'clientes', 'vendedores',
-    'lotes', 'lote_motoristas', 'clientes_cadastro', 'usuarios_perfil', 'motoristas'
+    'lotes', 'lote_motoristas', 'clientes_cadastro', 'usuarios_perfil',
+    'motoristas', 'log_atividades'
   ];
-  if (!tabelasPermitidas.includes(tabela)) {
-    return res.status(403).json({ error: 'Tabela não permitida' });
-  }
+  if (!tabelasPermitidas.includes(tabela)) return res.status(403).json({ error: 'Tabela não permitida' });
 
-  // Converte valor para número se possível (corrige lote_id e id enviados como string)
   function castVal(val) {
     if (val === null || val === undefined) return val;
     const n = Number(val);
@@ -75,9 +56,7 @@ export default async function handler(req, res) {
       if (id) query = query.eq('id', castVal(id));
       if (filtros) {
         const f = JSON.parse(filtros);
-        Object.entries(f).forEach(([key, val]) => {
-          query = query.eq(key, castVal(val));
-        });
+        Object.entries(f).forEach(([key, val]) => { query = query.eq(key, castVal(val)); });
       }
       query = query.order('criado_em', { ascending: false });
       const { data, error } = await query;
@@ -102,7 +81,5 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
     return res.status(405).json({ error: 'Método não permitido' });
-  } catch(e) {
-    return res.status(500).json({ error: e.message });
-  }
+  } catch(e) { return res.status(500).json({ error: e.message }); }
 }
