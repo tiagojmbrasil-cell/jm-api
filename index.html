@@ -184,11 +184,31 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     <div class="form-grid">
       <div class="form-group">
         <label>Origem</label>
-        <input type="text" id="f-origem" placeholder="Ex: São Paulo, SP">
+        <div style="position:relative">
+          <input
+            type="text"
+            id="f-origem"
+            placeholder="Ex: São Paulo, SP"
+            autocomplete="off"
+            oninput="buscarCidade(this.value,'f-origem-list')"
+            onkeydown="navegarAutocomplete(event,'f-origem-list')"
+          >
+          <div id="f-origem-list" class="autocomplete-list" style="display:none"></div>
+        </div>
       </div>
       <div class="form-group">
         <label>Destino</label>
-        <input type="text" id="f-destino" placeholder="Ex: Belo Horizonte, MG">
+        <div style="position:relative">
+          <input
+            type="text"
+            id="f-destino"
+            placeholder="Ex: Belo Horizonte, MG"
+            autocomplete="off"
+            oninput="buscarCidade(this.value,'f-destino-list')"
+            onkeydown="navegarAutocomplete(event,'f-destino-list')"
+          >
+          <div id="f-destino-list" class="autocomplete-list" style="display:none"></div>
+        </div>
       </div>
     </div>
     <div class="section-divider">Dados da Carga</div>
@@ -1519,6 +1539,10 @@ function resetForm() {
   });
   document.getElementById('f-status').value = 'pendente';
   document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
+  const lOrigem = document.getElementById('f-origem-list');
+  const lDestino = document.getElementById('f-destino-list');
+  if (lOrigem) lOrigem.style.display = 'none';
+  if (lDestino) lDestino.style.display = 'none';
 }
 
 // MODAL
