@@ -1,39 +1,3593 @@
-<!-- Motoristas Inseridos Section -->
-<section id="motoristas-inseridos">
-    <h2>Motoristas Inseridos</h2>
-    <ul id="driver-list"></ul>
-    <script>
-        const drivers = []; // Array to hold driver data
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JM Brasil — Sistema</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0c0f;--surface:#111318;--surface2:#181c23;--border:#1f2530;
+  --accent:#f97316;--accent2:#fb923c;--text:#e8eaf0;--muted:#5a6070;--muted2:#3a4050;
+  --green:#22c55e;--red:#ef4444;--yellow:#eab308;--blue:#3b82f6;--radius:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;display:flex;align-items:center;gap:10px;}
+nav{display:flex;gap:4px;}
+nav button{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:8px 16px;border-radius:6px;cursor:pointer;transition:all 0.15s;}
+nav button:hover{color:var(--text);background:var(--surface2);}
+nav button.active{color:var(--accent);background:rgba(249,115,22,0.1);}
+.btn-logout{background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 14px;border-radius:6px;cursor:pointer;transition:all 0.15s;}
+.btn-logout:hover{color:var(--red);border-color:rgba(239,68,68,0.5);}
+.page{display:none;padding:32px;max-width:1300px;margin:0 auto;}
+.page.active{display:block;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;position:relative;overflow:hidden;}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.stat.total::before{background:var(--accent);}
+.stat.aprovadas::before{background:var(--green);}
+.stat.reprovadas::before{background:var(--red);}
+.stat.pendentes::before{background:var(--yellow);}
+.stat-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:8px;}
+.stat-value{font-family:'Syne',sans-serif;font-size:32px;font-weight:700;line-height:1;}
+.stat.total .stat-value{color:var(--accent);}
+.stat.aprovadas .stat-value{color:var(--green);}
+.stat.reprovadas .stat-value{color:var(--red);}
+.stat.pendentes .stat-value{color:var(--yellow);}
+.form-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:24px;display:flex;align-items:center;gap:10px;}
+.form-title span{width:4px;height:20px;background:var(--accent);border-radius:2px;display:inline-block;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group.full{grid-column:1/-1;}
+label{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted);}
+input,select,textarea{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 14px;outline:none;transition:border-color 0.15s;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(249,115,22,0.1);}
+select option{background:var(--surface2);}
+textarea{resize:vertical;min-height:80px;}
+.btn-primary{background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding:12px 28px;cursor:pointer;transition:all 0.15s;}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px);}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:10px 20px;cursor:pointer;transition:all 0.15s;}
+.btn-secondary:hover{border-color:var(--muted2);}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+.table-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.table-header h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;}
+.filters{display:flex;gap:10px;align-items:center;}
+.filters input,.filters select{width:auto;font-size:13px;padding:8px 12px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead tr{border-bottom:1px solid var(--border);}
+th{text-align:left;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted);padding:10px 14px;}
+tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s;cursor:pointer;}
+tbody tr:hover{background:var(--surface2);}
+tbody tr:last-child{border-bottom:none;}
+td{padding:14px;color:var(--text);}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;padding:3px 10px;border-radius:20px;}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;}
+.badge-pendente{color:var(--yellow);background:rgba(234,179,8,0.12);}
+.badge-aprovada{color:var(--green);background:rgba(34,197,94,0.12);}
+.badge-reprovada{color:var(--red);background:rgba(239,68,68,0.12);}
+.badge-em_negociacao{color:var(--blue);background:rgba(59,130,246,0.12);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;}
+.modal-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;}
+.modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.detail-row:last-child{border-bottom:none;}
+.detail-label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:0.5px;}
+.detail-value{font-weight:500;}
+.status-select-row{display:flex;align-items:center;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);}
+.status-select-row label{font-size:12px;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 20px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:10px;z-index:300;transform:translateY(100px);opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-left:3px solid var(--green);}
+.toast.error{border-left:3px solid var(--red);}
+.empty{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.empty p{font-size:14px;}
+.loading{text-align:center;padding:40px;color:var(--muted);font-size:14px;}
+.section-divider{display:flex;align-items:center;gap:10px;margin:28px 0 20px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+.section-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.valor-cell{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);}
+@media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr);}.form-grid{grid-template-columns:1fr;}.page{padding:16px;}header{padding:0 16px;}}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--accent);border-top:none;border-radius:0 0 8px 8px;z-index:50;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+.autocomplete-item{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);transition:background 0.1s;}
+.autocomplete-item:last-child{border-bottom:none;}
+.autocomplete-item:hover,.autocomplete-item.active{background:rgba(249,115,22,0.15);}
+</style>
+</head>
+<body>
 
-        function displayDrivers() {
-            const driverList = document.getElementById('driver-list');
-            driverList.innerHTML = ''; // Clear the list first
-            drivers.forEach((driver, index) => {
-                const listItem = document.createElement('li');
-                listItem.textContent = driver;
-                
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = 'Remove';
-                deleteButton.onclick = function() {
-                    removeDriver(index);
-                };
-                
-                listItem.appendChild(deleteButton);
-                driverList.appendChild(listItem);
-            });
-        }
+<!-- TELA DE LOGIN -->
+<div id="login-screen" style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px;width:100%;max-width:400px;">
+    <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:8px;text-align:center;">
+      <span style="color:#22c55e">JM</span><span style="color:#eab308"> BRASIL</span>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:13px;margin-bottom:28px;"></p>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted)">Email</label>
+        <input type="email" id="login-email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')fazerLogin()">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted)">Senha</label>
+        <input type="password" id="login-senha" placeholder="••••••••" onkeydown="if(event.key==='Enter')fazerLogin()">
+      </div>
+      <p id="login-erro" style="color:var(--red);font-size:13px;display:none;text-align:center"></p>
+      <button id="login-btn" onclick="fazerLogin()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding:12px;cursor:pointer;margin-top:4px;">Entrar</button>
+    </div>
+  </div>
+</div>
 
-        function removeDriver(index) {
-            drivers.splice(index, 1); // Remove driver from array
-            displayDrivers(); // Update the UI
-            // Call a function to update the database here
-            // Example: updateDatabase(drivers);
-        }
+<script>
+const SUPABASE_URL = 'https://jdmcbdmkoxxnnuzjoepa.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
+</script>
 
-        // Example function to simulate adding a driver
-        function addDriver(driver) {
-            drivers.push(driver);
-            displayDrivers();
+<header>
+  <div class="logo" style="gap:12px;">
+    <span><span style="color:#22c55e">JM</span><span style="color:#eab308"> BRASIL</span></span>
+    <span id="setor-badge" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;color:#fff;letter-spacing:0.8px;"></span>
+  </div>
+  <nav>
+    <button class="active" onclick="showPage('dashboard')">Dashboard</button>
+    <button onclick="showPage('nova')">Nova Cotação</button>
+    <button onclick="showPage('lista')">Todas as Cotações</button>
+    <button onclick="showPage('lotes')">Lotes</button>
+    <button onclick="showPage('motoristas')">Motoristas</button>
+    <button onclick="showPage('gr')">GR</button>
+    <button onclick="showPage('status-lote')">Status do Lote</button>
+    <button onclick="showPage('clientes')">Clientes</button>
+    <button onclick="showPage('fiscal')">Fiscal</button>
+    <button id="nav-seguranca" onclick="showPage('seguranca')" style="display:none">Segurança</button>
+  </nav>
+  <button class="btn-logout" onclick="fazerLogout()">Sair</button>
+</header>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="stats">
+    <div class="stat total"><div class="stat-label">Total</div><div class="stat-value" id="stat-total">—</div></div>
+    <div class="stat aprovadas"><div class="stat-label">Aprovadas</div><div class="stat-value" id="stat-aprovadas">—</div></div>
+    <div class="stat reprovadas"><div class="stat-label">Reprovadas</div><div class="stat-value" id="stat-reprovadas">—</div></div>
+    <div class="stat pendentes"><div class="stat-label">Pendentes</div><div class="stat-value" id="stat-pendentes">—</div></div>
+  </div>
+  <div class="card">
+    <div class="table-header">
+      <h2>Cotações Recentes</h2>
+      <button class="btn-secondary" onclick="showPage('lista')">Ver todas →</button>
+    </div>
+    <div id="dashboard-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- NOVA COTAÇÃO -->
+<div class="page" id="page-nova">
+  <div class="card">
+    <div class="form-title"><span></span> Registrar Nova Cotação</div>
+    <div class="section-divider">Cliente e Vendedor</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nome do Cliente / Empresa</label>
+        <input type="text" id="f-cliente" placeholder="Ex: Empresa ABC Ltda">
+      </div>
+      <div class="form-group">
+        <label>Vendedor Responsável</label>
+        <input type="text" id="f-vendedor" placeholder="Nome do vendedor">
+      </div>
+    </div>
+    <div class="section-divider">Rota da Carga</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Origem</label>
+        <input type="text" id="f-origem" placeholder="Ex: São Paulo, SP">
+      </div>
+      <div class="form-group">
+        <label>Destino</label>
+        <input type="text" id="f-destino" placeholder="Ex: Belo Horizonte, MG">
+      </div>
+    </div>
+    <div class="section-divider">Dados da Carga</div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Produto</label>
+        <input type="text" id="f-produto" placeholder="Ex: Soja, Milho, Aço...">
+      </div>
+      <div class="form-group">
+        <label>Tipo de Carga</label>
+        <input type="text" id="f-tipo" placeholder="Ex: Granel, Frigorificado...">
+      </div>
+      <div class="form-group">
+        <label>Peso (ton)</label>
+        <input type="number" id="f-peso" placeholder="Ex: 5" min="0" step="0.1">
+      </div>
+    </div>
+    <div class="section-divider">Valor e Status</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Valor Cotado</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
+          <input type="number" id="f-valor" placeholder="0,00" step="0.01" min="0" style="padding-left:36px">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="f-status">
+          <option value="pendente">Pendente</option>
+          <option value="em_negociacao">Em Negociação</option>
+          <option value="aprovada">Aprovada</option>
+          <option value="reprovada">Reprovada</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Data da Cotação</label>
+        <input type="date" id="f-data">
+      </div>
+      <div class="form-group full">
+        <label>Observações</label>
+        <textarea id="f-obs" placeholder="Informações adicionais..."></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="resetForm()">Limpar</button>
+      <button class="btn-primary" onclick="salvarCotacao()">💾 Salvar Cotação</button>
+    </div>
+  </div>
+</div>
+
+<!-- LISTA DE COTAÇÕES -->
+<div class="page" id="page-lista">
+  <div class="card">
+    <div class="table-header">
+      <h2>Todas as Cotações</h2>
+      <div class="filters">
+        <input type="text" id="filtro-busca" placeholder="🔍 Buscar cliente..." oninput="filtrarTabela()">
+        <select id="filtro-status" onchange="filtrarTabela()">
+          <option value="">Todos os status</option>
+          <option value="pendente">Pendente</option>
+          <option value="aprovada">Aprovada</option>
+          <option value="reprovada">Reprovada</option>
+          <option value="em_negociacao">Em Negociação</option>
+        </select>
+      </div>
+    </div>
+    <div id="lista-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- LOTES -->
+<div class="page" id="page-lotes">
+  <div class="card" style="margin-bottom:20px">
+    <div class="form-title"><span></span> Novo Lote</div>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label>Agência</label>
+        <select id="l-agencia">
+          <option value="">Selecione...</option>
+          <option>UNIDADE 01 (LUCAS)</option>
+          <option>UNIDADE 03 (PEDRO)</option>
+          <option>UNIDADE 04 (IVO)</option>
+          <option>UNIDADE 05 (GABRIEL)</option>
+          <option>UNIDADE 06 (ITALO)</option>
+          <option>UNIDADE 07 (ADMINISTRATIVO)</option>
+          <option>UNIDADE (LOGISTICA 02)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cliente</label>
+        <select id="l-cliente">
+          <option value="">Selecione um cliente...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Produto</label>
+        <input type="text" id="l-produto" placeholder="Ex: Soja, Milho, Fertilizante...">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="l-status">
+          <option value="liberado">Liberado</option>
+          <option value="aceita">Aceita</option>
+          <option value="aguardando">Aguardando</option>
+          <option value="aguardando_inicio">Aguardando Início</option>
+          <option value="aguardando_produto">Aguardando Produto</option>
+          <option value="buscando">Buscando</option>
+          <option value="fechada">Fechada</option>
+          <option value="finalizado">Finalizado</option>
+          <option value="finalizando">Finalizando</option>
+          <option value="no_show">No-Show</option>
+          <option value="paralizado">Paralizado</option>
+          <option value="prob_qualidade">Prob. Qualidade</option>
+          <option value="ret_domingo">Ret. Domingo</option>
+          <option value="ret_fds">Ret. Final de Semana</option>
+          <option value="ret_quarta">Ret. Quarta</option>
+          <option value="ret_quinta">Ret. Quinta</option>
+          <option value="ret_sabado">Ret. Sábado</option>
+          <option value="ret_segunda">Ret. Segunda</option>
+          <option value="ret_sexta">Ret. Sexta</option>
+          <option value="ret_terca">Ret. Terça</option>
+          <option value="sab_dom">Sab/Dom</option>
+          <option value="sab_ate_11">Sab até 11hrs</option>
+          <option value="sab_ate_17">Sab até 17hrs</option>
+          <option value="sem_cota">Sem Cota</option>
+          <option value="sem_produto">Sem Produto</option>
+          <option value="suspenso">Suspenso</option>
+          <option value="urgente">Urgente</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Coleta</label>
+        <input type="text" id="l-coleta" placeholder="Local de coleta">
+      </div>
+      <div class="form-group">
+        <label>Origem</label>
+        <div style="position:relative">
+          <input type="text" id="l-origem" placeholder="Digite a cidade de origem..." autocomplete="off" oninput="buscarCidade(this.value,'l-origem-list')" onkeydown="navegarAutocomplete(event,'l-origem-list')">
+          <div id="l-origem-list" class="autocomplete-list" style="display:none"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Entrega</label>
+        <input type="text" id="l-entrega" placeholder="Local de entrega">
+      </div>
+      <div class="form-group">
+        <label>Destino</label>
+        <div style="position:relative">
+          <input type="text" id="l-destino" placeholder="Digite a cidade de destino..." autocomplete="off" oninput="buscarCidade(this.value,'l-destino-list')" onkeydown="navegarAutocomplete(event,'l-destino-list')">
+          <div id="l-destino-list" class="autocomplete-list" style="display:none"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Tarifa Empresa (R$)</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
+          <input type="number" id="l-tarifa-emp" placeholder="0,00" step="0.01" min="0" style="padding-left:36px">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Tarifa Motorista (R$)</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
+          <input type="number" id="l-tarifa-mot" placeholder="0,00" step="0.01" min="0" style="padding-left:36px">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Peso Total (ton)</label>
+        <input type="number" id="l-peso" placeholder="Ex: 25.5" step="0.1" min="0">
+      </div>
+      <div class="form-group">
+        <label>Data</label>
+        <input type="date" id="l-data">
+      </div>
+      <div class="form-group full">
+        <label>Observação</label>
+        <textarea id="l-obs" placeholder="Informações adicionais..."></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="resetLote()">Limpar</button>
+      <button class="btn-primary" onclick="salvarLote()">💾 Salvar Lote</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="table-header">
+      <h2>Lotes Registrados</h2>
+      <div class="filters">
+        <input type="text" id="filtro-lote-busca" placeholder="🔍 Buscar cliente ou nº do lote..." oninput="filtrarLotes()">
+        <select id="filtro-lote-status" onchange="filtrarLotes()">
+          <option value="">Todos os status</option>
+          <option value="liberado">Liberado</option>
+          <option value="aceita">Aceita</option>
+          <option value="aguardando">Aguardando</option>
+          <option value="buscando">Buscando</option>
+          <option value="finalizado">Finalizado</option>
+          <option value="suspenso">Suspenso</option>
+          <option value="urgente">Urgente</option>
+        </select>
+      </div>
+    </div>
+    <div id="lotes-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="fecharModal(event)">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Detalhes da Cotação</span>
+      <button class="modal-close" onclick="fecharModalBtn()">✕</button>
+    </div>
+    <div id="modal-content"></div>
+    <div class="status-select-row">
+      <label>Alterar Status:</label>
+      <select id="modal-status" onchange="atualizarStatus()">
+        <option value="pendente">Pendente</option>
+        <option value="em_negociacao">Em Negociação</option>
+        <option value="aprovada">Aprovada</option>
+        <option value="reprovada">Reprovada</option>
+      </select>
+    </div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;">
+      <button onclick="excluirCotacao()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer;">🗑 Excluir Cotação</button>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS DO LOTE -->
+<div class="page" id="page-status-lote">
+  <div class="stats" id="stats-lote">
+    <div class="stat total"><div class="stat-label">Total de Lotes</div><div class="stat-value" id="sl-total">—</div></div>
+    <div class="stat aprovadas"><div class="stat-label">Finalizados</div><div class="stat-value" id="sl-finalizados">—</div></div>
+    <div class="stat pendentes"><div class="stat-label">Em Andamento</div><div class="stat-value" id="sl-andamento">—</div></div>
+    <div class="stat reprovadas"><div class="stat-label">Ton. Total</div><div class="stat-value" id="sl-ton">—</div></div>
+  </div>
+  <div class="card">
+    <div class="table-header">
+      <h2>Status dos Lotes</h2>
+      <div class="filters">
+        <input type="text" id="filtro-sl-busca" placeholder="🔍 Buscar cliente..." oninput="filtrarStatusLote()">
+        <select id="filtro-sl-status" onchange="filtrarStatusLote()">
+          <option value="">Todos os status</option>
+          <option value="liberado">Liberado</option>
+          <option value="aceita">Aceita</option>
+          <option value="aguardando">Aguardando</option>
+          <option value="buscando">Buscando</option>
+          <option value="finalizado">Finalizado</option>
+          <option value="suspenso">Suspenso</option>
+          <option value="urgente">Urgente</option>
+        </select>
+      </div>
+    </div>
+    <div id="status-lote-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- CLIENTES -->
+<div class="page" id="page-clientes">
+  <div class="card" style="margin-bottom:20px">
+    <div class="form-title"><span></span> Cadastro de Cliente</div>
+
+    <div class="section-divider">Identificação</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>CNPJ / CPF</label>
+        <div style="position:relative;display:flex;gap:8px;">
+          <input type="text" id="cl-cnpj" placeholder="00.000.000/0000-00" maxlength="18" oninput="mascaraCNPJ(this)">
+          <button onclick="buscarCNPJ()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:0 16px;cursor:pointer;font-size:13px;white-space:nowrap;font-weight:600;">🔍 Buscar</button>
+        </div>
+        <span id="cl-cnpj-status" style="font-size:12px;color:var(--muted)"></span>
+      </div>
+      <div class="form-group">
+        <label>IE / CEI</label>
+        <input type="text" id="cl-ie" placeholder="Inscrição Estadual">
+      </div>
+      <div class="form-group">
+        <label>Razão Social</label>
+        <input type="text" id="cl-razao" placeholder="Razão Social da empresa">
+      </div>
+      <div class="form-group">
+        <label>Nome Fantasia</label>
+        <input type="text" id="cl-fantasia" placeholder="Nome Fantasia">
+      </div>
+    </div>
+
+    <div class="section-divider">Endereço</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>CEP</label>
+        <input type="text" id="cl-cep" placeholder="00000-000" maxlength="9">
+      </div>
+      <div class="form-group">
+        <label>Endereço</label>
+        <input type="text" id="cl-endereco" placeholder="Rua, Avenida...">
+      </div>
+      <div class="form-group">
+        <label>Número</label>
+        <input type="text" id="cl-numero" placeholder="Nº">
+      </div>
+      <div class="form-group">
+        <label>Bairro</label>
+        <input type="text" id="cl-bairro" placeholder="Bairro">
+      </div>
+      <div class="form-group full">
+        <label>Complemento</label>
+        <textarea id="cl-complemento" placeholder="Complemento..." style="min-height:60px"></textarea>
+      </div>
+      <div class="form-group full">
+        <label>Referência</label>
+        <textarea id="cl-referencia" placeholder="Referência..." style="min-height:60px"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Cidade</label>
+        <input type="text" id="cl-cidade" placeholder="Cidade">
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <input type="text" id="cl-estado" placeholder="UF" maxlength="2" style="text-transform:uppercase">
+      </div>
+    </div>
+
+    <div class="section-divider">Contato</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="cl-email" placeholder="email@empresa.com">
+      </div>
+      <div class="form-group">
+        <label>Telefone</label>
+        <input type="text" id="cl-telefone" placeholder="(00) 0000-0000">
+      </div>
+      <div class="form-group">
+        <label>Celular</label>
+        <input type="text" id="cl-celular" placeholder="(00) 00000-0000">
+      </div>
+      <div class="form-group">
+        <label>Dt. Nasc / Abertura</label>
+        <input type="date" id="cl-dt-abertura">
+      </div>
+      <div class="form-group">
+        <label>Exportador?</label>
+        <select id="cl-exportador">
+          <option value="false">Não</option>
+          <option value="true">Sim</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="resetCliente()">Limpar</button>
+      <button class="btn-primary" onclick="salvarCliente()">💾 Salvar Cliente</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-header">
+      <h2>Clientes Cadastrados</h2>
+      <div class="filters">
+        <input type="text" id="filtro-cl-busca" placeholder="🔍 Buscar cliente..." oninput="filtrarClientes()">
+      </div>
+    </div>
+    <div id="clientes-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- MODAL MOTORISTAS -->
+<div class="modal-overlay" id="modal-motoristas-overlay" onclick="fecharModalMotoristas(event)">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-title">
+      <span id="modal-motoristas-titulo">Motoristas do Lote</span>
+      <button class="modal-close" onclick="fecharModalMotoristasBtn()">✕</button>
+    </div>
+
+    <!-- Info do lote -->
+    <div id="modal-lote-info" style="background:var(--surface2);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;">
+      <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <span>🚛 <strong id="ml-cliente">—</strong></span>
+        <span>📦 Produto: <strong id="ml-produto">—</strong></span>
+        <span>⚖️ Peso total: <strong id="ml-peso-total">—</strong> ton</span>
+        <span style="color:var(--green)">✅ Carregado: <strong id="ml-carregado">0</strong> ton</span>
+        <span style="color:var(--yellow)">⏳ Restante: <strong id="ml-restante">—</strong> ton</span>
+      </div>
+      <div style="margin-top:10px;background:var(--border);border-radius:20px;height:8px;overflow:hidden;">
+        <div id="ml-barra" style="height:100%;background:var(--green);border-radius:20px;transition:width 0.3s;width:0%"></div>
+      </div>
+    </div>
+
+    <!-- SELECIONAR MOTORISTA APROVADO -->
+    <div id="aba-adicionar">
+    <div style="background:var(--surface2);border-radius:8px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Selecionar Motorista Aprovado pela GR</div>
+      <div id="lista-motoristas-aprovados" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;max-height:300px;overflow-y:auto;">
+        <div class="loading">Carregando motoristas aprovados...</div>
+      </div>
+      <input type="hidden" id="nm-motorista-selecionado-id" value="">
+      <div id="nm-motorista-selecionado-info" style="display:none;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;">
+        <strong id="nm-motorista-selecionado-nome"></strong>
+        <span style="color:var(--muted)" id="nm-motorista-selecionado-detalhe"></span>
+      </div>
+      <div class="form-group">
+        <label>Peso Saída (ton)</label>
+        <input type="number" id="nm-peso" placeholder="Ex: 40" step="0.1" min="0">
+      </div>
+      <div style="margin-top:14px;">
+        <button onclick="adicionarMotorista()" class="btn-primary" style="width:100%;padding:12px;">+ Adicionar ao Lote</button>
+      </div>
+    </div>
+    </div>
+
+    <!-- ABA MOTORISTAS INSERIDOS -->
+  </div>
+</div>
+
+<!-- MODAL EDITAR LOTE -->
+<div class="modal-overlay" id="modal-lote-overlay" onclick="fecharModalLote(event)">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-title">
+      <span>Editar Lote</span>
+      <button class="modal-close" onclick="fecharModalLoteBtn()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Agência</label>
+        <select id="el-agencia">
+          <option value="">Selecione...</option>
+          <option>UNIDADE 01 (LUCAS)</option>
+          <option>UNIDADE 03 (PEDRO)</option>
+          <option>UNIDADE 04 (IVO)</option>
+          <option>UNIDADE 05 (GABRIEL)</option>
+          <option>UNIDADE 06 (ITALO)</option>
+          <option>UNIDADE 07 (ADMINISTRATIVO)</option>
+          <option>UNIDADE (LOGISTICA 02)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cliente</label>
+        <select id="el-cliente">
+          <option value="">Selecione um cliente...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Produto</label>
+        <input type="text" id="el-produto" placeholder="Ex: Soja, Milho...">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="el-status">
+          <option value="liberado">Liberado</option>
+          <option value="aceita">Aceita</option>
+          <option value="aguardando">Aguardando</option>
+          <option value="aguardando_inicio">Aguardando Início</option>
+          <option value="aguardando_produto">Aguardando Produto</option>
+          <option value="buscando">Buscando</option>
+          <option value="fechada">Fechada</option>
+          <option value="finalizado">Finalizado</option>
+          <option value="finalizando">Finalizando</option>
+          <option value="no_show">No-Show</option>
+          <option value="paralizado">Paralizado</option>
+          <option value="prob_qualidade">Prob. Qualidade</option>
+          <option value="ret_domingo">Ret. Domingo</option>
+          <option value="ret_fds">Ret. Final de Semana</option>
+          <option value="ret_quarta">Ret. Quarta</option>
+          <option value="ret_quinta">Ret. Quinta</option>
+          <option value="ret_sabado">Ret. Sábado</option>
+          <option value="ret_segunda">Ret. Segunda</option>
+          <option value="ret_sexta">Ret. Sexta</option>
+          <option value="ret_terca">Ret. Terça</option>
+          <option value="sab_dom">Sab/Dom</option>
+          <option value="sab_ate_11">Sab até 11hrs</option>
+          <option value="sab_ate_17">Sab até 17hrs</option>
+          <option value="sem_cota">Sem Cota</option>
+          <option value="sem_produto">Sem Produto</option>
+          <option value="suspenso">Suspenso</option>
+          <option value="urgente">Urgente</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Coleta</label>
+        <input type="text" id="el-coleta" placeholder="Local de coleta">
+      </div>
+      <div class="form-group">
+        <label>Origem</label>
+        <input type="text" id="el-origem" placeholder="Cidade/UF de origem">
+      </div>
+      <div class="form-group">
+        <label>Entrega</label>
+        <input type="text" id="el-entrega" placeholder="Local de entrega">
+      </div>
+      <div class="form-group">
+        <label>Destino</label>
+        <input type="text" id="el-destino" placeholder="Cidade/UF de destino">
+      </div>
+      <div class="form-group">
+        <label>Tarifa Empresa (R$)</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
+          <input type="number" id="el-tarifa-emp" placeholder="0,00" step="0.01" min="0" style="padding-left:36px">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Tarifa Motorista (R$)</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
+          <input type="number" id="el-tarifa-mot" placeholder="0,00" step="0.01" min="0" style="padding-left:36px">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Peso Total (ton)</label>
+        <input type="number" id="el-peso" placeholder="Ex: 25.5" step="0.1" min="0">
+      </div>
+      <div class="form-group">
+        <label>Data</label>
+        <input type="date" id="el-data">
+      </div>
+      <div class="form-group full">
+        <label>Observação</label>
+        <textarea id="el-obs" placeholder="Informações adicionais..."></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="fecharModalLoteBtn()">Cancelar</button>
+      <button class="btn-primary" onclick="salvarEdicaoLote()">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- MOTORISTAS -->
+<div class="page" id="page-motoristas">
+  <div class="card">
+    <div class="table-header">
+      <h2>Motoristas Cadastrados</h2>
+      <div class="filters">
+        <input type="text" id="filtro-mot-busca" placeholder="🔍 Buscar motorista, CPF ou lote..." oninput="filtrarMotoristasPagina()">
+        <select id="filtro-mot-status" onchange="filtrarMotoristasPagina()">
+          <option value="">Todos os status</option>
+          <option value="em_negociacao">Em Negociação</option>
+          <option value="cadastro">Cadastro</option>
+          <option value="validando_gr_interna">Validando GR Interna</option>
+          <option value="validando_gr_externa">Validando GR Externa</option>
+          <option value="liberado_carregar">Liberado Carregar</option>
+          <option value="aguardando_nota">Aguardando Nota</option>
+          <option value="documento_emitido">Documento Emitido</option>
+          <option value="carregado">Carregado</option>
+          <option value="em_transito">Em Trânsito</option>
+          <option value="aguardando_coleta">Aguardando Coleta</option>
+          <option value="aguardando_descarga">Aguardando Descarga</option>
+        </select>
+      </div>
+    </div>
+    <div id="motoristas-page-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- GR - GERENCIAMENTO DE RISCO -->
+<div class="page" id="page-gr">
+  <div class="card">
+    <div class="table-header">
+      <h2>Gerenciamento de Risco</h2>
+      <div class="filters">
+        <input type="text" id="filtro-gr-busca" placeholder="🔍 Buscar motorista, CPF..." oninput="filtrarGR()">
+        <select id="filtro-gr-status" onchange="filtrarGR()">
+          <option value="">Todos os status GR</option>
+          <option value="pendente">⏳ Pendente</option>
+          <option value="aprovado">✅ Aprovado</option>
+          <option value="reprovado">❌ Reprovado</option>
+        </select>
+        <button class="btn-primary" onclick="abrirCadastroMotoristaGR()" style="padding:8px 16px;font-size:13px;">+ Cadastrar Motorista</button>
+      </div>
+    </div>
+    <div id="gr-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- MODAL CADASTRAR MOTORISTA GR -->
+<div class="modal-overlay" id="modal-cadastro-motorista-overlay" onclick="if(event.target===this)fecharCadastroMotoristaGR()">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-title">
+      <span>🚛 Cadastrar Motorista — GR</span>
+      <button class="modal-close" onclick="fecharCadastroMotoristaGR()">✕</button>
+    </div>
+
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="form-group"><label>Nome</label><input type="text" id="gr-nome" placeholder="Nome do motorista"></div>
+      <div class="form-group"><label>Placa do Veículo</label><input type="text" id="gr-placa" placeholder="Ex: ABC-1234"></div>
+      <div class="form-group"><label>Contato / Telefone</label><input type="text" id="gr-contato" placeholder="Ex: (34) 99999-9999"></div>
+      <div class="form-group"><label>CPF</label><input type="text" id="gr-cpf" placeholder="Ex: 000.000.000-00"></div>
+    </div>
+
+    <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">Dados Bancários</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button type="button" id="gr-btn-conta" onclick="selecionarTipoPagamentoGR('conta_bancaria')"
+        style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:rgba(249,115,22,0.12);color:var(--accent);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
+        🏦 Conta Bancária
+      </button>
+      <button type="button" id="gr-btn-pix" onclick="selecionarTipoPagamentoGR('chave_pix')"
+        style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
+        ⚡ Chave PIX
+      </button>
+    </div>
+    <input type="hidden" id="gr-tipo-pagamento" value="conta_bancaria">
+    <div id="gr-campos-conta" class="form-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="form-group"><label>Nome do Titular</label><input type="text" id="gr-nome-titular" placeholder="Nome completo do titular"></div>
+      <div class="form-group"><label>CPF/CNPJ do Titular</label><input type="text" id="gr-cpf-titular" placeholder="CPF ou CNPJ"></div>
+      <div class="form-group"><label>Banco</label><input type="text" id="gr-banco" placeholder="Ex: Bradesco, Itaú..."></div>
+      <div class="form-group"><label>Agência</label><input type="text" id="gr-agencia" placeholder="Ex: 1234"></div>
+      <div class="form-group"><label>Número da Conta</label><input type="text" id="gr-conta" placeholder="Ex: 12345-6"></div>
+      <div class="form-group"><label>Tipo de Conta</label>
+        <select id="gr-tipo-conta"><option value="">Selecione...</option><option value="corrente">Corrente</option><option value="poupanca">Poupança</option></select>
+      </div>
+    </div>
+    <div id="gr-campos-pix" class="form-grid" style="grid-template-columns:1fr 1fr;display:none;">
+      <div class="form-group"><label>Tipo de Chave PIX</label>
+        <select id="gr-tipo-pix">
+          <option value="">Selecione o tipo...</option>
+          <option value="telefone">📱 Telefone</option>
+          <option value="cpf">🪪 CPF</option>
+          <option value="cnpj">🏢 CNPJ</option>
+          <option value="email">✉️ E-mail</option>
+          <option value="aleatoria">🔑 Chave Aleatória</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Chave PIX</label><input type="text" id="gr-pix" placeholder="Chave PIX"></div>
+    </div>
+
+    <!-- CHECK LIST -->
+    <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:16px;">
+      <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">📋 Check List — Documentação</div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px;">
+        <div class="form-group"><label>Valor do Frete do Motorista (R$)</label><input type="number" id="gr-ck-valor-frete" placeholder="R$ 0,00" step="0.01" min="0"></div>
+        <div class="form-group"><label>Valor da Carga (R$)</label><input type="number" id="gr-ck-valor-carga" placeholder="R$ 0,00" step="0.01" min="0"></div>
+        <div class="form-group full"><label>Canal de Contato do Motorista</label><input type="text" id="gr-ck-canal" placeholder="Ex: WhatsApp, Fretebras, indicação..."></div>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Documentos Recebidos</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+        <!-- CNH -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <span style="font-size:13px;">Habilitação do motorista (CNH)</span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-gr-arq-cnh" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span><input type="file" id="gr-arq-cnh" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-cnh','label-gr-arq-cnh')">
+              </label>
+              <button type="button" onclick="limparAnexo('gr-arq-cnh','label-gr-arq-cnh')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
+          </div>
+          <!-- ANTT -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <span style="font-size:13px;">Registro na ANTT</span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-gr-arq-antt" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span><input type="file" id="gr-arq-antt" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-antt','label-gr-arq-antt')">
+              </label>
+              <button type="button" onclick="limparAnexo('gr-arq-antt','label-gr-arq-antt')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
+          </div>
+          <!-- Doc Caminhão -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <span style="font-size:13px;">Documentação do caminhão e carretas</span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-gr-arq-doc-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span><input type="file" id="gr-arq-doc-caminhao" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-doc-caminhao','label-gr-arq-doc-caminhao')">
+              </label>
+              <button type="button" onclick="limparAnexo('gr-arq-doc-caminhao','label-gr-arq-doc-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
+          </div>
+          <!-- Residência -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <span style="font-size:13px;">Comprovante de residência</span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-gr-arq-residencia" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span><input type="file" id="gr-arq-residencia" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-residencia','label-gr-arq-residencia')">
+              </label>
+              <button type="button" onclick="limparAnexo('gr-arq-residencia','label-gr-arq-residencia')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
+          </div>
+          <!-- Foto Caminhão -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <span style="font-size:13px;">Foto do caminhão e carretas com as placas visíveis</span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-gr-arq-foto-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span><input type="file" id="gr-arq-foto-caminhao" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-foto-caminhao','label-gr-arq-foto-caminhao')">
+              </label>
+              <button type="button" onclick="limparAnexo('gr-arq-foto-caminhao','label-gr-arq-foto-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
+          </div>
+          <!-- Selfie CNH -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <span style="font-size:13px;">Foto do motorista (selfie segurando a CNH)</span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-gr-arq-selfie-cnh" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span><input type="file" id="gr-arq-selfie-cnh" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-selfie-cnh','label-gr-arq-selfie-cnh')">
+              </label>
+              <button type="button" onclick="limparAnexo('gr-arq-selfie-cnh','label-gr-arq-selfie-cnh')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
+          </div>
+          <!-- Selfie Placa -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <span style="font-size:13px;">Foto do motorista (selfie ao lado do veículo, mostrando a placa)</span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-gr-arq-selfie-placa" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span><input type="file" id="gr-arq-selfie-placa" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-selfie-placa','label-gr-arq-selfie-placa')">
+              </label>
+              <button type="button" onclick="limparAnexo('gr-arq-selfie-placa','label-gr-arq-selfie-placa')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
+          </div>
+          <!-- Lonas -->
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <span style="font-size:13px;">Fotos das lonas que serão utilizadas</span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-gr-arq-lonas" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span><input type="file" id="gr-arq-lonas" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-lonas','label-gr-arq-lonas')">
+              </label>
+              <button type="button" onclick="limparAnexo('gr-arq-lonas','label-gr-arq-lonas')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
+          </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <div style="font-size:13px;margin-bottom:6px;">Três contatos de referência profissional</div>
+          <input type="text" id="gr-ck-ref-prof" placeholder="Ex: João (34) 99999-1111, Maria (34) 99999-2222..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;">
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <div style="font-size:13px;margin-bottom:6px;">Três contatos de referência pessoal</div>
+          <input type="text" id="gr-ck-ref-pessoal" placeholder="Ex: Carlos (34) 99999-3333, Ana (34) 99999-4444..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;">
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <div style="font-size:13px;margin-bottom:6px;">Contato do proprietário ou responsável pelo veículo</div>
+          <input type="text" id="gr-ck-proprietario" placeholder="Nome e telefone do proprietário..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;">
+        </div>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Forma de Pagamento</div>
+      <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;">
+          <input type="checkbox" id="gr-ck-adiantamento" style="width:16px;height:16px;accent-color:var(--accent);">Adiantamento 70%
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;">
+          <input type="checkbox" id="gr-ck-saldo" style="width:16px;height:16px;accent-color:var(--accent);">Saldo 30%
+        </label>
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px;">
+        <div class="form-group"><label>Exceção — Pagamento diferente</label><input type="text" id="gr-ck-excecao-pgto" placeholder="Descreva, se houver"></div>
+        <div class="form-group"><label>Assinatura do Responsável</label><input type="text" id="gr-ck-assinatura-pgto" placeholder="Nome do responsável"></div>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Prazo de Pagamento (Saldo)</div>
+      <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;"><input type="radio" name="gr-ck-prazo-saldo" value="5" style="accent-color:var(--accent);">05 dias após a descarga</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;"><input type="radio" name="gr-ck-prazo-saldo" value="7" style="accent-color:var(--accent);">07 dias após a descarga</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;"><input type="radio" name="gr-ck-prazo-saldo" value="8+" style="accent-color:var(--accent);">08 dias ou mais</label>
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px;">
+        <div class="form-group"><label>Exceção — Prazo menor que 05 dias</label><input type="text" id="gr-ck-excecao-prazo" placeholder="Prazo e responsável"></div>
+        <div class="form-group"><label>Assinatura do Responsável</label><input type="text" id="gr-ck-assinatura-prazo" placeholder="Nome do responsável"></div>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Recolhimento do Motorista</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;flex:1;min-width:220px;">
+          <input type="checkbox" id="gr-ck-pessoa-fisica" style="width:16px;height:16px;min-width:16px;margin-top:2px;accent-color:var(--accent);">
+          <span><strong>Pessoa Física:</strong> INSS (Valor total × 20% × 11%)<br>SEST SENAT (Valor total × 20% × 2,5%)</span>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;flex:1;min-width:220px;">
+          <input type="checkbox" id="gr-ck-pessoa-juridica" style="width:16px;height:16px;min-width:16px;margin-top:2px;accent-color:var(--accent);">
+          <span><strong>Pessoa Jurídica:</strong> Taxa administrativa de R$ 88,00</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="fecharCadastroMotoristaGR()">Cancelar</button>
+      <button class="btn-primary" onclick="salvarMotoristaGR()">💾 Cadastrar Motorista</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GR -->
+<div class="modal-overlay" id="modal-gr-overlay" onclick="if(event.target===this)fecharModalGR()">
+  <div class="modal" style="max-width:720px;">
+    <div class="modal-title">
+      <span id="mgr-titulo">Análise GR — Motorista</span>
+      <button class="modal-close" onclick="fecharModalGR()">✕</button>
+    </div>
+
+    <!-- Status GR atual -->
+    <div id="mgr-status-bar" style="margin-bottom:16px;"></div>
+
+    <!-- Dados do Motorista -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">🧑 Dados do Motorista</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">NOME</div><div style="font-weight:600" id="mgr-nome">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CPF</div><div style="font-weight:600" id="mgr-cpf">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PLACA</div><div style="font-weight:600" id="mgr-placa">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CONTATO</div><div style="font-weight:600" id="mgr-contato">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PESO SAÍDA</div><div style="font-weight:600;color:var(--accent)" id="mgr-peso">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PAGAMENTO</div><div id="mgr-pagamento">—</div></div>
+      </div>
+    </div>
+
+    <!-- Dados do Lote -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">🚛 Dados do Lote</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">LOTE</div><div style="font-weight:600" id="mgr-lote">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CLIENTE</div><div style="font-weight:600" id="mgr-cliente">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PRODUTO</div><div style="font-weight:600" id="mgr-produto">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">AGÊNCIA</div><div style="font-weight:600" id="mgr-agencia-lote">—</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">ROTA</div><div style="font-weight:600" id="mgr-rota">—</div></div>
+      </div>
+    </div>
+
+    <!-- Checklist -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📋 Checklist de Documentação</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">VALOR FRETE MOTORISTA</div><div style="font-weight:600" id="mgr-ck-valor-frete">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">VALOR DA CARGA</div><div style="font-weight:600" id="mgr-ck-valor-carga">—</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CANAL DE CONTATO</div><div style="font-weight:600" id="mgr-ck-canal">—</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;">DOCUMENTOS</div>
+      <div id="mgr-ck-docs" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">FORMA DE PAGAMENTO</div><div style="font-weight:600" id="mgr-ck-pgto">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PRAZO DO SALDO</div><div style="font-weight:600" id="mgr-ck-prazo">—</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">RECOLHIMENTO</div><div style="font-weight:600" id="mgr-ck-recolhimento">—</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">REFERÊNCIAS PROFISSIONAIS</div><div style="font-weight:600" id="mgr-ck-ref-prof">—</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">REFERÊNCIAS PESSOAIS</div><div style="font-weight:600" id="mgr-ck-ref-pessoal">—</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CONTATO DO PROPRIETÁRIO</div><div style="font-weight:600" id="mgr-ck-proprietario">—</div></div>
+      </div>
+    </div>
+
+    <!-- Arquivos Anexados -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📎 Arquivos Anexados</div>
+      <div id="mgr-anexos" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+
+    <!-- Decisão GR -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:14px;">🔍 Decisão GR</div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <button onclick="definirDecisaoGR('aprovado')" id="btn-gr-aprovar"
+          style="flex:1;padding:12px;border-radius:8px;border:2px solid var(--green);background:rgba(34,197,94,0.12);color:var(--green);font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;">
+          ✅ Aprovar Motorista
+        </button>
+        <button onclick="definirDecisaoGR('reprovado')" id="btn-gr-reprovar"
+          style="flex:1;padding:12px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;">
+          ❌ Reprovar Motorista
+        </button>
+      </div>
+      <input type="hidden" id="mgr-decisao" value="">
+      <div id="mgr-motivo-row" style="display:none;">
+        <div class="form-group">
+          <label>Motivo da Reprovação</label>
+          <textarea id="mgr-motivo" placeholder="Descreva o motivo da reprovação..." style="min-height:80px;"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="fecharModalGR()">Cancelar</button>
+      <button class="btn-primary" onclick="salvarDecisaoGR()">💾 Salvar Decisão</button>
+    </div>
+  </div>
+</div>
+
+<!-- FISCAL -->
+<div class="page" id="page-fiscal">
+  <div class="card">
+    <div class="table-header">
+      <h2>Painel Fiscal</h2>
+      <div class="filters">
+        <input type="text" id="filtro-fiscal-busca" placeholder="🔍 Buscar motorista..." oninput="filtrarFiscal()">
+        <select id="filtro-fiscal-status" onchange="filtrarFiscal()">
+          <option value="">Todos os status</option>
+          <option value="em_negociacao">Em Negociação</option>
+          <option value="cadastro">Cadastro</option>
+          <option value="validando_gr_interna">Validando GR Interna</option>
+          <option value="validando_gr_externa">Validando GR Externa</option>
+          <option value="liberado_carregar">Liberado Carregar</option>
+          <option value="aguardando_nota">Aguardando Nota</option>
+          <option value="documento_emitido">Documento Emitido</option>
+          <option value="carregado">Carregado</option>
+          <option value="em_transito">Em Trânsito</option>
+          <option value="aguardando_coleta">Aguardando Coleta</option>
+          <option value="aguardando_descarga">Aguardando Descarga</option>
+        </select>
+      </div>
+    </div>
+    <div id="fiscal-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- MODAL FISCAL -->
+<div class="modal-overlay" id="modal-fiscal-overlay" onclick="fecharModalFiscal(event)">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-title">
+      <span id="mf-titulo">Detalhes do Motorista</span>
+      <button class="modal-close" onclick="fecharModalFiscalBtn()">✕</button>
+    </div>
+
+    <!-- Status -->
+    <div id="mf-status-bar" style="margin-bottom:16px;"></div>
+
+    <!-- Seção Motorista -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">🧑 Dados do Motorista</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">NOME</div><div style="font-weight:600" id="mf-nome">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CPF</div><div style="font-weight:600" id="mf-cpf">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PLACA</div><div style="font-weight:600" id="mf-placa">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CONTATO</div><div style="font-weight:600" id="mf-contato">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PESO SAÍDA</div><div style="font-weight:600;color:var(--accent)" id="mf-peso">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">STATUS</div><div id="mf-status">—</div></div>
+      </div>
+    </div>
+
+    <!-- Seção Lote -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">🚛 Dados do Lote</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">LOTE</div><div style="font-weight:600" id="mf-lote">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CLIENTE</div><div style="font-weight:600" id="mf-cliente">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PRODUTO</div><div style="font-weight:600" id="mf-produto">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">AGÊNCIA</div><div style="font-weight:600" id="mf-agencia-lote">—</div></div>
+        <div class="full" style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">ROTA</div><div style="font-weight:600" id="mf-rota">—</div></div>
+      </div>
+    </div>
+
+    <!-- Seção Bancária -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">💳 Dados Bancários</div>
+      <div style="margin-bottom:12px;" id="mf-badge-pagamento"></div>
+      <div id="mf-secao-conta" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">NOME DO TITULAR</div><div style="font-weight:600" id="mf-nome-titular">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CPF/CNPJ TITULAR</div><div style="font-weight:600" id="mf-cpf-titular">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">BANCO</div><div style="font-weight:600" id="mf-banco">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">AGÊNCIA</div><div style="font-weight:600" id="mf-agencia">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">NÚMERO DA CONTA</div><div style="font-weight:600" id="mf-conta">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">TIPO DE CONTA</div><div style="font-weight:600" id="mf-tipo-conta">—</div></div>
+      </div>
+      <div id="mf-secao-pix" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">TIPO DE CHAVE PIX</div><div style="font-weight:600" id="mf-tipo-pix">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CHAVE PIX</div><div style="font-weight:600;color:var(--green)" id="mf-pix">—</div></div>
+      </div>
+    </div>
+
+    <!-- Seção Check List -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;" id="mf-secao-checklist">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:14px;">📋 Check List — Documentação</div>
+
+      <!-- Valores -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">VALOR FRETE MOTORISTA</div><div style="font-weight:600;color:var(--accent)" id="mf-ck-valor-frete">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">VALOR DA CARGA</div><div style="font-weight:600;color:var(--accent)" id="mf-ck-valor-carga">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CANAL DE CONTATO</div><div style="font-weight:600" id="mf-ck-canal">—</div></div>
+      </div>
+
+      <!-- Documentos -->
+      <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Documentos Recebidos</div>
+      <div id="mf-ck-docs" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
+
+      <!-- Anexos -->
+      <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📎 Arquivos Anexados</div>
+      <div id="mf-ck-anexos" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+        <div style="font-size:13px;color:var(--muted);">Nenhum arquivo anexado.</div>
+      </div>
+
+      <!-- Forma de Pagamento -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Forma de Pagamento</div>
+          <div id="mf-ck-pgto" style="font-size:13px;font-weight:500;">—</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Prazo do Saldo</div>
+          <div id="mf-ck-prazo" style="font-size:13px;font-weight:500;">—</div>
+        </div>
+        <div style="grid-column:1/-1" id="mf-ck-excecao-pgto-row" style="display:none;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">EXCEÇÃO PAGAMENTO</div>
+          <div style="font-weight:500" id="mf-ck-excecao-pgto">—</div>
+        </div>
+        <div style="grid-column:1/-1" id="mf-ck-excecao-prazo-row" style="display:none;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">EXCEÇÃO PRAZO</div>
+          <div style="font-weight:500" id="mf-ck-excecao-prazo">—</div>
+        </div>
+      </div>
+
+      <!-- Recolhimento -->
+      <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Recolhimento</div>
+      <div id="mf-ck-recolhimento" style="font-size:13px;font-weight:500;">—</div>
+    </div>
+
+    <!-- Status GR -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">🔍 Gerenciamento de Risco (GR)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">STATUS GR</div><div id="mf-gr-status">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">MOTIVO REPROVAÇÃO</div><div style="font-weight:600;font-size:13px" id="mf-gr-motivo">—</div></div>
+      </div>
+    </div>
+
+    <!-- Alterar status -->
+    <div class="status-select-row">
+      <label>Alterar Status:</label>
+      <select id="mf-status-select" onchange="atualizarStatusFiscal()">
+        <option value="em_negociacao">Em Negociação</option>
+        <option value="cadastro">Cadastro</option>
+        <option value="validando_gr_interna">Validando GR Interna</option>
+        <option value="validando_gr_externa">Validando GR Externa</option>
+        <option value="liberado_carregar">Liberado Carregar</option>
+        <option value="aguardando_nota">Aguardando Nota</option>
+        <option value="documento_emitido">Documento Emitido</option>
+        <option value="carregado">Carregado</option>
+        <option value="em_transito">Em Trânsito</option>
+        <option value="aguardando_coleta">Aguardando Coleta</option>
+        <option value="aguardando_descarga">Aguardando Descarga</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- SEGURANÇA -->
+<div class="page" id="page-seguranca">
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat total"><div class="stat-label">Total Usuários</div><div class="stat-value" id="seg-total">—</div></div>
+    <div class="stat aprovadas"><div class="stat-label">Ativos</div><div class="stat-value" id="seg-ativos">—</div></div>
+    <div class="stat reprovadas"><div class="stat-label">Inativos</div><div class="stat-value" id="seg-inativos">—</div></div>
+  </div>
+
+  <!-- Monitoramento de Ações -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="table-header">
+      <h2 style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;">📋 Monitoramento de Ações</h2>
+      <div class="filters">
+        <input type="text" id="log-filtro-busca" placeholder="🔍 Buscar usuário ou ação..." oninput="filtrarLogs()" style="width:220px;">
+        <select id="log-filtro-tipo" onchange="filtrarLogs()" style="width:auto;font-size:13px;padding:8px 12px;">
+          <option value="">Todas as ações</option>
+          <option value="cotacao">Cotações</option>
+          <option value="lote">Lotes</option>
+          <option value="motorista">Motoristas</option>
+          <option value="cliente">Clientes</option>
+          <option value="usuario">Usuários</option>
+          <option value="login">Login/Logout</option>
+          <option value="fiscal">Fiscal</option>
+        </select>
+        <button onclick="carregarLogs()" class="btn-secondary" style="padding:8px 14px;font-size:13px;">🔄 Atualizar</button>
+      </div>
+    </div>
+    <div id="logs-table"><div class="loading">Carregando logs...</div></div>
+  </div>
+
+  <!-- Gerenciar Usuários -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="form-title"><span></span> Gerenciar Usuários</div>
+    <div id="usuarios-table"><div class="loading">Carregando...</div></div>
+  </div>
+
+  <!-- Adicionar Usuário -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="form-title"><span></span> Adicionar Novo Usuário</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nome</label>
+        <input type="text" id="nu-nome" placeholder="Nome completo">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="nu-email" placeholder="email@empresa.com">
+      </div>
+      <div class="form-group">
+        <label>Senha Inicial</label>
+        <input type="password" id="nu-senha" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="form-group">
+        <label>Setor</label>
+        <select id="nu-setor">
+          <option value="comercial">Comercial</option>
+          <option value="logistico">Logístico</option>
+          <option value="fiscal">Fiscal</option>
+          <option value="gr">GR</option>
+          <option value="administrativo">Administrativo</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" onclick="criarUsuario()">+ Criar Usuário</button>
+    </div>
+  </div>
+
+  <!-- Alterar Minha Senha -->
+  <div class="card">
+    <div class="form-title"><span></span> Alterar Senha</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nova Senha</label>
+        <input type="password" id="alt-senha" placeholder="Nova senha">
+      </div>
+      <div class="form-group">
+        <label>Confirmar Nova Senha</label>
+        <input type="password" id="alt-senha2" placeholder="Confirme a nova senha">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" onclick="alterarSenha()">🔒 Alterar Senha</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let cotacoes = [];
+let cotacaoAtualId = null;
+let lotes = [];
+let sb = null;
+
+// SUPABASE REQUEST
+const API_URL = 'https://jmbrasil.vercel.app/api/cotacoes';
+
+async function supabaseRequest(method, path, body = null) {
+  const [tabela, queryStringRaw] = path.split('?');
+  const queryString = queryStringRaw || '';
+
+  let url = API_URL + '?tabela=' + tabela;
+
+  const filtros = {};
+
+  // Processa cada parâmetro da query
+  const params = new URLSearchParams(queryString);
+  params.forEach((val, key) => {
+    if (key === 'order' || key === 'limit' || key === 'select') return;
+
+    // id principal (sem underscore) vai como &id=X
+    if (key === 'id' && val.startsWith('eq.')) {
+      url += '&id=' + val.replace('eq.', '');
+      return;
+    }
+
+    // Qualquer outro filtro com eq. vai pro objeto filtros
+    if (val.startsWith('eq.')) {
+      filtros[key] = val.replace('eq.', '');
+    }
+  });
+
+  if (Object.keys(filtros).length > 0) {
+    url += '&filtros=' + encodeURIComponent(JSON.stringify(filtros));
+  }
+
+  const res = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : null
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    let msg = 'Erro na requisição';
+    try { msg = JSON.parse(text).error || msg; } catch(e) {}
+    throw new Error(msg);
+  }
+  if (!text) return null;
+  try { return JSON.parse(text); } catch(e) { return null; }
+}
+
+// LOGIN
+async function fazerLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-senha').value;
+  const erro = document.getElementById('login-erro');
+  const btn = document.getElementById('login-btn');
+  erro.style.display = 'none';
+  if (!email || !senha) { erro.textContent = 'Preencha email e senha'; erro.style.display = 'block'; return; }
+  btn.textContent = 'Entrando...';
+  btn.disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+  btn.textContent = 'Entrar';
+  btn.disabled = false;
+  if (error) { erro.textContent = 'Email ou senha incorretos'; erro.style.display = 'block'; return; }
+  const user = (await sb.auth.getUser()).data.user;
+  userAtual = user;
+  await carregarPerfilUsuario(user.id);
+  registrarLog('login', 'Login realizado', `Email: ${user.email}`);
+  document.getElementById('login-screen').style.display = 'none';
+}
+
+async function fazerLogout() {
+  registrarLog('login', 'Logout realizado', `Email: ${userAtual?.email || '—'}`);
+  await sb.auth.signOut();
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-senha').value = '';
+}
+
+// PAGES
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const idx = ['dashboard','nova','lista','lotes','motoristas','gr','status-lote','clientes','fiscal','seguranca'].indexOf(name);
+  if (idx >= 0) document.querySelectorAll('nav button')[idx].classList.add('active');
+  if (name === 'dashboard') carregarDashboard();
+  if (name === 'lista') carregarLista();
+  if (name === 'lotes') { carregarLotes(); carregarClientesSelect('l-cliente'); document.getElementById('l-data').value = new Date().toISOString().split('T')[0]; }
+  if (name === 'motoristas') carregarMotoristasPagina();
+  if (name === 'gr') carregarGR();
+  if (name === 'status-lote') carregarStatusLote();
+  if (name === 'clientes') carregarClientes();
+  if (name === 'fiscal') carregarFiscal();
+  if (name === 'seguranca') { carregarSeguranca(); carregarLogs(); }
+  if (name === 'nova') document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
+
+  // Reaplicar read-only se necessário
+  if (permissoesAtual && permissoesAtual[name] === 1) {
+    setTimeout(() => {
+      const pagEl = document.getElementById('page-' + name);
+      if (!pagEl) return;
+      pagEl.querySelectorAll('input, select, textarea').forEach(el => {
+        el.setAttribute('disabled', 'disabled');
+        el.style.opacity = '0.6';
+        el.style.cursor = 'not-allowed';
+      });
+      pagEl.querySelectorAll('.btn-primary, .btn-secondary').forEach(el => {
+        el.style.display = 'none';
+      });
+    }, 500);
+  }
+}
+
+// DASHBOARD
+async function carregarDashboard() {
+  try {
+    const data = await supabaseRequest('GET', 'cotacoes_view?order=criado_em.desc&limit=200');
+    cotacoes = data || [];
+    document.getElementById('stat-total').textContent = cotacoes.length;
+    document.getElementById('stat-aprovadas').textContent = cotacoes.filter(c => c.status === 'aprovada').length;
+    document.getElementById('stat-reprovadas').textContent = cotacoes.filter(c => c.status === 'reprovada').length;
+    document.getElementById('stat-pendentes').textContent = cotacoes.filter(c => c.status === 'pendente' || c.status === 'em_negociacao').length;
+    document.getElementById('dashboard-table').innerHTML = renderTabela(cotacoes.slice(0, 8));
+  } catch(e) {
+    document.getElementById('dashboard-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao conectar.</p></div>';
+  }
+}
+
+// LISTA
+async function carregarLista() {
+  try {
+    if (!cotacoes.length) {
+      const data = await supabaseRequest('GET', 'cotacoes_view?order=criado_em.desc&limit=200');
+      cotacoes = data || [];
+    }
+    document.getElementById('lista-table').innerHTML = renderTabela(cotacoes);
+  } catch(e) {
+    document.getElementById('lista-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao conectar.</p></div>';
+  }
+}
+
+function filtrarTabela() {
+  const busca = document.getElementById('filtro-busca').value.toLowerCase();
+  const status = document.getElementById('filtro-status').value;
+  const filtradas = cotacoes.filter(c => {
+    const matchBusca = !busca || (c.cliente_nome || '').toLowerCase().includes(busca);
+    const matchStatus = !status || c.status === status;
+    return matchBusca && matchStatus;
+  });
+  document.getElementById('lista-table').innerHTML = renderTabela(filtradas);
+}
+
+function renderTabela(dados) {
+  if (!dados.length) return '<div class="empty"><div class="empty-icon">📋</div><p>Nenhuma cotação encontrada.</p></div>';
+  return `<table><thead><tr><th>#</th><th>Cliente</th><th>Rota</th><th>Tipo</th><th>Valor</th><th>Vendedor</th><th>Data</th><th>Status</th></tr></thead><tbody>
+    ${dados.map(c => `<tr onclick="abrirModal(${c.id})">
+      <td style="color:var(--muted);font-size:12px">#${c.id}</td>
+      <td><strong>${c.cliente_nome || '—'}</strong></td>
+      <td style="font-size:12px;color:var(--muted)">${c.origem || '—'} → ${c.destino || '—'}</td>
+      <td style="font-size:12px">${c.tipo_carga || '—'}</td>
+      <td class="valor-cell">R$ ${Number(c.valor_cotado || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+      <td style="font-size:12px">${c.vendedor_nome || '—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${formatDate(c.data_cotacao)}</td>
+      <td>${badgeStatus(c.status)}</td>
+    </tr>`).join('')}
+  </tbody></table>`;
+}
+
+// SALVAR COTAÇÃO
+async function salvarCotacao() {
+  const cliente = document.getElementById('f-cliente').value.trim();
+  if (!cliente) { showToast('Informe ao menos o nome do cliente', 'error'); return; }
+  try {
+    const clientes = await supabaseRequest('GET', `clientes?nome=eq.${encodeURIComponent(cliente)}&select=id`);
+    let clienteId = clientes && clientes.length ? clientes[0].id : (await supabaseRequest('POST', 'clientes', { nome: cliente }))[0].id;
+    let vendedorId = null;
+    const vendedorNome = document.getElementById('f-vendedor').value.trim();
+    if (vendedorNome) {
+      const vendedores = await supabaseRequest('GET', `vendedores?nome=eq.${encodeURIComponent(vendedorNome)}&select=id`);
+      vendedorId = vendedores && vendedores.length ? vendedores[0].id : (await supabaseRequest('POST', 'vendedores', { nome: vendedorNome }))[0].id;
+    }
+    await supabaseRequest('POST', 'cotacoes', {
+      cliente_id: clienteId, vendedor_id: vendedorId,
+      origem: document.getElementById('f-origem').value || null,
+      destino: document.getElementById('f-destino').value || null,
+      tipo_carga: document.getElementById('f-tipo').value || null,
+      peso_kg: document.getElementById('f-peso').value || null,
+      valor_cotado: parseFloat(document.getElementById('f-valor').value) || null,
+      status: document.getElementById('f-status').value,
+      data_cotacao: document.getElementById('f-data').value || null,
+      observacao: document.getElementById('f-obs').value || null,
+    });
+    registrarLog('cotacao', 'Cotação salva', `Cliente: ${document.getElementById('f-cliente')?.value||'—'}`);
+    showToast('✅ Cotação salva!', 'success');
+    resetForm();
+    cotacoes = [];
+    setTimeout(() => showPage('lista'), 1200);
+  } catch(e) { showToast('Erro ao salvar: ' + e.message, 'error'); }
+}
+
+function resetForm() {
+  ['f-cliente','f-vendedor','f-origem','f-destino','f-tipo','f-peso','f-valor','f-obs'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-status').value = 'pendente';
+  document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
+}
+
+// MODAL
+async function abrirModal(id) {
+  const c = cotacoes.find(x => x.id === id);
+  if (!c) return;
+  cotacaoAtualId = id;
+  document.getElementById('modal-status').value = c.status;
+  document.getElementById('modal-content').innerHTML = `
+    <div class="detail-row"><span class="detail-label">Cliente</span><span class="detail-value">${c.cliente_nome || '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Vendedor</span><span class="detail-value">${c.vendedor_nome || '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Origem</span><span class="detail-value">${c.origem || '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Destino</span><span class="detail-value">${c.destino || '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Tipo de Carga</span><span class="detail-value">${c.tipo_carga || '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Peso</span><span class="detail-value">${c.peso_kg ? c.peso_kg + ' ton' : '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Valor Cotado</span><span class="detail-value" style="color:var(--accent);font-family:'Syne',sans-serif;font-size:16px">R$ ${Number(c.valor_cotado || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>
+    <div class="detail-row"><span class="detail-label">Data</span><span class="detail-value">${formatDate(c.data_cotacao)}</span></div>
+    <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${badgeStatus(c.status)}</span></div>
+    ${c.observacao ? `<div class="detail-row" style="flex-direction:column;align-items:flex-start;gap:6px"><span class="detail-label">Observação</span><span style="font-size:13px;color:var(--muted);line-height:1.5">${c.observacao}</span></div>` : ''}
+  `;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+async function atualizarStatus() {
+  const novoStatus = document.getElementById('modal-status').value;
+  try {
+    await supabaseRequest('PATCH', `cotacoes?id=eq.${cotacaoAtualId}`, { status: novoStatus });
+    const c = cotacoes.find(x => x.id === cotacaoAtualId);
+    if (c) c.status = novoStatus;
+    showToast('Status atualizado!', 'success');
+    fecharModalBtn();
+    if (document.getElementById('page-lista').classList.contains('active')) filtrarTabela();
+    else carregarDashboard();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function excluirCotacao() {
+  if (!confirm('Excluir esta cotação?')) return;
+  try {
+    await supabaseRequest('DELETE', `cotacoes?id=eq.${cotacaoAtualId}`);
+    cotacoes = cotacoes.filter(c => c.id !== cotacaoAtualId);
+    fecharModalBtn();
+    showToast('✅ Cotação excluída!', 'success');
+    if (document.getElementById('page-lista').classList.contains('active')) filtrarTabela();
+    else carregarDashboard();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+function fecharModal(e) { if (e.target === document.getElementById('modal-overlay')) fecharModalBtn(); }
+function fecharModalBtn() { document.getElementById('modal-overlay').classList.remove('open'); cotacaoAtualId = null; }
+
+// LOTES
+async function salvarLote() {
+  try {
+    await supabaseRequest('POST', 'lotes', {
+      agencia: document.getElementById('l-agencia').value || null,
+      cliente: document.getElementById('l-cliente').value || null,
+      produto: document.getElementById('l-produto').value || null,
+      status: document.getElementById('l-status').value,
+      coleta: document.getElementById('l-coleta').value || null,
+      origem: document.getElementById('l-origem').value || null,
+      entrega: document.getElementById('l-entrega').value || null,
+      destino: document.getElementById('l-destino').value || null,
+      tarifa_empresa: document.getElementById('l-tarifa-emp').value || null,
+      tarifa_motorista: document.getElementById('l-tarifa-mot').value || null,
+      peso_ton: document.getElementById('l-peso').value || null,
+      data_lote: document.getElementById('l-data').value || null,
+
+      observacao: document.getElementById('l-obs').value || null,
+    });
+    registrarLog('lote', 'Lote criado', `Cliente: ${document.getElementById('l-cliente')?.value||'—'}`);
+    showToast('✅ Lote salvo!', 'success');
+    resetLote();
+    lotes = [];
+    setTimeout(() => carregarLotes(), 1000);
+  } catch(e) { showToast('Erro ao salvar: ' + e.message, 'error'); }
+}
+
+function resetLote() {
+  ['l-produto','l-coleta','l-origem','l-entrega','l-destino','l-tarifa-emp','l-tarifa-mot','l-peso','l-obs'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('l-agencia').value = '';
+  document.getElementById('l-status').value = 'liberado';
+  document.getElementById('l-data').value = new Date().toISOString().split('T')[0];
+}
+
+async function carregarLotes() {
+  try {
+    lotes = await supabaseRequest('GET', 'lotes?order=criado_em.desc&limit=200') || [];
+    renderLotes(lotes);
+  } catch(e) {
+    document.getElementById('lotes-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar lotes.</p></div>';
+  }
+}
+
+function filtrarLotes() {
+  const busca = document.getElementById('filtro-lote-busca').value.toLowerCase();
+  const status = document.getElementById('filtro-lote-status').value;
+  renderLotes(lotes.filter(l => (!busca || (l.cliente||'').toLowerCase().includes(busca) || String(l.id).includes(busca)) && (!status || l.status === status)));
+}
+
+function renderLotes(dados) {
+  if (!dados.length) { document.getElementById('lotes-table').innerHTML = '<div class="empty"><div class="empty-icon">📦</div><p>Nenhum lote encontrado.</p></div>'; return; }
+  document.getElementById('lotes-table').innerHTML = `<table><thead><tr>
+    <th>Nº Lote</th><th>Agência</th><th>Cliente</th><th>Produto</th><th>Rota</th>
+    <th>Tarifa Emp.</th><th>Tarifa Mot.</th><th>Peso</th><th>Data</th><th>Status</th><th></th>
+  </tr></thead><tbody>
+    ${dados.map(l => `<tr>
+      <td><span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--accent)">Lote ${l.id}</span></td>
+      <td style="font-size:12px">${l.agencia || '—'}</td>
+      <td><strong>${l.cliente || '—'}</strong></td>
+      <td style="font-size:12px">${l.produto || '—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${l.origem || '—'} → ${l.destino || '—'}</td>
+      <td class="valor-cell">R$ ${Number(l.tarifa_empresa||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+      <td style="color:var(--muted)">R$ ${Number(l.tarifa_motorista||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+      <td style="font-size:12px">${l.peso_ton ? l.peso_ton + ' ton' : '—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${formatDate(l.data_lote)}</td>
+      <td>${badgeLote(l.status)}</td>
+      <td style="display:flex;gap:6px;">
+        <button onclick="abrirMotoristas(${l.id})" style="background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🚛 Motoristas</button>
+        <button onclick="editarLote(${l.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">✏️</button>
+        <button onclick="excluirLote(${l.id})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🗑</button>
+      </td>
+    </tr>`).join('')}
+  </tbody></table>`;
+}
+
+function badgeLote(s) {
+  const cores = {liberado:'badge-aprovada',aceita:'badge-aprovada',finalizado:'badge-aprovada',finalizando:'badge-aprovada',buscando:'badge-em_negociacao',aguardando:'badge-pendente',aguardando_inicio:'badge-pendente',aguardando_produto:'badge-pendente',suspenso:'badge-reprovada',no_show:'badge-reprovada',paralizado:'badge-reprovada',urgente:'badge-reprovada',fechada:'badge-reprovada'};
+  const nomes = {liberado:'Liberado',aceita:'Aceita',aguardando:'Aguardando',aguardando_inicio:'Ag. Início',aguardando_produto:'Ag. Produto',buscando:'Buscando',fechada:'Fechada',finalizado:'Finalizado',finalizando:'Finalizando',no_show:'No-Show',paralizado:'Paralizado',prob_qualidade:'Prob. Qualidade',ret_domingo:'Ret. Domingo',ret_fds:'Ret. FDS',ret_quarta:'Ret. Quarta',ret_quinta:'Ret. Quinta',ret_sabado:'Ret. Sábado',ret_segunda:'Ret. Segunda',ret_sexta:'Ret. Sexta',ret_terca:'Ret. Terça',sab_dom:'Sab/Dom',sab_ate_11:'Sab até 11h',sab_ate_17:'Sab até 17h',sem_cota:'Sem Cota',sem_produto:'Sem Produto',suspenso:'Suspenso',urgente:'Urgente'};
+  return `<span class="badge ${cores[s]||'badge-pendente'}">${nomes[s]||s}</span>`;
+}
+
+async function excluirLote(id) {
+  if (!confirm('Excluir este lote?')) return;
+  try {
+    await supabaseRequest('DELETE', `lotes?id=eq.${id}`);
+    lotes = lotes.filter(l => l.id !== id);
+    renderLotes(lotes);
+    registrarLog('lote', 'Lote excluído', `ID: ${id}`);
+    showToast('Lote excluído!', 'success');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+// HELPERS
+function badgeStatus(s) {
+  const map = {pendente:'Pendente',aprovada:'Aprovada',reprovada:'Reprovada',em_negociacao:'Em Negociação'};
+  return `<span class="badge badge-${s}">${map[s]||s}</span>`;
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+
+// EDITAR LOTE
+let loteEditandoId = null;
+
+async function editarLote(id) {
+  await carregarClientesSelect('el-cliente');
+  const l = lotes.find(x => x.id === id);
+  if (!l) return;
+  loteEditandoId = id;
+  document.getElementById('el-agencia').value = l.agencia || '';
+  document.getElementById('el-cliente').value = l.cliente || '';
+  document.getElementById('el-produto').value = l.produto || '';
+  document.getElementById('el-status').value = l.status || 'liberado';
+  document.getElementById('el-coleta').value = l.coleta || '';
+  document.getElementById('el-origem').value = l.origem || '';
+  document.getElementById('el-entrega').value = l.entrega || '';
+  document.getElementById('el-destino').value = l.destino || '';
+  document.getElementById('el-tarifa-emp').value = l.tarifa_empresa || '';
+  document.getElementById('el-tarifa-mot').value = l.tarifa_motorista || '';
+  document.getElementById('el-peso').value = l.peso_ton || '';
+  document.getElementById('el-data').value = l.data_lote || '';
+  document.getElementById('el-obs').value = l.observacao || '';
+  document.getElementById('modal-lote-overlay').classList.add('open');
+}
+
+async function salvarEdicaoLote() {
+  try {
+    await supabaseRequest('PATCH', `lotes?id=eq.${loteEditandoId}`, {
+      agencia: document.getElementById('el-agencia').value || null,
+      cliente: document.getElementById('el-cliente').value || null,
+      produto: document.getElementById('el-produto').value || null,
+      status: document.getElementById('el-status').value,
+      coleta: document.getElementById('el-coleta').value || null,
+      origem: document.getElementById('el-origem').value || null,
+      entrega: document.getElementById('el-entrega').value || null,
+      destino: document.getElementById('el-destino').value || null,
+      tarifa_empresa: document.getElementById('el-tarifa-emp').value || null,
+      tarifa_motorista: document.getElementById('el-tarifa-mot').value || null,
+      peso_ton: document.getElementById('el-peso').value || null,
+      data_lote: document.getElementById('el-data').value || null,
+      observacao: document.getElementById('el-obs').value || null,
+    });
+    showToast('✅ Lote atualizado!', 'success');
+    fecharModalLoteBtn();
+    lotes = [];
+    carregarLotes();
+  } catch(e) { showToast('Erro ao salvar: ' + e.message, 'error'); }
+}
+
+function fecharModalLote(e) { if (e.target === document.getElementById('modal-lote-overlay')) fecharModalLoteBtn(); }
+function fecharModalLoteBtn() { document.getElementById('modal-lote-overlay').classList.remove('open'); loteEditandoId = null; }
+
+
+// ============ MOTORISTAS ============
+let loteAtualId = null;
+let loteAtualDados = null;
+let statusLoteData = [];
+
+
+async function abrirMotoristas(id) {
+  loteAtualId = parseInt(id);
+  loteAtualDados = lotes.find(l => parseInt(l.id) === parseInt(id));
+  if (!loteAtualDados) return;
+  document.getElementById('modal-motoristas-titulo').textContent = 'Motoristas — Lote #' + id;
+  document.getElementById('ml-cliente').textContent = loteAtualDados.cliente || '—';
+  document.getElementById('ml-produto').textContent = loteAtualDados.produto || '—';
+  document.getElementById('ml-peso-total').textContent = loteAtualDados.peso_ton || '0';
+  document.getElementById('nm-peso').value = '';
+  document.getElementById('nm-motorista-selecionado-id').value = '';
+  document.getElementById('nm-motorista-selecionado-info').style.display = 'none';
+  document.getElementById('modal-motoristas-overlay').classList.add('open');
+  await carregarMotoristas();
+  await carregarMotoristasAprovadosParaLote();
+}
+
+async function carregarMotoristas() {
+  try {
+    const motoristas = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}&order=criado_em.asc`) || [];
+    const totalCarregado = motoristas.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
+
+    // Busca loteAtualDados do banco se não estiver em memória
+    if (!loteAtualDados && loteAtualId) {
+      const lotesDb = await supabaseRequest('GET', `lotes?id=eq.${loteAtualId}`) || [];
+      if (lotesDb.length) loteAtualDados = lotesDb[0];
+    }
+
+    const pesoTotal = parseFloat(loteAtualDados?.peso_ton || 0);
+    const restante = Math.max(0, pesoTotal - totalCarregado);
+    const pct = pesoTotal > 0 ? Math.min(100, (totalCarregado / pesoTotal) * 100) : 0;
+
+    document.getElementById('ml-carregado').textContent = totalCarregado.toFixed(2);
+    document.getElementById('ml-restante').textContent = restante.toFixed(2);
+    document.getElementById('ml-barra').style.width = pct + '%';
+    document.getElementById('ml-barra').style.background = pct >= 100 ? 'var(--green)' : pct > 60 ? 'var(--yellow)' : 'var(--accent)';
+
+    // Atualiza o array lotes em memória para refletir o peso carregado
+    const loteIdx = lotes.findIndex(x => parseInt(x.id) === parseInt(loteAtualId));
+    if (loteIdx >= 0) {
+      lotes[loteIdx]._carregado = totalCarregado;
+      lotes[loteIdx]._restante = restante;
+    }
+
+    // Verificar se lote está completo
+    if (pesoTotal > 0 && totalCarregado >= pesoTotal) {
+      await supabaseRequest('PATCH', `lotes?id=eq.${loteAtualId}`, { status: 'finalizado' });
+      const l = lotes.find(x => parseInt(x.id) === parseInt(loteAtualId));
+      if (l) l.status = 'finalizado';
+      showToast('🎉 Lote finalizado! 100% carregado!', 'success');
+    }
+  } catch(e) {
+    console.error('Erro ao carregar motoristas:', e);
+  }
+}
+
+async function uploadAnexo(file, motoristaId, tipo) {
+  const ext = file.name.split('.').pop();
+  const path = `${motoristaId}/${tipo}_${Date.now()}.${ext}`;
+  const { data, error } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
+  if (error) throw new Error('Erro upload ' + tipo + ': ' + error.message);
+  // Salva só o path — URL assinada gerada na hora de visualizar
+  return { tipo, nome: file.name, path: path };
+}
+
+async function carregarMotoristasAprovadosParaLote() {
+  try {
+    const motoristas = await supabaseRequest('GET', 'motoristas?gr_status=eq.aprovado') || [];
+    const container = document.getElementById('lista-motoristas-aprovados');
+    if (!motoristas.length) {
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">Nenhum motorista aprovado pela GR encontrado.</div>';
+      return;
+    }
+    container.innerHTML = motoristas.map(m => `
+      <div onclick="selecionarMotoristaParaLote(${m.id}, '${(m.nome||'').replace(/'/g,"\\'")}', '${m.placa||''}', '${m.cpf||''}')"
+        style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;cursor:pointer;transition:all 0.15s;"
+        onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div>
+          <div style="font-weight:700;font-size:14px;">${m.nome || '—'}</div>
+          <div style="font-size:12px;color:var(--muted);">CPF: ${m.cpf || '—'} · Placa: ${m.placa || '—'}</div>
+        </div>
+        <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;color:var(--green);background:rgba(34,197,94,0.12);">✅ Aprovado</span>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('lista-motoristas-aprovados').innerHTML = '<div style="color:var(--red);font-size:13px;">Erro ao carregar motoristas.</div>';
+  }
+}
+
+function selecionarMotoristaParaLote(id, nome, placa, cpf) {
+  document.getElementById('nm-motorista-selecionado-id').value = id;
+  document.getElementById('nm-motorista-selecionado-nome').textContent = nome;
+  document.getElementById('nm-motorista-selecionado-detalhe').textContent = ` · CPF: ${cpf} · Placa: ${placa}`;
+  document.getElementById('nm-motorista-selecionado-info').style.display = '';
+  // Highlight selecionado
+  document.querySelectorAll('#lista-motoristas-aprovados > div').forEach(el => {
+    el.style.borderColor = 'var(--border)';
+    el.style.background = 'var(--surface)';
+  });
+  event.currentTarget.style.borderColor = 'var(--green)';
+  event.currentTarget.style.background = 'rgba(34,197,94,0.08)';
+}
+
+async function adicionarMotorista() {
+  const motoristaId = document.getElementById('nm-motorista-selecionado-id').value;
+  const peso = document.getElementById('nm-peso').value;
+  if (!motoristaId) { showToast('Selecione um motorista aprovado', 'error'); return; }
+  if (!peso) { showToast('Informe o peso saída', 'error'); return; }
+
+  const pesoTotal = parseFloat(loteAtualDados.peso_ton || 0);
+  const motoristasExistentes = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}`) || [];
+  const totalCarregado = motoristasExistentes.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
+  const restante = pesoTotal - totalCarregado;
+
+  if (pesoTotal > 0 && parseFloat(peso) > restante) {
+    showToast(`Peso excede o restante (${restante.toFixed(2)} ton)`, 'error'); return;
+  }
+
+  try {
+    // Busca dados completos do motorista aprovado
+    const motoristaDados = await supabaseRequest('GET', `motoristas?id=eq.${motoristaId}`) || [];
+    const m = motoristaDados[0];
+    if (!m) { showToast('Motorista não encontrado', 'error'); return; }
+
+    await supabaseRequest('POST', 'lote_motoristas', {
+      lote_id: loteAtualId,
+      motorista_id: m.id,
+      nome: m.nome,
+      placa: m.placa,
+      contato: m.contato,
+      cpf: m.cpf,
+      peso_saida: parseFloat(peso),
+      status: 'em_negociacao',
+      tipo_pagamento: m.tipo_pagamento,
+      nome_titular: m.nome_titular,
+      cpf_titular: m.cpf_titular,
+      banco: m.banco,
+      agencia: m.agencia,
+      numero_conta: m.numero_conta,
+      tipo_conta: m.tipo_conta,
+      tipo_chave_pix: m.tipo_chave_pix,
+      chave_pix: m.chave_pix,
+      checklist: m.checklist || {},
+      anexos: m.anexos || [],
+      gr_status: 'aprovado',
+      gr_motivo: m.gr_motivo,
+    });
+
+    registrarLog('motorista', 'Motorista adicionado', `Nome: ${document.getElementById('nm-nome')?.value||'—'}, Lote: ${loteAtualId}`);
+    showToast('✅ Motorista adicionado ao lote!', 'success');
+    document.getElementById('nm-peso').value = '';
+    document.getElementById('nm-motorista-selecionado-id').value = '';
+    document.getElementById('nm-motorista-selecionado-info').style.display = 'none';
+    await carregarMotoristas();
+    await carregarMotoristasAprovadosParaLote();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function removerMotorista(id) {
+  if (!confirm('Remover este motorista?')) return;
+  try {
+    await supabaseRequest('DELETE', `lote_motoristas?id=eq.${id}`);
+    registrarLog('motorista', 'Motorista removido', `ID: ${id}`);
+    showToast('Motorista removido!', 'success');
+    await carregarMotoristas();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+function fecharModalMotoristas(e) { if (e.target === document.getElementById('modal-motoristas-overlay')) fecharModalMotoristasBtn(); }
+async function fecharModalMotoristasBtn() {
+  document.getElementById('modal-motoristas-overlay').classList.remove('open');
+  loteAtualId = null;
+  loteAtualDados = null;
+  lotes = []; // força recarregar do banco
+  await carregarLotes();
+}
+
+// ============ PÁGINA MOTORISTAS ============
+let motoristasPageData = [];
+
+async function carregarMotoristasPagina() {
+  try {
+    document.getElementById('motoristas-page-table').innerHTML = '<div class="loading">Carregando...</div>';
+    motoristasPageData = await supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500') || [];
+    filtrarMotoristasPagina();
+  } catch(e) {
+    document.getElementById('motoristas-page-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
+  }
+}
+
+function filtrarMotoristasPagina() {
+  const busca = (document.getElementById('filtro-mot-busca').value || '').toLowerCase();
+  const status = document.getElementById('filtro-mot-status').value;
+  const filtrados = motoristasPageData.filter(m => {
+    const matchBusca = !busca ||
+      (m.nome||'').toLowerCase().includes(busca) ||
+      (m.cpf||'').includes(busca) ||
+      String(m.lote_id).includes(busca) ||
+      (m.placa||'').toLowerCase().includes(busca);
+    const matchStatus = !status || m.status === status;
+    return matchBusca && matchStatus;
+  });
+  renderMotoristasPagina(filtrados);
+}
+
+function renderMotoristasPagina(dados) {
+  if (!dados.length) {
+    document.getElementById('motoristas-page-table').innerHTML = '<div class="empty"><div class="empty-icon">🚛</div><p>Nenhum motorista encontrado.</p></div>';
+    return;
+  }
+  document.getElementById('motoristas-page-table').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>#</th><th>Motorista</th><th>CPF</th><th>Placa</th><th>Contato</th>
+        <th>Status GR</th><th>Pagamento</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${dados.map(m => `<tr>
+          <td style="color:var(--muted);font-size:12px">#${m.id}</td>
+          <td><strong>${m.nome || '—'}</strong></td>
+          <td style="font-size:12px">${m.cpf || '—'}</td>
+          <td style="font-size:12px">${m.placa || '—'}</td>
+          <td style="font-size:12px">${m.contato || '—'}</td>
+          <td>${badgeGR(m.gr_status || 'pendente')}</td>
+          <td>${badgeTipoPagamento(m.tipo_pagamento)}</td>
+          <td style="display:flex;gap:6px;">
+            <button onclick="abrirEditarMotorista(${m.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">✏️ Editar</button>
+            <button onclick="removerMotoristaPagina(${m.id})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🗑</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function removerMotoristaPagina(id) {
+  if (!confirm('Remover este motorista?')) return;
+  try {
+    await supabaseRequest('DELETE', `motoristas?id=eq.${id}`);
+    showToast('Motorista removido!', 'success');
+    await carregarMotoristasPagina();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+// ============ STATUS DO LOTE ============
+async function carregarStatusLote() {
+  try {
+    const data = await supabaseRequest('GET', 'lotes?order=criado_em.desc&limit=200') || [];
+    statusLoteData = await Promise.all(data.map(async l => {
+      const motoristas = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${l.id}`) || [];
+      const carregado = motoristas.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
+      const pesoTon = parseFloat(l.peso_ton || 0);
+      return { ...l, motoristas, carregado, restante: Math.max(0, pesoTon - carregado) };
+    }));
+
+    document.getElementById('sl-total').textContent = statusLoteData.length;
+    document.getElementById('sl-finalizados').textContent = statusLoteData.filter(l => l.status === 'finalizado').length;
+    document.getElementById('sl-andamento').textContent = statusLoteData.filter(l => l.status !== 'finalizado').length;
+    const tonTotal = statusLoteData.reduce((sum, l) => sum + parseFloat(l.peso_ton || 0), 0);
+    document.getElementById('sl-ton').textContent = tonTotal.toFixed(1);
+
+    renderStatusLote(statusLoteData);
+  } catch(e) {
+    document.getElementById('status-lote-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
+  }
+}
+
+function filtrarStatusLote() {
+  const busca = document.getElementById('filtro-sl-busca').value.toLowerCase();
+  const status = document.getElementById('filtro-sl-status').value;
+  const filtrados = statusLoteData.filter(l => {
+    const matchBusca = !busca || (l.cliente || '').toLowerCase().includes(busca);
+    const matchStatus = !status || l.status === status;
+    return matchBusca && matchStatus;
+  });
+  renderStatusLote(filtrados);
+}
+
+function renderStatusLote(dados) {
+  if (!dados.length) { document.getElementById('status-lote-table').innerHTML = '<div class="empty"><div class="empty-icon">📦</div><p>Nenhum lote encontrado.</p></div>'; return; }
+  document.getElementById('status-lote-table').innerHTML = `<table>
+    <thead><tr>
+      <th>#</th><th>Cliente</th><th>Produto</th><th>Agência</th>
+      <th>Peso Total</th><th>Carregado</th><th>Restante</th><th>Progresso</th>
+      <th>Motoristas</th><th>Último Status</th><th>Status Lote</th>
+    </tr></thead>
+    <tbody>
+      ${dados.map(l => {
+        const pct = parseFloat(l.peso_ton) > 0 ? Math.min(100, (l.carregado / parseFloat(l.peso_ton)) * 100) : 0;
+        const barColor = pct >= 100 ? '#22c55e' : pct > 60 ? '#eab308' : '#f97316';
+        return `<tr onclick="abrirMotoristas(${l.id})">
+          <td style="color:var(--muted);font-size:12px">#${l.id}</td>
+          <td><strong>${l.cliente || '—'}</strong></td>
+          <td style="font-size:12px">${l.produto || '—'}</td>
+          <td style="font-size:12px">${l.agencia || '—'}</td>
+          <td style="font-size:12px">${l.peso_ton ? l.peso_ton + ' ton' : '—'}</td>
+          <td style="color:var(--green);font-weight:600">${l.carregado.toFixed(2)} ton</td>
+          <td style="color:var(--yellow);font-weight:600">${l.restante.toFixed(2)} ton</td>
+          <td style="min-width:120px">
+            <div style="background:var(--border);border-radius:20px;height:8px;overflow:hidden;">
+              <div style="height:100%;background:${barColor};border-radius:20px;width:${pct.toFixed(1)}%"></div>
+            </div>
+            <span style="font-size:11px;color:var(--muted)">${pct.toFixed(1)}%</span>
+          </td>
+          <td style="font-size:12px;text-align:center">${l.motoristas.length}</td>
+          <td style="font-size:12px">${l.motoristas.length ? badgeMotorista(l.motoristas[l.motoristas.length-1].status) : '—'}</td>
+          <td>${badgeLote(l.status)}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+
+async function atualizarStatusMotorista(id, novoStatus) {
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: novoStatus });
+    showToast('Status atualizado!', 'success');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+function badgeMotorista(s) {
+  const cores = {
+    em_negociacao: 'color:#3b82f6;background:rgba(59,130,246,0.12)',
+    cadastro: 'color:#8b5cf6;background:rgba(139,92,246,0.12)',
+    validando_gr_interna: 'color:#eab308;background:rgba(234,179,8,0.12)',
+    validando_gr_externa: 'color:#f97316;background:rgba(249,115,22,0.12)',
+    liberado_carregar: 'color:#22c55e;background:rgba(34,197,94,0.12)',
+    aguardando_nota: 'color:#eab308;background:rgba(234,179,8,0.12)',
+    documento_emitido: 'color:#22c55e;background:rgba(34,197,94,0.12)',
+    carregado: 'color:#22c55e;background:rgba(34,197,94,0.12)',
+    em_transito: 'color:#3b82f6;background:rgba(59,130,246,0.12)',
+    aguardando_coleta: 'color:#eab308;background:rgba(234,179,8,0.12)',
+    aguardando_descarga: 'color:#f97316;background:rgba(249,115,22,0.12)',
+  };
+  const nomes = {
+    em_negociacao:'Em Negociação', cadastro:'Cadastro',
+    validando_gr_interna:'Valid. GR Interna', validando_gr_externa:'Valid. GR Externa',
+    liberado_carregar:'Liberado Carregar', aguardando_nota:'Ag. Nota',
+    documento_emitido:'Doc. Emitido', carregado:'Carregado',
+    em_transito:'Em Trânsito', aguardando_coleta:'Ag. Coleta',
+    aguardando_descarga:'Ag. Descarga',
+  };
+  const style = cores[s] || 'color:var(--muted);background:var(--surface2)';
+  return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;${style}">${nomes[s]||s}</span>`;
+}
+
+
+// ============ CLIENTES ============
+let clientesData = [];
+let clienteEditandoId = null;
+
+function mascaraCNPJ(input) {
+  let v = input.value.replace(/\D/g,'');
+  if (v.length <= 11) {
+    v = v.replace(/(\d{3})(\d)/,'$1.$2');
+    v = v.replace(/(\d{3})(\d)/,'$1.$2');
+    v = v.replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  } else {
+    v = v.replace(/^(\d{2})(\d)/,'$1.$2');
+    v = v.replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3');
+    v = v.replace(/\.(\d{3})(\d)/,'.$1/$2');
+    v = v.replace(/(\d{4})(\d)/,'$1-$2');
+  }
+  input.value = v;
+}
+
+async function buscarCNPJ() {
+  const cnpj = document.getElementById('cl-cnpj').value.replace(/\D/g,'');
+  const status = document.getElementById('cl-cnpj-status');
+  if (cnpj.length !== 14) { status.textContent = '⚠️ CNPJ deve ter 14 dígitos'; status.style.color='var(--red)'; return; }
+  status.textContent = '🔍 Buscando...'; status.style.color='var(--muted)';
+  try {
+    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
+    if (!res.ok) throw new Error('CNPJ não encontrado');
+    const d = await res.json();
+    document.getElementById('cl-razao').value = d.razao_social || '';
+    document.getElementById('cl-fantasia').value = d.nome_fantasia || d.razao_social || '';
+    document.getElementById('cl-cep').value = d.cep || '';
+    document.getElementById('cl-endereco').value = d.logradouro || '';
+    document.getElementById('cl-numero').value = d.numero || '';
+    document.getElementById('cl-bairro').value = d.bairro || '';
+    document.getElementById('cl-complemento').value = d.complemento || '';
+    document.getElementById('cl-cidade').value = d.municipio || '';
+    document.getElementById('cl-estado').value = d.uf || '';
+    document.getElementById('cl-email').value = d.email || '';
+    document.getElementById('cl-telefone').value = d.ddd_telefone_1 ? '(' + d.ddd_telefone_1.substring(0,2) + ') ' + d.ddd_telefone_1.substring(2) : '';
+    if (d.data_inicio_atividade) document.getElementById('cl-dt-abertura').value = d.data_inicio_atividade;
+    status.textContent = '✅ Empresa encontrada: ' + (d.razao_social || '');
+    status.style.color = 'var(--green)';
+  } catch(e) {
+    status.textContent = '❌ CNPJ não encontrado ou inválido';
+    status.style.color = 'var(--red)';
+  }
+}
+
+async function salvarCliente() {
+  const razao = document.getElementById('cl-razao').value.trim();
+  const cnpj = document.getElementById('cl-cnpj').value.trim();
+  if (!razao && !cnpj) { showToast('Informe ao menos o CNPJ ou Razão Social', 'error'); return; }
+  try {
+    const dados = {
+      cnpj: cnpj || null,
+      ie_cei: document.getElementById('cl-ie').value || null,
+      razao_social: razao || null,
+      nome_fantasia: document.getElementById('cl-fantasia').value || null,
+      cep: document.getElementById('cl-cep').value || null,
+      endereco: document.getElementById('cl-endereco').value || null,
+      numero: document.getElementById('cl-numero').value || null,
+      bairro: document.getElementById('cl-bairro').value || null,
+      complemento: document.getElementById('cl-complemento').value || null,
+      referencia: document.getElementById('cl-referencia').value || null,
+      cidade: document.getElementById('cl-cidade').value || null,
+      estado: document.getElementById('cl-estado').value || null,
+      email: document.getElementById('cl-email').value || null,
+      telefone: document.getElementById('cl-telefone').value || null,
+      celular: document.getElementById('cl-celular').value || null,
+      dt_abertura: document.getElementById('cl-dt-abertura').value || null,
+      exportador: document.getElementById('cl-exportador').value === 'true',
+    };
+    if (clienteEditandoId) {
+      await supabaseRequest('PATCH', `clientes_cadastro?id=eq.${clienteEditandoId}`, dados);
+      showToast('✅ Cliente atualizado!', 'success');
+      clienteEditandoId = null;
+    } else {
+      await supabaseRequest('POST', 'clientes_cadastro', dados);
+      registrarLog('cliente', 'Cliente cadastrado', `Nome: ${dados?.nome||'—'}`);
+      showToast('✅ Cliente salvo!', 'success');
+    }
+    resetCliente();
+    clientesData = [];
+    carregarClientes();
+  } catch(e) { showToast('Erro ao salvar: ' + e.message, 'error'); }
+}
+
+function resetCliente() {
+  ['cl-cnpj','cl-ie','cl-razao','cl-fantasia','cl-cep','cl-endereco','cl-numero',
+   'cl-bairro','cl-complemento','cl-referencia','cl-cidade','cl-estado',
+   'cl-email','cl-telefone','cl-celular','cl-dt-abertura'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('cl-exportador').value = 'false';
+  document.getElementById('cl-cnpj-status').textContent = '';
+  clienteEditandoId = null;
+  document.querySelector('#page-clientes .form-title').innerHTML = '<span></span> Cadastro de Cliente';
+}
+
+async function carregarClientes() {
+  try {
+    clientesData = await supabaseRequest('GET', 'clientes_cadastro?order=criado_em.desc&limit=200') || [];
+    renderClientes(clientesData);
+  } catch(e) {
+    document.getElementById('clientes-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
+  }
+}
+
+function filtrarClientes() {
+  const busca = document.getElementById('filtro-cl-busca').value.toLowerCase();
+  const filtrados = clientesData.filter(c =>
+    !busca ||
+    (c.razao_social||'').toLowerCase().includes(busca) ||
+    (c.nome_fantasia||'').toLowerCase().includes(busca) ||
+    (c.cnpj||'').includes(busca)
+  );
+  renderClientes(filtrados);
+}
+
+function renderClientes(dados) {
+  if (!dados.length) { document.getElementById('clientes-table').innerHTML = '<div class="empty"><div class="empty-icon">👥</div><p>Nenhum cliente cadastrado.</p></div>'; return; }
+  document.getElementById('clientes-table').innerHTML = `<table>
+    <thead><tr>
+      <th>#</th><th>CNPJ</th><th>Razão Social</th><th>Nome Fantasia</th>
+      <th>Cidade/UF</th><th>Telefone</th><th>Email</th><th>Exportador</th><th></th>
+    </tr></thead>
+    <tbody>
+      ${dados.map(c => `<tr>
+        <td style="color:var(--muted);font-size:12px">#${c.id}</td>
+        <td style="font-size:12px">${c.cnpj || '—'}</td>
+        <td><strong>${c.razao_social || '—'}</strong></td>
+        <td style="font-size:12px">${c.nome_fantasia || '—'}</td>
+        <td style="font-size:12px;color:var(--muted)">${c.cidade || '—'}${c.estado ? '/' + c.estado : ''}</td>
+        <td style="font-size:12px">${c.telefone || '—'}</td>
+        <td style="font-size:12px">${c.email || '—'}</td>
+        <td style="font-size:12px;text-align:center">${c.exportador ? '<span style="color:var(--green)">✅</span>' : '—'}</td>
+        <td style="display:flex;gap:6px;">
+          <button onclick="editarCliente(${c.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">✏️</button>
+          <button onclick="excluirCliente(${c.id})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🗑</button>
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function editarCliente(id) {
+  const c = clientesData.find(x => x.id === id);
+  if (!c) return;
+  clienteEditandoId = id;
+  document.getElementById('cl-cnpj').value = c.cnpj || '';
+  document.getElementById('cl-ie').value = c.ie_cei || '';
+  document.getElementById('cl-razao').value = c.razao_social || '';
+  document.getElementById('cl-fantasia').value = c.nome_fantasia || '';
+  document.getElementById('cl-cep').value = c.cep || '';
+  document.getElementById('cl-endereco').value = c.endereco || '';
+  document.getElementById('cl-numero').value = c.numero || '';
+  document.getElementById('cl-bairro').value = c.bairro || '';
+  document.getElementById('cl-complemento').value = c.complemento || '';
+  document.getElementById('cl-referencia').value = c.referencia || '';
+  document.getElementById('cl-cidade').value = c.cidade || '';
+  document.getElementById('cl-estado').value = c.estado || '';
+  document.getElementById('cl-email').value = c.email || '';
+  document.getElementById('cl-telefone').value = c.telefone || '';
+  document.getElementById('cl-celular').value = c.celular || '';
+  document.getElementById('cl-dt-abertura').value = c.dt_abertura || '';
+  document.getElementById('cl-exportador').value = c.exportador ? 'true' : 'false';
+  document.getElementById('cl-cnpj-status').textContent = '';
+  document.querySelector('#page-clientes .form-title').innerHTML = '<span></span> Editando Cliente #' + id;
+  window.scrollTo(0, 0);
+  showPage('clientes');
+}
+
+async function excluirCliente(id) {
+  if (!confirm('Excluir este cliente?')) return;
+  try {
+    await supabaseRequest('DELETE', `clientes_cadastro?id=eq.${id}`);
+    clientesData = clientesData.filter(c => c.id !== id);
+    renderClientes(clientesData);
+    showToast('Cliente excluído!', 'success');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+
+async function carregarClientesSelect(selectId) {
+  try {
+    const clientes = await supabaseRequest('GET', 'clientes_cadastro?order=razao_social.asc&select=id,razao_social,nome_fantasia') || [];
+    const sel = document.getElementById(selectId);
+    const valorAtual = sel.value;
+    sel.innerHTML = '<option value="">Selecione um cliente...</option>';
+    clientes.forEach(c => {
+      const nome = c.nome_fantasia || c.razao_social;
+      const opt = document.createElement('option');
+      opt.value = nome;
+      opt.textContent = nome;
+      if (nome === valorAtual) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  } catch(e) { console.error('Erro ao carregar clientes:', e); }
+}
+
+
+// ============ AUTOCOMPLETE CIDADES ============
+let cidadesCache = [];
+let buscandoCidades = false;
+let cidadesCarregadas = false;
+
+async function carregarCidadesIBGE() {
+  if (cidadesCarregadas || buscandoCidades) return;
+  buscandoCidades = true;
+  try {
+    const res = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome');
+    const data = await res.json();
+    cidadesCache = data.map(c => ({ nome: c.nome, uf: c.microrregiao.mesorregiao.UF.sigla }));
+    cidadesCarregadas = true;
+  } catch(e) { console.error('Erro IBGE:', e); }
+  buscandoCidades = false;
+}
+
+async function buscarCidade(termo, listaId) {
+  const lista = document.getElementById(listaId);
+  if (!termo || termo.length < 2) { lista.style.display = 'none'; return; }
+
+  if (!cidadesCarregadas) {
+    await carregarCidadesIBGE();
+  }
+
+  const termoLower = termo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const filtradas = cidadesCache.filter(c => {
+    const nomeLower = c.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    return nomeLower.startsWith(termoLower);
+  }).slice(0, 10);
+
+  if (!filtradas.length) { lista.style.display = 'none'; return; }
+
+  lista.innerHTML = filtradas.map(c =>
+    `<div class="autocomplete-item" onmousedown="selecionarCidade('${c.nome}/${c.uf}', '${listaId}')">
+      <strong>${c.nome}</strong> <span style="color:var(--muted);font-size:11px">/ ${c.uf}</span>
+    </div>`
+  ).join('');
+  lista.style.display = 'block';
+}
+
+function selecionarCidade(valor, listaId) {
+  const inputId = listaId.replace('-list', '');
+  const input = document.getElementById(inputId);
+  if (input) input.value = valor;
+  const lista = document.getElementById(listaId);
+  if (lista) lista.style.display = 'none';
+}
+
+function navegarAutocomplete(event, listaId) {
+  const lista = document.getElementById(listaId);
+  if (!lista || lista.style.display === 'none') return;
+  const items = lista.querySelectorAll('.autocomplete-item');
+  const ativo = lista.querySelector('.autocomplete-item.active');
+  let idx = -1;
+  items.forEach((el, i) => { if(el === ativo) idx = i; });
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    if (ativo) ativo.classList.remove('active');
+    const next = items[idx + 1] || items[0];
+    if (next) next.classList.add('active');
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    if (ativo) ativo.classList.remove('active');
+    const prev = items[idx - 1] || items[items.length - 1];
+    if (prev) prev.classList.add('active');
+  } else if (event.key === 'Enter') {
+    if (ativo) { event.preventDefault(); ativo.dispatchEvent(new Event('mousedown')); }
+  } else if (event.key === 'Escape') {
+    lista.style.display = 'none';
+  }
+}
+
+document.addEventListener('click', function(e) {
+  document.querySelectorAll('.autocomplete-list').forEach(l => {
+    if (!l.parentElement.contains(e.target)) l.style.display = 'none';
+  });
+});
+
+// Pré-carrega cidades ao abrir a página de lotes
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(carregarCidadesIBGE, 1000);
+});
+
+
+// ============ FISCAL ============
+let fiscalData = [];
+
+async function carregarFiscal() {
+  try {
+    document.getElementById('fiscal-table').innerHTML = '<div class="loading">Carregando motoristas...</div>';
+    const motoristas = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500') || [];
+    const loteIds = [...new Set(motoristas.map(m => m.lote_id))];
+    const lotesMap = {};
+    await Promise.all(loteIds.map(async lid => {
+      const l = await supabaseRequest('GET', `lotes?id=eq.${lid}&select=id,cliente,produto,origem,destino`) || [];
+      if (l.length) lotesMap[lid] = l[0];
+    }));
+    fiscalData = motoristas.map(m => ({ ...m, lote: lotesMap[m.lote_id] || null }));
+    renderFiscal(fiscalData);
+  } catch(e) {
+    document.getElementById('fiscal-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
+  }
+}
+
+function filtrarFiscal() {
+  const busca = document.getElementById('filtro-fiscal-busca').value.toLowerCase();
+  const status = document.getElementById('filtro-fiscal-status').value;
+  const filtrados = fiscalData.filter(m => {
+    const matchBusca = !busca || (m.nome||'').toLowerCase().includes(busca) || (m.cpf||'').includes(busca);
+    const matchStatus = !status || m.status === status;
+    return matchBusca && matchStatus;
+  });
+  renderFiscal(filtrados);
+}
+
+function renderFiscal(dados) {
+  if (!dados.length) {
+    document.getElementById('fiscal-table').innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>Nenhum motorista encontrado.</p></div>';
+    return;
+  }
+  document.getElementById('fiscal-table').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>#</th>
+        <th>Motorista</th>
+        <th>CPF</th>
+        <th>Placa</th>
+        <th>Status</th>
+        <th>Lote / Cliente</th>
+        <th>Rota</th>
+        <th>Peso Saída</th>
+        <th>Status GR</th>
+        <th>Pagamento</th>
+        <th>Dados Bancários / PIX</th>
+        <th>Titular</th>
+      </tr></thead>
+      <tbody>
+        ${dados.map(m => {
+          const isPix = m.tipo_pagamento === 'chave_pix';
+          const dadosPagamento = isPix
+            ? `<div style="display:flex;flex-direction:column;gap:3px;">
+                <span style="font-size:11px;color:var(--muted)">${nomeTipoPix(m.tipo_chave_pix)}</span>
+                <span style="color:var(--green);font-weight:600;word-break:break-all">${m.chave_pix || '—'}</span>
+               </div>`
+            : `<div style="display:flex;flex-direction:column;gap:3px;">
+                <span style="font-weight:600">${m.banco || '—'}</span>
+                <span style="color:var(--muted);font-size:11px">Ag: ${m.agencia || '—'} | Cc: ${m.numero_conta || '—'} ${m.tipo_conta ? '(' + m.tipo_conta.charAt(0).toUpperCase() + m.tipo_conta.slice(1) + ')' : ''}</span>
+               </div>`;
+          return `<tr onclick="abrirFiscalModal(${m.id})" style="cursor:pointer">
+            <td style="color:var(--muted);font-size:12px">#${m.id}</td>
+            <td><strong>${m.nome || '—'}</strong></td>
+            <td style="font-size:12px">${m.cpf || '—'}</td>
+            <td style="font-size:12px">${m.placa || '—'}</td>
+            <td>${badgeMotorista(m.status)}</td>
+            <td style="font-size:12px">
+              <span style="color:var(--muted)">Lote #${m.lote_id}</span><br>
+              <strong>${m.lote ? m.lote.cliente || '—' : '—'}</strong>
+            </td>
+            <td style="font-size:12px;color:var(--muted)">${m.lote ? (m.lote.origem||'—') + ' → ' + (m.lote.destino||'—') : '—'}</td>
+            <td style="font-size:12px;color:var(--accent);font-weight:600">${m.peso_saida ? m.peso_saida + ' ton' : '—'}</td>
+            <td>${badgeGR(m.gr_status || 'pendente')}</td>
+            <td>${badgeTipoPagamento(m.tipo_pagamento)}</td>
+            <td style="font-size:12px">${dadosPagamento}</td>
+            <td style="font-size:12px">
+              <div style="font-weight:600">${m.nome_titular || '—'}</div>
+              <div style="color:var(--muted);font-size:11px">${m.cpf_titular || ''}</div>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+
+// ============ MODAL FISCAL ============
+let motoristFiscalId = null;
+
+async function abrirFiscalModal(id) {
+  const m = fiscalData.find(x => x.id === id);
+  if (!m) return;
+  motoristFiscalId = id;
+
+  document.getElementById('mf-titulo').textContent = 'Motorista — ' + (m.nome || '#' + id);
+  document.getElementById('mf-status-bar').innerHTML = badgeMotorista(m.status);
+  document.getElementById('mf-nome').textContent = m.nome || '—';
+  document.getElementById('mf-cpf').textContent = m.cpf || '—';
+  document.getElementById('mf-placa').textContent = m.placa || '—';
+  document.getElementById('mf-contato').textContent = m.contato || '—';
+  document.getElementById('mf-peso').textContent = m.peso_saida ? m.peso_saida + ' ton' : '—';
+  document.getElementById('mf-status').innerHTML = badgeMotorista(m.status);
+  document.getElementById('mf-status-select').value = m.status || 'em_negociacao';
+
+  document.getElementById('mf-lote').textContent = 'Lote #' + m.lote_id;
+  document.getElementById('mf-cliente').textContent = m.lote ? (m.lote.cliente || '—') : '—';
+  document.getElementById('mf-produto').textContent = m.lote ? (m.lote.produto || '—') : '—';
+  document.getElementById('mf-agencia-lote').textContent = m.lote ? (m.lote.agencia || '—') : '—';
+  document.getElementById('mf-rota').textContent = m.lote ? ((m.lote.origem||'—') + ' → ' + (m.lote.destino||'—')) : '—';
+
+  document.getElementById('mf-nome-titular').textContent = m.nome_titular || '—';
+  document.getElementById('mf-cpf-titular').textContent = m.cpf_titular || '—';
+  document.getElementById('mf-banco').textContent = m.banco || '—';
+  document.getElementById('mf-agencia').textContent = m.agencia || '—';
+  document.getElementById('mf-conta').textContent = m.numero_conta || '—';
+  document.getElementById('mf-tipo-conta').textContent = m.tipo_conta ? m.tipo_conta.charAt(0).toUpperCase() + m.tipo_conta.slice(1) : '—';
+  document.getElementById('mf-tipo-pix').textContent = nomeTipoPix(m.tipo_chave_pix);
+  document.getElementById('mf-pix').textContent = m.chave_pix || '—';
+  document.getElementById('mf-badge-pagamento').innerHTML = badgeTipoPagamento(m.tipo_pagamento);
+
+  // Status GR no modal fiscal
+  const grStatusEl = document.getElementById('mf-gr-status');
+  if (grStatusEl) grStatusEl.innerHTML = badgeGR(m.gr_status || 'pendente');
+  const grMotivoEl = document.getElementById('mf-gr-motivo');
+  if (grMotivoEl) grMotivoEl.textContent = m.gr_motivo || '—';
+
+  const isPix = m.tipo_pagamento === 'chave_pix';
+  document.getElementById('mf-secao-conta').style.display = isPix ? 'none' : 'grid';
+  document.getElementById('mf-secao-pix').style.display = isPix ? 'grid' : 'none';
+
+  document.getElementById('modal-fiscal-overlay').classList.add('open');
+
+  // ---- CHECKLIST ----
+  const ck = m.checklist || {};
+  const fmt = v => v ? 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '—';
+
+  document.getElementById('mf-ck-valor-frete').textContent = fmt(ck.valor_frete_motorista);
+  document.getElementById('mf-ck-valor-carga').textContent = fmt(ck.valor_carga);
+  document.getElementById('mf-ck-canal').textContent = ck.canal_contato || '—';
+
+  // Documentos — mostra anexos por tipo
+  const nomeDocLabel = {
+    cnh: 'Habilitação (CNH)',
+    antt: 'Registro na ANTT',
+    doc_caminhao: 'Doc. Caminhão/Carretas',
+    residencia: 'Comprovante de Residência',
+    foto_caminhao: 'Foto Caminhão/Carretas',
+    selfie_cnh: 'Selfie segurando CNH',
+    selfie_placa: 'Selfie ao lado do veículo',
+    lonas: 'Fotos das Lonas',
+  };
+  const anexos = m.anexos || [];
+  const todosDocTipos = Object.keys(nomeDocLabel);
+  document.getElementById('mf-ck-docs').innerHTML = todosDocTipos.map(tipo => {
+    const docsDoTipo = anexos.filter(a => a.tipo === tipo);
+    const temAnexo = docsDoTipo.length > 0;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surface);border-radius:6px;border:1px solid ${temAnexo ? 'rgba(34,197,94,0.3)' : 'var(--border)'};">
+      <span style="font-size:13px;color:var(--text);">${nomeDocLabel[tipo]}</span>
+      <span style="font-size:12px;font-weight:600;color:${temAnexo ? 'var(--green)' : 'var(--muted)'};">
+        ${temAnexo ? '✅ ' + docsDoTipo.map(a => a.nome || 'Anexado').join(', ') : '— Não anexado'}
+      </span>
+    </div>`;
+  }).join('');
+
+  // Forma de pagamento
+  let pgto = [];
+  if (ck.pgto_adiantamento70) pgto.push('Adiantamento 70%');
+  if (ck.pgto_saldo30) pgto.push('Saldo 30%');
+  document.getElementById('mf-ck-pgto').textContent = pgto.length ? pgto.join(' + ') : '—';
+  const excPgto = document.getElementById('mf-ck-excecao-pgto');
+  const excPgtoRow = document.getElementById('mf-ck-excecao-pgto-row');
+  if (ck.pgto_excecao) { excPgto.textContent = ck.pgto_excecao + (ck.pgto_assinatura ? ' (Resp: ' + ck.pgto_assinatura + ')' : ''); excPgtoRow.style.display = ''; }
+  else { excPgtoRow.style.display = 'none'; }
+
+  // Prazo do saldo
+  const prazoMap = { '5':'05 dias após descarga', '7':'07 dias após descarga', '8+':'08+ dias após descarga' };
+  document.getElementById('mf-ck-prazo').textContent = prazoMap[ck.prazo_saldo] || '—';
+  const excPrazo = document.getElementById('mf-ck-excecao-prazo');
+  const excPrazoRow = document.getElementById('mf-ck-excecao-prazo-row');
+  if (ck.prazo_excecao) { excPrazo.textContent = ck.prazo_excecao + (ck.prazo_assinatura ? ' (Resp: ' + ck.prazo_assinatura + ')' : ''); excPrazoRow.style.display = ''; }
+  else { excPrazoRow.style.display = 'none'; }
+
+  // Recolhimento
+  let rec = [];
+  if (ck.recolhimento_pf) rec.push('Pessoa Física (INSS + SEST SENAT)');
+  if (ck.recolhimento_pj) rec.push('Pessoa Jurídica (Taxa R$ 88,00)');
+  document.getElementById('mf-ck-recolhimento').textContent = rec.length ? rec.join(' | ') : '—';
+
+  // Anexos — arquivos para download
+  const nomeAnexo = {
+    cnh: 'CNH', antt: 'ANTT', doc_caminhao: 'Doc. Caminhão/Carretas',
+    residencia: 'Comp. Residência', foto_caminhao: 'Foto Caminhão/Carretas',
+    selfie_cnh: 'Selfie com CNH', selfie_placa: 'Selfie ao lado do veículo', lonas: 'Fotos das Lonas'
+  };
+  const containerAnexos = document.getElementById('mf-ck-anexos');
+  if (anexos.length === 0) {
+    containerAnexos.innerHTML = '<div style="font-size:13px;color:var(--muted);">Nenhum arquivo anexado.</div>';
+  } else {
+    containerAnexos.innerHTML = '<div style="font-size:13px;color:var(--muted);">Carregando arquivos...</div>';
+    try {
+      // Gera URLs assinadas (válidas por 1 hora) para cada anexo
+      const paths = anexos.map(a => a.path || a.url); // compatibilidade com registros antigos
+      const { data: signedUrls, error } = await sb.storage
+        .from('motoristas-docs')
+        .createSignedUrls(paths.filter(Boolean), 3600);
+
+      if (error) throw error;
+
+      // Mapeia path -> signedUrl
+      const urlMap = {};
+      (signedUrls || []).forEach(s => { urlMap[s.path] = s.signedUrl; });
+
+      containerAnexos.innerHTML = anexos.map(a => {
+        const caminho = a.path || a.url;
+        const url = urlMap[caminho] || caminho;
+        const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome);
+        const label = nomeAnexo[a.tipo] || a.tipo;
+        return `
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;gap:10px;">
+          <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+            <span style="font-size:16px;">${isImg ? "🖼️" : "📄"}</span>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text);">${label}</div>
+              <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">${a.nome}</div>
+            </div>
+          </div>
+          <a href="${url}" target="_blank" style="display:flex;align-items:center;gap:5px;background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;">
+            ${isImg ? "🔍 Ver" : "⬇️ Abrir"}
+          </a>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      containerAnexos.innerHTML = `<div style="font-size:13px;color:var(--red);">Erro ao carregar arquivos: ${e.message}</div>`;
+    }
+  }
+}
+
+async function atualizarStatusFiscal() {
+  const novoStatus = document.getElementById('mf-status-select').value;
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: novoStatus });
+    const m = fiscalData.find(x => x.id === motoristFiscalId);
+    if (m) {
+      m.status = novoStatus;
+      document.getElementById('mf-status-bar').innerHTML = badgeMotorista(novoStatus);
+      document.getElementById('mf-status').innerHTML = badgeMotorista(novoStatus);
+    }
+    registrarLog('fiscal', 'Status fiscal atualizado', `ID: ${motoristFiscalId}, Novo status: ${novoStatus}`);
+    showToast('Status atualizado!', 'success');
+    renderFiscal(fiscalData);
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+function fecharModalFiscal(e) { if (e.target === document.getElementById('modal-fiscal-overlay')) fecharModalFiscalBtn(); }
+function fecharModalFiscalBtn() { document.getElementById('modal-fiscal-overlay').classList.remove('open'); motoristFiscalId = null; }
+
+// ============ TIPO PAGAMENTO ============
+function selecionarTipoPagamento(tipo) {
+  document.getElementById('nm-tipo-pagamento').value = tipo;
+  const btnConta = document.getElementById('btn-tipo-conta-bancaria');
+  const btnPix = document.getElementById('btn-tipo-chave-pix');
+  const campoConta = document.getElementById('campos-conta-bancaria');
+  const campoPix = document.getElementById('campos-chave-pix');
+
+  if (tipo === 'conta_bancaria') {
+    btnConta.style.borderColor = 'var(--accent)';
+    btnConta.style.background = 'rgba(249,115,22,0.12)';
+    btnConta.style.color = 'var(--accent)';
+    btnPix.style.borderColor = 'var(--border)';
+    btnPix.style.background = 'var(--surface)';
+    btnPix.style.color = 'var(--muted)';
+    campoConta.style.display = 'grid';
+    campoPix.style.display = 'none';
+  } else {
+    btnPix.style.borderColor = 'var(--green)';
+    btnPix.style.background = 'rgba(34,197,94,0.12)';
+    btnPix.style.color = 'var(--green)';
+    btnConta.style.borderColor = 'var(--border)';
+    btnConta.style.background = 'var(--surface)';
+    btnConta.style.color = 'var(--muted)';
+    campoPix.style.display = 'grid';
+    campoConta.style.display = 'none';
+  }
+}
+
+function atualizarPlaceholderPix() {
+  const tipo = document.getElementById('nm-tipo-pix').value;
+  const placeholders = {
+    telefone: 'Ex: (34) 99999-9999',
+    cpf: 'Ex: 000.000.000-00',
+    cnpj: 'Ex: 00.000.000/0001-00',
+    email: 'Ex: nome@email.com',
+    aleatoria: 'Cole a chave aleatória aqui',
+  };
+  document.getElementById('nm-pix').placeholder = placeholders[tipo] || 'Digite a chave PIX';
+}
+
+function nomeTipoPix(tipo) {
+  const nomes = {
+    telefone: '📱 Telefone',
+    cpf: '🪪 CPF',
+    cnpj: '🏢 CNPJ',
+    email: '✉️ E-mail',
+    aleatoria: '🔑 Chave Aleatória',
+  };
+  return nomes[tipo] || (tipo ? tipo : '—');
+}
+
+function badgeTipoPagamento(tipo) {
+  if (tipo === 'chave_pix') {
+    return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;color:var(--green);background:rgba(34,197,94,0.12);">⚡ Chave PIX</span>`;
+  }
+  return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;color:var(--blue);background:rgba(59,130,246,0.12);">🏦 Conta Bancária</span>`;
+}
+
+
+// ============ PERFIL E PERMISSÕES ============
+async function carregarPerfilUsuario(userId) {
+  try {
+    const perfis = await supabaseRequest('GET', `usuarios_perfil?id=eq.${userId}`);
+    if (perfis && perfis.length) {
+      console.log('Perfil encontrado:', perfis[0].setor);
+      aplicarPermissoes(perfis[0].setor || 'comercial', getPermissoesUsuario(perfis[0]));
+    } else {
+      await supabaseRequest('POST', 'usuarios_perfil', {
+        id: userId,
+        setor: 'comercial',
+        ativo: true,
+        permissoes: PERMISSOES_PADRAO['comercial']
+      });
+      aplicarPermissoes('comercial', PERMISSOES_PADRAO['comercial']);
+    }
+  } catch(e) {
+    console.error('Erro ao carregar perfil:', e);
+    aplicarPermissoes('comercial', PERMISSOES_PADRAO['comercial']);
+  }
+}
+
+// ============ MONITORAMENTO DE LOGS ============
+let todosLogs = [];
+
+async function registrarLog(tipo, acao, detalhes = '') {
+  try {
+    const nome = userAtual?.email || 'desconhecido';
+    await supabaseRequest('POST', 'log_atividades', {
+      usuario_email: nome,
+      usuario_nome: userAtual?.user_metadata?.nome || nome,
+      setor: setorAtual || '—',
+      tipo,
+      acao,
+      detalhes: String(detalhes).substring(0, 500),
+      criado_em: new Date().toISOString()
+    });
+  } catch(e) {
+    // Silencioso - não interrompe fluxo
+    console.warn('Log não registrado:', e.message);
+  }
+}
+
+async function carregarLogs() {
+  document.getElementById('logs-table').innerHTML = '<div class="loading">Carregando...</div>';
+  try {
+    const logs = await supabaseRequest('GET', 'log_atividades?order=criado_em.desc&limit=200') || [];
+    todosLogs = logs;
+    filtrarLogs();
+  } catch(e) {
+    document.getElementById('logs-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar logs.</p></div>';
+  }
+}
+
+function filtrarLogs() {
+  const busca = (document.getElementById('log-filtro-busca')?.value || '').toLowerCase();
+  const tipo = document.getElementById('log-filtro-tipo')?.value || '';
+  const filtrados = todosLogs.filter(l => {
+    const matchBusca = !busca ||
+      (l.usuario_email||'').toLowerCase().includes(busca) ||
+      (l.usuario_nome||'').toLowerCase().includes(busca) ||
+      (l.acao||'').toLowerCase().includes(busca) ||
+      (l.detalhes||'').toLowerCase().includes(busca);
+    const matchTipo = !tipo || (l.tipo||'') === tipo;
+    return matchBusca && matchTipo;
+  });
+  renderLogs(filtrados);
+}
+
+function renderLogs(lista) {
+  if (!lista.length) {
+    document.getElementById('logs-table').innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>Nenhuma ação registrada.</p></div>';
+    return;
+  }
+  const tipoCor = {
+    cotacao: 'var(--accent)', lote: 'var(--blue)', motorista: '#22c55e',
+    cliente: '#8b5cf6', usuario: '#ef4444', login: 'var(--yellow)', fiscal: '#06b6d4'
+  };
+  const tipoIcon = {
+    cotacao: '📄', lote: '📦', motorista: '🚛',
+    cliente: '👥', usuario: '👤', login: '🔐', fiscal: '💼'
+  };
+  document.getElementById('logs-table').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Data/Hora</th><th>Usuário</th><th>Setor</th><th>Tipo</th><th>Ação</th><th>Detalhes</th>
+      </tr></thead>
+      <tbody>
+        ${lista.map(l => {
+          const cor = tipoCor[l.tipo] || 'var(--muted)';
+          const icon = tipoIcon[l.tipo] || '📌';
+          const dt = l.criado_em ? new Date(l.criado_em).toLocaleString('pt-BR') : '—';
+          return `<tr>
+            <td style="font-size:12px;color:var(--muted);white-space:nowrap;">${dt}</td>
+            <td>
+              <div style="font-weight:600;font-size:13px;">${l.usuario_nome||'—'}</div>
+              <div style="font-size:11px;color:var(--muted);">${l.usuario_email||''}</div>
+            </td>
+            <td><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(99,102,241,0.15);color:#818cf8;">${(l.setor||'—').toUpperCase()}</span></td>
+            <td><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:${cor}22;color:${cor};">${icon} ${(l.tipo||'—').toUpperCase()}</span></td>
+            <td style="font-size:13px;font-weight:500;">${l.acao||'—'}</td>
+            <td style="font-size:12px;color:var(--muted);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${l.detalhes||''}">${l.detalhes||'—'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ============ SEGURANÇA ============
+async function carregarSeguranca() {
+  try {
+    const perfis = await supabaseRequest('GET', 'usuarios_perfil?order=criado_em.desc') || [];
+    document.getElementById('seg-total').textContent = perfis.length;
+    document.getElementById('seg-ativos').textContent = perfis.filter(u => u.ativo).length;
+    document.getElementById('seg-inativos').textContent = perfis.filter(u => !u.ativo).length;
+    renderUsuarios(perfis);
+  } catch(e) {
+    document.getElementById('usuarios-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar usuários.</p></div>';
+  }
+}
+
+const ABAS_SISTEMA = [
+  { id: 'dashboard',   label: '📊 Dashboard' },
+  { id: 'nova',        label: '➕ Nova Cotação' },
+  { id: 'lista',       label: '📋 Todas as Cotações' },
+  { id: 'lotes',       label: '📦 Lotes' },
+  { id: 'motoristas',  label: '🚛 Motoristas' },
+  { id: 'gr',          label: '🔍 GR' },
+  { id: 'status-lote', label: '📍 Status do Lote' },
+  { id: 'clientes',    label: '👥 Clientes' },
+  { id: 'fiscal',      label: '💼 Fiscal' },
+  { id: 'seguranca',   label: '🔒 Segurança' },
+];
+
+// Permissões padrão por setor: 0=oculto, 1=só ver, 2=acesso total
+const PERMISSOES_PADRAO = {
+  administrativo: { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, gr:2, 'status-lote':2, clientes:2, fiscal:2, seguranca:2 },
+  comercial:      { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, gr:0, 'status-lote':2, clientes:2, fiscal:0, seguranca:0 },
+  logistico:      { dashboard:2, nova:0, lista:1, lotes:2, motoristas:2, gr:1, 'status-lote':2, clientes:0, fiscal:0, seguranca:0 },
+  fiscal:         { dashboard:2, nova:0, lista:1, lotes:0, motoristas:1, gr:0, 'status-lote':2, clientes:0, fiscal:2, seguranca:0 },
+  gr:             { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:2, 'status-lote':1, clientes:0, fiscal:0, seguranca:0 },
+};
+
+function getPermissoesUsuario(u) {
+  const padrao = PERMISSOES_PADRAO[u.setor] || PERMISSOES_PADRAO['comercial'];
+  const custom = (u.permissoes && typeof u.permissoes === 'object') ? u.permissoes : {};
+  return { ...padrao, ...custom };
+}
+
+function renderUsuarios(perfis) {
+  if (!perfis.length) {
+    document.getElementById('usuarios-table').innerHTML = '<div class="empty"><div class="empty-icon">👥</div><p>Nenhum usuário encontrado.</p></div>';
+    return;
+  }
+  const cores = { administrativo:'#f97316', comercial:'#3b82f6', logistico:'#22c55e', fiscal:'#8b5cf6', gr:'#ec4899' };
+
+  document.getElementById('usuarios-table').innerHTML = perfis.map(u => {
+    const perms = getPermissoesUsuario(u);
+    const nivelLabel = { 0: '🚫 Oculto', 1: '👁️ Só ver', 2: '✏️ Total' };
+    const nivelCor   = { 0: 'var(--red)', 1: 'var(--yellow)', 2: 'var(--green)' };
+
+    return `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:${cores[u.setor]||'#888'}22;display:flex;align-items:center;justify-content:center;font-size:16px;">👤</div>
+          <div>
+            <div style="font-weight:700;font-size:14px">${u.nome || 'Sem nome'}</div>
+            <div style="font-size:11px;color:var(--muted)">${u.nome || ''}</div>
+          </div>
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${cores[u.setor]||'#888'}22;color:${cores[u.setor]||'#888'}">${(u.setor||'').toUpperCase()}</span>
+          ${u.ativo ? '<span class="badge badge-aprovada">Ativo</span>' : '<span class="badge badge-reprovada">Inativo</span>'}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <select onchange="alterarSetor('${u.id}', this.value)" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;">
+            <option value="comercial" ${u.setor==='comercial'?'selected':''}>Comercial</option>
+            <option value="logistico" ${u.setor==='logistico'?'selected':''}>Logístico</option>
+            <option value="fiscal" ${u.setor==='fiscal'?'selected':''}>Fiscal</option>
+            <option value="gr" ${u.setor==='gr'?'selected':''}>GR</option>
+            <option value="administrativo" ${u.setor==='administrativo'?'selected':''}>Administrativo</option>
+          </select>
+          <button onclick="toggleAtivo('${u.id}', ${u.ativo})" style="background:${u.ativo?'rgba(239,68,68,0.1)':'rgba(34,197,94,0.1)'};color:${u.ativo?'#ef4444':'#22c55e'};border:1px solid ${u.ativo?'rgba(239,68,68,0.3)':'rgba(34,197,94,0.3)'};border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">
+            ${u.ativo ? 'Desativar' : 'Ativar'}
+          </button>
+          <button onclick="excluirUsuario('${u.id}', '${u.nome || u.email || 'este usuário'}')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">
+            🗑️ Excluir
+          </button>
+        </div>
+      </div>
+
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:10px;">Permissões por Aba</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">
+        ${ABAS_SISTEMA.map(aba => {
+          const nivel = perms[aba.id] ?? 0;
+          return `
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <span style="font-size:12px;font-weight:500">${aba.label}</span>
+            <select onchange="alterarPermissao('${u.id}', '${aba.id}', parseInt(this.value))"
+              style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:${nivelCor[nivel]};font-size:11px;font-weight:700;padding:3px 6px;cursor:pointer;min-width:90px;">
+              <option value="0" ${nivel===0?'selected':''} style="color:var(--red)">🚫 Oculto</option>
+              <option value="1" ${nivel===1?'selected':''} style="color:var(--yellow)">👁️ Só ver</option>
+              <option value="2" ${nivel===2?'selected':''} style="color:var(--green)">✏️ Total</option>
+            </select>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <div style="margin-top:10px;display:flex;justify-content:flex-end;">
+        <button onclick="resetarPermissoes('${u.id}', '${u.setor}')" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;">
+          🔄 Resetar para padrão do setor
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function alterarSetor(userId, novoSetor) {
+  try {
+    // Ao mudar setor, reseta permissões para o padrão do novo setor
+    const novasPerms = PERMISSOES_PADRAO[novoSetor] || PERMISSOES_PADRAO['comercial'];
+    await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userId}`, { setor: novoSetor, permissoes: novasPerms });
+    showToast('Setor atualizado! Permissões resetadas para o padrão.', 'success');
+    carregarSeguranca();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function alterarPermissao(userId, aba, nivel) {
+  try {
+    const perfis = await supabaseRequest('GET', `usuarios_perfil?id=eq.${userId}`) || [];
+    if (!perfis.length) return;
+    const u = perfis[0];
+    const permsAtuais = getPermissoesUsuario(u);
+    permsAtuais[aba] = nivel;
+    await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userId}`, { permissoes: permsAtuais });
+    showToast('Permissão atualizada!', 'success');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function resetarPermissoes(userId, setor) {
+  try {
+    const padrao = PERMISSOES_PADRAO[setor] || PERMISSOES_PADRAO['comercial'];
+    await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userId}`, { permissoes: padrao });
+    showToast('Permissões resetadas para o padrão do setor!', 'success');
+    carregarSeguranca();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function toggleAtivo(userId, ativo) {
+  try {
+    await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userId}`, { ativo: !ativo });
+    showToast(ativo ? 'Usuário desativado!' : 'Usuário ativado!', 'success');
+    carregarSeguranca();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function excluirUsuario(userId, nomeUsuario) {
+  if (!confirm(`Tem certeza que deseja excluir "${nomeUsuario}"?\nEssa ação não pode ser desfeita!`)) return;
+  try {
+    const resp = await fetch(API_URL + '?acao=deletar_usuario', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    });
+    const result = await resp.json();
+    if (!resp.ok) throw new Error(result.error || 'Erro ao excluir usuário');
+    registrarLog('usuario', 'Usuário excluído', `Nome: ${nomeUsuario}`);
+    showToast('✅ Usuário excluído com sucesso!', 'success');
+    carregarSeguranca();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function criarUsuario() {
+  const nome = document.getElementById('nu-nome').value.trim();
+  const email = document.getElementById('nu-email').value.trim();
+  const senha = document.getElementById('nu-senha').value;
+  const setor = document.getElementById('nu-setor').value;
+  if (!email || !senha) { showToast('Email e senha são obrigatórios', 'error'); return; }
+  if (senha.length < 6) { showToast('Senha deve ter mínimo 6 caracteres', 'error'); return; }
+  try {
+    const resp = await fetch(API_URL + '?acao=criar_usuario', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha, nome, setor })
+    });
+    const result = await resp.json();
+    if (!resp.ok) throw new Error(result.error || 'Erro ao criar usuário');
+    registrarLog('usuario', 'Usuário criado', `Email: ${email}, Setor: ${setor}`);
+    showToast('✅ Usuário criado com sucesso!', 'success');
+    document.getElementById('nu-nome').value = '';
+    document.getElementById('nu-email').value = '';
+    document.getElementById('nu-senha').value = '';
+    carregarSeguranca();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function alterarSenha() {
+  const senha = document.getElementById('alt-senha').value;
+  const senha2 = document.getElementById('alt-senha2').value;
+  if (!senha || !senha2) { showToast('Preencha os dois campos', 'error'); return; }
+  if (senha !== senha2) { showToast('Senhas não conferem', 'error'); return; }
+  if (senha.length < 6) { showToast('Senha deve ter mínimo 6 caracteres', 'error'); return; }
+  try {
+    const { error } = await sb.auth.updateUser({ password: senha });
+    if (error) throw new Error(error.message);
+    registrarLog('usuario', 'Senha alterada', 'Própria senha alterada');
+    showToast('✅ Senha alterada com sucesso!', 'success');
+    document.getElementById('alt-senha').value = '';
+    document.getElementById('alt-senha2').value = '';
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+// PERMISSÕES POR SETOR
+const PERMISSOES = {
+  administrativo: ['dashboard','nova','lista','lotes','status-lote','clientes','fiscal','seguranca'],
+  comercial:      ['dashboard','nova','lista','lotes','status-lote','clientes'],
+  logistico:      ['dashboard','lotes','status-lote'],
+  fiscal:         ['dashboard','status-lote','fiscal']
+};
+
+let setorAtual = null;
+let userAtual = null;
+let permissoesAtual = {};
+
+function aplicarPermissoes(setor, perms) {
+  setorAtual = setor;
+  permissoesAtual = perms || PERMISSOES_PADRAO[setor] || PERMISSOES_PADRAO['comercial'];
+
+  const paginas = ['dashboard','nova','lista','lotes','motoristas','gr','status-lote','clientes','fiscal','seguranca'];
+  const botoesNav = document.querySelectorAll('nav button');
+
+  paginas.forEach((p, i) => {
+    const btn = botoesNav[i];
+    if (!btn) return;
+    const nivel = permissoesAtual[p] ?? 0;
+    btn.style.display = nivel > 0 ? '' : 'none';
+  });
+
+  // Badge do setor
+  const badge = document.getElementById('setor-badge');
+  const cores = { administrativo:'#f97316', comercial:'#3b82f6', logistico:'#22c55e', fiscal:'#8b5cf6', gr:'#ec4899' };
+  if (badge) {
+    badge.textContent = setor.toUpperCase();
+    badge.style.background = cores[setor] || '#888';
+  }
+
+  // Aplicar read-only nas páginas com nível 1
+  paginas.forEach(p => {
+    const nivel = permissoesAtual[p] ?? 0;
+    const pagEl = document.getElementById('page-' + p);
+    if (!pagEl) return;
+    if (nivel === 1) {
+      // Só ver: desabilita inputs, selects, textareas e botões de ação
+      pagEl.querySelectorAll('input, select, textarea').forEach(el => {
+        el.setAttribute('disabled', 'disabled');
+        el.style.opacity = '0.6';
+        el.style.cursor = 'not-allowed';
+      });
+      pagEl.querySelectorAll('.btn-primary, .btn-secondary').forEach(el => {
+        el.style.display = 'none';
+      });
+    } else if (nivel === 2) {
+      // Acesso total: garante que está habilitado
+      pagEl.querySelectorAll('input, select, textarea').forEach(el => {
+        el.removeAttribute('disabled');
+        el.style.opacity = '';
+        el.style.cursor = '';
+      });
+      pagEl.querySelectorAll('.btn-primary, .btn-secondary').forEach(el => {
+        el.style.display = '';
+      });
+    }
+  });
+
+  // Navegar para primeira aba visível
+  const primeiraVisivel = paginas.find(p => (permissoesAtual[p] ?? 0) > 0) || 'dashboard';
+  showPage(primeiraVisivel);
+}
+
+// ============ GR - GERENCIAMENTO DE RISCO ============
+let grData = [];
+let grMotoristaSelecionadoId = null;
+
+function abrirCadastroMotoristaGR() {
+  // Reset form
+  ['gr-nome','gr-placa','gr-contato','gr-cpf','gr-nome-titular','gr-cpf-titular','gr-banco','gr-agencia','gr-conta','gr-pix',
+   'gr-ck-valor-frete','gr-ck-valor-carga','gr-ck-canal','gr-ck-excecao-pgto','gr-ck-assinatura-pgto','gr-ck-excecao-prazo','gr-ck-assinatura-prazo',
+   'gr-ck-ref-prof','gr-ck-ref-pessoal','gr-ck-proprietario'
+  ].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  ['gr-ck-adiantamento','gr-ck-saldo','gr-ck-pessoa-fisica','gr-ck-pessoa-juridica'
+  ].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
+  document.querySelectorAll('input[name="gr-ck-prazo-saldo"]').forEach(r => r.checked = false);
+  selecionarTipoPagamentoGR('conta_bancaria');
+  document.getElementById('modal-cadastro-motorista-overlay').classList.add('open');
+}
+
+function fecharCadastroMotoristaGR() {
+  document.getElementById('modal-cadastro-motorista-overlay').classList.remove('open');
+}
+
+function selecionarTipoPagamentoGR(tipo) {
+  document.getElementById('gr-tipo-pagamento').value = tipo;
+  const btnConta = document.getElementById('gr-btn-conta');
+  const btnPix = document.getElementById('gr-btn-pix');
+  const campoConta = document.getElementById('gr-campos-conta');
+  const campoPix = document.getElementById('gr-campos-pix');
+  if (tipo === 'conta_bancaria') {
+    btnConta.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:rgba(249,115,22,0.12);color:var(--accent);font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
+    btnPix.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
+    campoConta.style.display = 'grid';
+    campoPix.style.display = 'none';
+  } else {
+    btnPix.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--green);background:rgba(34,197,94,0.12);color:var(--green);font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
+    btnConta.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
+    campoPix.style.display = 'grid';
+    campoConta.style.display = 'none';
+  }
+}
+
+async function salvarMotoristaGR() {
+  const nome = document.getElementById('gr-nome').value.trim();
+  if (!nome) { showToast('Informe o nome do motorista', 'error'); return; }
+
+  const prazoSaldoEl = document.querySelector('input[name="gr-ck-prazo-saldo"]:checked');
+  const checklist = {
+    valor_frete_motorista: document.getElementById('gr-ck-valor-frete').value || null,
+    valor_carga: document.getElementById('gr-ck-valor-carga').value || null,
+    canal_contato: document.getElementById('gr-ck-canal').value || null,
+    pgto_adiantamento70: document.getElementById('gr-ck-adiantamento').checked,
+    pgto_saldo30: document.getElementById('gr-ck-saldo').checked,
+    pgto_excecao: document.getElementById('gr-ck-excecao-pgto').value || null,
+    pgto_assinatura: document.getElementById('gr-ck-assinatura-pgto').value || null,
+    prazo_saldo: prazoSaldoEl ? prazoSaldoEl.value : null,
+    prazo_excecao: document.getElementById('gr-ck-excecao-prazo').value || null,
+    prazo_assinatura: document.getElementById('gr-ck-assinatura-prazo').value || null,
+    recolhimento_pf: document.getElementById('gr-ck-pessoa-fisica').checked,
+    recolhimento_pj: document.getElementById('gr-ck-pessoa-juridica').checked,
+    ref_profissional: document.getElementById('gr-ck-ref-prof').value || null,
+    ref_pessoal: document.getElementById('gr-ck-ref-pessoal').value || null,
+    contato_proprietario: document.getElementById('gr-ck-proprietario').value || null,
+  };
+
+  try {
+    const resultado = await supabaseRequest('POST', 'motoristas', {
+      nome,
+      placa: document.getElementById('gr-placa').value || null,
+      contato: document.getElementById('gr-contato').value || null,
+      cpf: document.getElementById('gr-cpf').value || null,
+      tipo_pagamento: document.getElementById('gr-tipo-pagamento').value || 'conta_bancaria',
+      nome_titular: document.getElementById('gr-nome-titular').value || null,
+      cpf_titular: document.getElementById('gr-cpf-titular').value || null,
+      banco: document.getElementById('gr-banco').value || null,
+      agencia: document.getElementById('gr-agencia').value || null,
+      numero_conta: document.getElementById('gr-conta').value || null,
+      tipo_conta: document.getElementById('gr-tipo-conta').value || null,
+      tipo_chave_pix: document.getElementById('gr-tipo-pix').value || null,
+      chave_pix: document.getElementById('gr-pix').value || null,
+      gr_status: 'pendente',
+      checklist,
+      anexos: [],
+    });
+
+    const motoristaId = resultado[0]?.id;
+
+    // Upload de arquivos
+    if (motoristaId) {
+      const arquivos = [
+        { id: 'gr-arq-cnh', tipo: 'cnh' }, { id: 'gr-arq-antt', tipo: 'antt' },
+        { id: 'gr-arq-doc-caminhao', tipo: 'doc_caminhao' }, { id: 'gr-arq-residencia', tipo: 'residencia' },
+        { id: 'gr-arq-foto-caminhao', tipo: 'foto_caminhao' }, { id: 'gr-arq-selfie-cnh', tipo: 'selfie_cnh' },
+        { id: 'gr-arq-selfie-placa', tipo: 'selfie_placa' }, { id: 'gr-arq-lonas', tipo: 'lonas' },
+      ];
+      const anexos = [];
+      for (const { id, tipo } of arquivos) {
+        const input = document.getElementById(id);
+        if (input && input.files.length > 0) {
+          for (const file of input.files) {
+            const anexo = await uploadAnexoGR(file, motoristaId, tipo);
+            if (anexo) anexos.push(anexo);
+          }
         }
-    </script>
-</section>
+      }
+      if (anexos.length > 0) {
+        await supabaseRequest('PATCH', `motoristas?id=eq.${motoristaId}`, { anexos });
+      }
+    }
+
+    showToast('✅ Motorista cadastrado! Aguardando análise GR.', 'success');
+    fecharCadastroMotoristaGR();
+    carregarGR();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function uploadAnexoGR(file, motoristaId, tipo) {
+  try {
+    const ext = file.name.split('.').pop();
+    const path = `motoristas/${motoristaId}/${tipo}_${Date.now()}.${ext}`;
+    const { error } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
+    if (error) throw error;
+    return { tipo, nome: file.name, path };
+  } catch(e) { console.error('Erro upload:', e); return null; }
+}
+
+async function carregarGR() {
+  try {
+    document.getElementById('gr-table').innerHTML = '<div class="loading">Carregando...</div>';
+    grData = await supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500') || [];
+    filtrarGR();
+  } catch(e) {
+    document.getElementById('gr-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
+  }
+}
+
+function filtrarGR() {
+  const busca = (document.getElementById('filtro-gr-busca').value || '').toLowerCase();
+  const status = document.getElementById('filtro-gr-status').value;
+  const filtrados = grData.filter(m => {
+    const matchBusca = !busca ||
+      (m.nome||'').toLowerCase().includes(busca) ||
+      (m.cpf||'').includes(busca) ||
+      String(m.lote_id).includes(busca) ||
+      (m.placa||'').toLowerCase().includes(busca);
+    const matchStatus = !status || (m.gr_status || 'pendente') === status;
+    return matchBusca && matchStatus;
+  });
+  renderGR(filtrados);
+}
+
+function badgeGR(status) {
+  const map = {
+    pendente:  { label: '⏳ Pendente',  cor: 'var(--yellow)', bg: 'rgba(234,179,8,0.12)' },
+    aprovado:  { label: '✅ Aprovado',  cor: 'var(--green)',  bg: 'rgba(34,197,94,0.12)' },
+    reprovado: { label: '❌ Reprovado', cor: 'var(--red)',    bg: 'rgba(239,68,68,0.12)' },
+  };
+  const s = map[status] || map['pendente'];
+  return `<span style="display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;color:${s.cor};background:${s.bg};">${s.label}</span>`;
+}
+
+function renderGR(dados) {
+  if (!dados.length) {
+    document.getElementById('gr-table').innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p>Nenhum motorista encontrado.</p></div>';
+    return;
+  }
+  document.getElementById('gr-table').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>#</th><th>Motorista</th><th>CPF</th><th>Placa</th><th>Contato</th>
+        <th>Status GR</th><th>Motivo</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${dados.map(m => `<tr>
+          <td style="color:var(--muted);font-size:12px">#${m.id}</td>
+          <td><strong>${m.nome || '—'}</strong></td>
+          <td style="font-size:12px">${m.cpf || '—'}</td>
+          <td style="font-size:12px">${m.placa || '—'}</td>
+          <td style="font-size:12px">${m.contato || '—'}</td>
+          <td>${badgeGR(m.gr_status || 'pendente')}</td>
+          <td style="font-size:12px;color:var(--muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.gr_motivo || '—'}</td>
+          <td>
+            <button onclick="abrirModalGR(${m.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-weight:600;">🔍 Analisar</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function abrirModalGR(id) {
+  const m = grData.find(x => x.id === id);
+  if (!m) return;
+  grMotoristaSelecionadoId = id;
+
+  document.getElementById('mgr-titulo').textContent = 'Análise GR — ' + (m.nome || '#' + id);
+  document.getElementById('mgr-status-bar').innerHTML = badgeGR(m.gr_status || 'pendente');
+  document.getElementById('mgr-nome').textContent = m.nome || '—';
+  document.getElementById('mgr-cpf').textContent = m.cpf || '—';
+  document.getElementById('mgr-placa').textContent = m.placa || '—';
+  document.getElementById('mgr-contato').textContent = m.contato || '—';
+  document.getElementById('mgr-peso').textContent = '—';
+  document.getElementById('mgr-pagamento').innerHTML = badgeTipoPagamento(m.tipo_pagamento);
+  document.getElementById('mgr-lote').textContent = '—';
+  document.getElementById('mgr-cliente').textContent = '—';
+  document.getElementById('mgr-produto').textContent = '—';
+  document.getElementById('mgr-agencia-lote').textContent = '—';
+  document.getElementById('mgr-rota').textContent = '—';
+
+  // Checklist
+  const ck = m.checklist || {};
+  const fmt = v => v ? 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '—';
+  document.getElementById('mgr-ck-valor-frete').textContent = fmt(ck.valor_frete_motorista);
+  document.getElementById('mgr-ck-valor-carga').textContent = fmt(ck.valor_carga);
+  document.getElementById('mgr-ck-canal').textContent = ck.canal_contato || '—';
+
+  // Documentos
+  const nomeDocLabel = { cnh:'Habilitação (CNH)', antt:'Registro na ANTT', doc_caminhao:'Doc. Caminhão/Carretas', residencia:'Comprovante de Residência', foto_caminhao:'Foto Caminhão/Carretas', selfie_cnh:'Selfie segurando CNH', selfie_placa:'Selfie ao lado do veículo', lonas:'Fotos das Lonas' };
+  const anexos = m.anexos || [];
+  document.getElementById('mgr-ck-docs').innerHTML = Object.keys(nomeDocLabel).map(tipo => {
+    const docsDoTipo = anexos.filter(a => a.tipo === tipo);
+    const temAnexo = docsDoTipo.length > 0;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surface);border-radius:6px;border:1px solid ${temAnexo ? 'rgba(34,197,94,0.3)' : 'var(--border)'};">
+      <span style="font-size:13px;">${nomeDocLabel[tipo]}</span>
+      <span style="font-size:12px;font-weight:600;color:${temAnexo ? 'var(--green)' : 'var(--muted)'};">${temAnexo ? '✅ Anexado' : '— Não anexado'}</span>
+    </div>`;
+  }).join('');
+
+  // Pgto e prazo
+  let pgto = [];
+  if (ck.pgto_adiantamento70) pgto.push('Adiantamento 70%');
+  if (ck.pgto_saldo30) pgto.push('Saldo 30%');
+  document.getElementById('mgr-ck-pgto').textContent = pgto.length ? pgto.join(' + ') : '—';
+  const prazoMap = { '5':'05 dias após descarga', '7':'07 dias após descarga', '8+':'08+ dias após descarga' };
+  document.getElementById('mgr-ck-prazo').textContent = prazoMap[ck.prazo_saldo] || '—';
+  let rec = [];
+  if (ck.recolhimento_pf) rec.push('Pessoa Física');
+  if (ck.recolhimento_pj) rec.push('Pessoa Jurídica');
+  document.getElementById('mgr-ck-recolhimento').textContent = rec.length ? rec.join(' | ') : '—';
+  document.getElementById('mgr-ck-ref-prof').textContent = ck.ref_profissional || '—';
+  document.getElementById('mgr-ck-ref-pessoal').textContent = ck.ref_pessoal || '—';
+  document.getElementById('mgr-ck-proprietario').textContent = ck.contato_proprietario || '—';
+
+  // Arquivos anexados com links
+  const containerAnexos = document.getElementById('mgr-anexos');
+  if (!anexos.length) {
+    containerAnexos.innerHTML = '<div style="font-size:13px;color:var(--muted);">Nenhum arquivo anexado.</div>';
+  } else {
+    containerAnexos.innerHTML = '<div style="font-size:13px;color:var(--muted);">Carregando arquivos...</div>';
+    try {
+      const paths = anexos.map(a => a.path || a.url).filter(Boolean);
+      const { data: signedUrls } = await sb.storage.from('motoristas-docs').createSignedUrls(paths, 3600);
+      const urlMap = {};
+      (signedUrls || []).forEach(s => { urlMap[s.path] = s.signedUrl; });
+      const nomeAnexo = { cnh:'CNH', antt:'ANTT', doc_caminhao:'Doc. Caminhão', residencia:'Comp. Residência', foto_caminhao:'Foto Caminhão', selfie_cnh:'Selfie CNH', selfie_placa:'Selfie Placa', lonas:'Lonas' };
+      containerAnexos.innerHTML = anexos.map(a => {
+        const url = urlMap[a.path || a.url] || a.path || a.url;
+        const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome);
+        return `<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;gap:10px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span>${isImg ? '🖼️' : '📄'}</span>
+            <div>
+              <div style="font-size:12px;font-weight:600;">${nomeAnexo[a.tipo] || a.tipo}</div>
+              <div style="font-size:11px;color:var(--muted);">${a.nome}</div>
+            </div>
+          </div>
+          <a href="${url}" target="_blank" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;text-decoration:none;">${isImg ? '🔍 Ver' : '⬇️ Abrir'}</a>
+        </div>`;
+      }).join('');
+    } catch(e) { containerAnexos.innerHTML = '<div style="color:var(--red);font-size:13px;">Erro ao carregar arquivos.</div>'; }
+  }
+
+  // Decisão atual
+  const decisaoAtual = m.gr_status || 'pendente';
+  document.getElementById('mgr-decisao').value = decisaoAtual === 'pendente' ? '' : decisaoAtual;
+  document.getElementById('mgr-motivo').value = m.gr_motivo || '';
+  atualizarBotoesGR(decisaoAtual === 'pendente' ? '' : decisaoAtual);
+
+  document.getElementById('modal-gr-overlay').classList.add('open');
+}
+
+function definirDecisaoGR(decisao) {
+  document.getElementById('mgr-decisao').value = decisao;
+  atualizarBotoesGR(decisao);
+}
+
+function atualizarBotoesGR(decisao) {
+  const btnAprovar = document.getElementById('btn-gr-aprovar');
+  const btnReprovar = document.getElementById('btn-gr-reprovar');
+  const motivoRow = document.getElementById('mgr-motivo-row');
+
+  if (decisao === 'aprovado') {
+    btnAprovar.style.borderColor = 'var(--green)';
+    btnAprovar.style.background = 'rgba(34,197,94,0.2)';
+    btnAprovar.style.color = 'var(--green)';
+    btnReprovar.style.borderColor = 'var(--border)';
+    btnReprovar.style.background = 'var(--surface)';
+    btnReprovar.style.color = 'var(--muted)';
+    motivoRow.style.display = 'none';
+  } else if (decisao === 'reprovado') {
+    btnReprovar.style.borderColor = 'var(--red)';
+    btnReprovar.style.background = 'rgba(239,68,68,0.2)';
+    btnReprovar.style.color = 'var(--red)';
+    btnAprovar.style.borderColor = 'var(--border)';
+    btnAprovar.style.background = 'var(--surface)';
+    btnAprovar.style.color = 'var(--muted)';
+    motivoRow.style.display = '';
+  } else {
+    btnAprovar.style.borderColor = 'var(--green)';
+    btnAprovar.style.background = 'rgba(34,197,94,0.12)';
+    btnAprovar.style.color = 'var(--green)';
+    btnReprovar.style.borderColor = 'var(--border)';
+    btnReprovar.style.background = 'var(--surface)';
+    btnReprovar.style.color = 'var(--muted)';
+    motivoRow.style.display = 'none';
+  }
+}
+
+async function salvarDecisaoGR() {
+  const decisao = document.getElementById('mgr-decisao').value;
+  if (!decisao) { showToast('Selecione Aprovar ou Reprovar', 'error'); return; }
+  if (decisao === 'reprovado' && !document.getElementById('mgr-motivo').value.trim()) {
+    showToast('Informe o motivo da reprovação', 'error'); return;
+  }
+  try {
+    await supabaseRequest('PATCH', `motoristas?id=eq.${grMotoristaSelecionadoId}`, {
+      gr_status: decisao,
+      gr_motivo: decisao === 'reprovado' ? document.getElementById('mgr-motivo').value.trim() : null,
+      gr_analisado_em: new Date().toISOString(),
+    });
+    const m = grData.find(x => x.id === grMotoristaSelecionadoId);
+    if (m) {
+      m.gr_status = decisao;
+      m.gr_motivo = decisao === 'reprovado' ? document.getElementById('mgr-motivo').value.trim() : null;
+    }
+    showToast(decisao === 'aprovado' ? '✅ Motorista aprovado!' : '❌ Motorista reprovado!', 'success');
+    document.getElementById('mgr-status-bar').innerHTML = badgeGR(decisao);
+    filtrarGR();
+    fecharModalGR();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+function fecharModalGR() {
+  document.getElementById('modal-gr-overlay').classList.remove('open');
+  grMotoristaSelecionadoId = null;
+}
+
+// INIT
+sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Atualiza label dos botões de anexo com nome do arquivo selecionado
+// ============ EDITAR MOTORISTA ============
+let motoristaEditandoId = null;
+let motoristaEditandoTabela = null;
+
+async function abrirEditarMotorista(id) {
+  // Busca primeiro na tabela motoristas, depois em lote_motoristas
+  let m = null;
+  const fromMotoristas = await supabaseRequest('GET', `motoristas?id=eq.${id}`) || [];
+  if (fromMotoristas.length) {
+    m = fromMotoristas[0];
+    motoristaEditandoTabela = 'motoristas';
+  } else {
+    const fromLote = await supabaseRequest('GET', `lote_motoristas?id=eq.${id}`) || [];
+    if (fromLote.length) { m = fromLote[0]; motoristaEditandoTabela = 'lote_motoristas'; }
+  }
+  if (!m) return;
+  motoristaEditandoId = id;
+
+  document.getElementById('em-nome').value = m.nome || '';
+  document.getElementById('em-placa').value = m.placa || '';
+  document.getElementById('em-contato').value = m.contato || '';
+  document.getElementById('em-cpf').value = m.cpf || '';
+  document.getElementById('em-peso').value = m.peso_saida || '';
+  document.getElementById('em-nome-titular').value = m.nome_titular || '';
+  document.getElementById('em-cpf-titular').value = m.cpf_titular || '';
+  document.getElementById('em-banco').value = m.banco || '';
+  document.getElementById('em-agencia').value = m.agencia || '';
+  document.getElementById('em-conta').value = m.numero_conta || '';
+  document.getElementById('em-tipo-conta').value = m.tipo_conta || '';
+  document.getElementById('em-tipo-pix').value = m.tipo_chave_pix || '';
+  document.getElementById('em-pix').value = m.chave_pix || '';
+  selecionarTipoPagamentoEditar(m.tipo_pagamento || 'conta_bancaria');
+  document.getElementById('modal-editar-motorista-overlay').classList.add('open');
+}
+
+function fecharEditarMotorista() {
+  document.getElementById('modal-editar-motorista-overlay').classList.remove('open');
+  motoristaEditandoId = null;
+  motoristaEditandoTabela = null;
+}
+
+function selecionarTipoPagamentoEditar(tipo) {
+  document.getElementById('em-tipo-pagamento').value = tipo;
+  const isPix = tipo === 'chave_pix';
+  document.getElementById('em-campos-conta').style.display = isPix ? 'none' : 'grid';
+  document.getElementById('em-campos-pix').style.display = isPix ? 'grid' : 'none';
+  document.getElementById('em-btn-conta').style.border = isPix ? '2px solid var(--border)' : '2px solid var(--accent)';
+  document.getElementById('em-btn-conta').style.background = isPix ? 'var(--surface)' : 'rgba(249,115,22,0.12)';
+  document.getElementById('em-btn-conta').style.color = isPix ? 'var(--muted)' : 'var(--accent)';
+  document.getElementById('em-btn-pix').style.border = isPix ? '2px solid var(--accent)' : '2px solid var(--border)';
+  document.getElementById('em-btn-pix').style.background = isPix ? 'rgba(249,115,22,0.12)' : 'var(--surface)';
+  document.getElementById('em-btn-pix').style.color = isPix ? 'var(--accent)' : 'var(--muted)';
+}
+
+async function salvarEdicaoMotorista() {
+  if (!motoristaEditandoId) return;
+  const tabela = motoristaEditandoTabela || 'motoristas';
+  try {
+    const dados = {
+      nome: document.getElementById('em-nome').value || null,
+      placa: document.getElementById('em-placa').value || null,
+      contato: document.getElementById('em-contato').value || null,
+      cpf: document.getElementById('em-cpf').value || null,
+      tipo_pagamento: document.getElementById('em-tipo-pagamento').value,
+      nome_titular: document.getElementById('em-nome-titular').value || null,
+      cpf_titular: document.getElementById('em-cpf-titular').value || null,
+      banco: document.getElementById('em-banco').value || null,
+      agencia: document.getElementById('em-agencia').value || null,
+      numero_conta: document.getElementById('em-conta').value || null,
+      tipo_conta: document.getElementById('em-tipo-conta').value || null,
+      tipo_chave_pix: document.getElementById('em-tipo-pix').value || null,
+      chave_pix: document.getElementById('em-pix').value || null,
+    };
+    if (tabela === 'lote_motoristas') {
+      dados.peso_saida = parseFloat(document.getElementById('em-peso').value) || null;
+    }
+    await supabaseRequest('PATCH', `${tabela}?id=eq.${motoristaEditandoId}`, dados);
+    showToast('✅ Motorista atualizado!', 'success');
+    fecharEditarMotorista();
+    await carregarMotoristasPagina();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+// ============ ANEXOS — botões limpos ============
+function atualizarBotaoAnexo(inputId, labelId) {
+  const input = document.getElementById(inputId);
+  const label = document.getElementById(labelId);
+  if (!input || !label) return;
+  const file = input.files[0];
+  const span = label.querySelector('span');
+  if (file) {
+    const nome = file.name.length > 18 ? file.name.substring(0,16)+'...' : file.name;
+    if (span) span.textContent = '✅ ' + nome;
+    label.style.background = 'rgba(34,197,94,0.1)';
+    label.style.borderColor = 'rgba(34,197,94,0.3)';
+    label.style.color = '#22c55e';
+  } else {
+    if (span) span.textContent = '📎 Anexar';
+    label.style.background = 'rgba(249,115,22,0.1)';
+    label.style.borderColor = 'rgba(249,115,22,0.3)';
+    label.style.color = 'var(--accent)';
+  }
+}
+
+function limparAnexo(inputId, labelId) {
+  const input = document.getElementById(inputId);
+  const label = document.getElementById(labelId);
+  if (!input || !label) return;
+  input.value = '';
+  const span = label.querySelector('span');
+  if (span) span.textContent = '📎 Anexar';
+  label.style.background = 'rgba(249,115,22,0.1)';
+  label.style.borderColor = 'rgba(249,115,22,0.3)';
+  label.style.color = 'var(--accent)';
+}
+
+
+sb.auth.getSession().then(async ({ data: { session } }) => {
+  if (session) {
+    userAtual = session.user;
+    await carregarPerfilUsuario(session.user.id);
+    document.getElementById('login-screen').style.display = 'none';
+  }
+});
+</script>
+<!-- MODAL EDITAR MOTORISTA -->
+<div class="modal-overlay" id="modal-editar-motorista-overlay" onclick="if(event.target===this)fecharEditarMotorista()">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-title">
+      <span>✏️ Editar Motorista</span>
+      <button class="modal-close" onclick="fecharEditarMotorista()">✕</button>
+    </div>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="form-group"><label>Nome</label><input type="text" id="em-nome" placeholder="Nome do motorista"></div>
+      <div class="form-group"><label>Placa</label><input type="text" id="em-placa" placeholder="ABC-1234"></div>
+      <div class="form-group"><label>Contato / Telefone</label><input type="text" id="em-contato" placeholder="(34) 99999-9999"></div>
+      <div class="form-group"><label>CPF</label><input type="text" id="em-cpf" placeholder="000.000.000-00"></div>
+      <div class="form-group"><label>Peso Saída (ton)</label><input type="number" id="em-peso" placeholder="Ex: 40" step="0.1" min="0"></div>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">Dados Bancários</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button type="button" id="em-btn-conta" onclick="selecionarTipoPagamentoEditar('conta_bancaria')" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:rgba(249,115,22,0.12);color:var(--accent);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">🏦 Conta Bancária</button>
+      <button type="button" id="em-btn-pix" onclick="selecionarTipoPagamentoEditar('chave_pix')" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">⚡ Chave PIX</button>
+    </div>
+    <input type="hidden" id="em-tipo-pagamento" value="conta_bancaria">
+    <div id="em-campos-conta" class="form-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="form-group"><label>Nome do Titular</label><input type="text" id="em-nome-titular" placeholder="Nome completo"></div>
+      <div class="form-group"><label>CPF/CNPJ do Titular</label><input type="text" id="em-cpf-titular" placeholder="CPF ou CNPJ"></div>
+      <div class="form-group"><label>Banco</label><input type="text" id="em-banco" placeholder="Ex: Bradesco, Itaú..."></div>
+      <div class="form-group"><label>Agência</label><input type="text" id="em-agencia" placeholder="Ex: 1234"></div>
+      <div class="form-group"><label>Número da Conta</label><input type="text" id="em-conta" placeholder="Ex: 12345-6"></div>
+      <div class="form-group"><label>Tipo de Conta</label>
+        <select id="em-tipo-conta"><option value="">Selecione...</option><option value="corrente">Corrente</option><option value="poupanca">Poupança</option></select>
+      </div>
+    </div>
+    <div id="em-campos-pix" class="form-grid" style="grid-template-columns:1fr 1fr;display:none;">
+      <div class="form-group"><label>Tipo de Chave PIX</label>
+        <select id="em-tipo-pix">
+          <option value="">Selecione...</option>
+          <option value="telefone">📱 Telefone</option>
+          <option value="cpf">🪪 CPF</option>
+          <option value="cnpj">🏢 CNPJ</option>
+          <option value="email">✉️ E-mail</option>
+          <option value="aleatoria">🔑 Chave Aleatória</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Chave PIX</label><input type="text" id="em-pix" placeholder="Chave PIX"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="fecharEditarMotorista()">Cancelar</button>
+      <button class="btn-primary" onclick="salvarEdicaoMotorista()">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
