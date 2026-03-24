@@ -3521,6 +3521,72 @@ sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // ============ EDITAR MOTORISTA ============
 let motoristaEditandoId = null;
 let motoristaEditandoTabela = null;
+/** Cópia editável da lista `anexos` (apenas edição na tabela `motoristas`) */
+let motoristaEditandoAnexos = null;
+
+function limparAnexosFormularioEditarMotorista() {
+  [
+    ['em-arq-cnh', 'label-em-arq-cnh'],
+    ['em-arq-antt', 'label-em-arq-antt'],
+    ['em-arq-doc-caminhao', 'label-em-arq-doc-caminhao'],
+    ['em-arq-residencia', 'label-em-arq-residencia'],
+    ['em-arq-foto-caminhao', 'label-em-arq-foto-caminhao'],
+    ['em-arq-selfie-cnh', 'label-em-arq-selfie-cnh'],
+    ['em-arq-selfie-placa', 'label-em-arq-selfie-placa'],
+    ['em-arq-lonas', 'label-em-arq-lonas'],
+  ].forEach(([inputId, labelId]) => limparAnexo(inputId, labelId));
+}
+
+async function renderAnexosEditarMotorista() {
+  const box = document.getElementById('em-anexos-atuais');
+  if (!box) return;
+  if (!motoristaEditandoAnexos || !motoristaEditandoAnexos.length) {
+    box.innerHTML = '<div style="font-size:13px;color:var(--muted);">Nenhum arquivo na lista. Use “Anexar” abaixo para incluir ou substituir documentos.</div>';
+    return;
+  }
+  box.innerHTML = '<div style="font-size:13px;color:var(--muted);">Carregando arquivos...</div>';
+  try {
+    const paths = motoristaEditandoAnexos.map(a => a.path || a.url).filter(Boolean);
+    const nomeCurto = { cnh: 'CNH', antt: 'ANTT', doc_caminhao: 'Doc. Caminhão', residencia: 'Comp. Residência', foto_caminhao: 'Foto Caminhão', selfie_cnh: 'Selfie CNH', selfie_placa: 'Selfie Placa', lonas: 'Lonas' };
+    const { data: signedUrls, error } = await sb.storage.from('motoristas-docs').createSignedUrls(paths, 3600);
+    if (error) throw error;
+    const urlMap = {};
+    (signedUrls || []).forEach(s => { if (s && s.path) urlMap[s.path] = s.signedUrl; });
+    box.innerHTML = motoristaEditandoAnexos.map((a, i) => {
+      const caminho = a.path || a.url || '';
+      const url = urlMap[caminho] || caminho;
+      const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome || caminho);
+      const label = nomeCurto[a.tipo] || a.tipo || 'Arquivo';
+      const nomeArq = (a.nome || caminho.split('/').pop() || 'documento').replace(/</g, '');
+      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+          <span style="font-size:16px;">${isImg ? '🖼️' : '📄'}</span>
+          <div style="min-width:0;">
+            <div style="font-size:12px;font-weight:600;color:var(--text);">${label}</div>
+            <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;">${nomeArq}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <a href="${url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;">${isImg ? '🔍 Ver' : '⬇️ Abrir'}</a>
+          <button type="button" onclick="removerAnexoEditarPorIndice(${i})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.25);border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap;">🗑 Remover</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    box.innerHTML = `<div style="font-size:13px;color:var(--red);">Erro ao carregar arquivos: ${(e.message || '').replace(/</g, '')}</div>`;
+  }
+}
+
+async function removerAnexoEditarPorIndice(idx) {
+  if (!motoristaEditandoAnexos || idx < 0 || idx >= motoristaEditandoAnexos.length) return;
+  const a = motoristaEditandoAnexos[idx];
+  const p = a && (a.path || a.url);
+  if (p && typeof p === 'string' && !p.startsWith('http')) {
+    try { await sb.storage.from('motoristas-docs').remove([p]); } catch (err) { console.warn('Storage remove:', err); }
+  }
+  motoristaEditandoAnexos.splice(idx, 1);
+  await renderAnexosEditarMotorista();
+}
 
 async function abrirEditarMotorista(id) {
   // Busca primeiro na tabela motoristas, depois em lote_motoristas
@@ -3550,11 +3616,26 @@ async function abrirEditarMotorista(id) {
   document.getElementById('em-tipo-pix').value = m.tipo_chave_pix || '';
   document.getElementById('em-pix').value = m.chave_pix || '';
   selecionarTipoPagamentoEditar(m.tipo_pagamento || 'conta_bancaria');
+
+  const secaoAnexos = document.getElementById('em-secao-anexos');
+  if (motoristaEditandoTabela === 'motoristas') {
+    motoristaEditandoAnexos = JSON.parse(JSON.stringify(m.anexos || []));
+    limparAnexosFormularioEditarMotorista();
+    if (secaoAnexos) secaoAnexos.style.display = '';
+    await renderAnexosEditarMotorista();
+  } else {
+    motoristaEditandoAnexos = null;
+    limparAnexosFormularioEditarMotorista();
+    if (secaoAnexos) secaoAnexos.style.display = 'none';
+  }
+
   document.getElementById('modal-editar-motorista-overlay').classList.add('open');
 }
 
 function fecharEditarMotorista() {
   document.getElementById('modal-editar-motorista-overlay').classList.remove('open');
+  limparAnexosFormularioEditarMotorista();
+  motoristaEditandoAnexos = null;
   motoristaEditandoId = null;
   motoristaEditandoTabela = null;
 }
@@ -3594,8 +3675,49 @@ async function salvarEdicaoMotorista() {
     if (tabela === 'lote_motoristas') {
       dados.peso_saida = parseFloat(document.getElementById('em-peso').value) || null;
     }
+
+    if (tabela === 'motoristas' && motoristaEditandoAnexos) {
+      const tiposMultiplos = ['foto_caminhao', 'lonas'];
+      const anexos = motoristaEditandoAnexos.slice();
+      const arquivosCfg = [
+        { id: 'em-arq-cnh', tipo: 'cnh' }, { id: 'em-arq-antt', tipo: 'antt' },
+        { id: 'em-arq-doc-caminhao', tipo: 'doc_caminhao' }, { id: 'em-arq-residencia', tipo: 'residencia' },
+        { id: 'em-arq-foto-caminhao', tipo: 'foto_caminhao' }, { id: 'em-arq-selfie-cnh', tipo: 'selfie_cnh' },
+        { id: 'em-arq-selfie-placa', tipo: 'selfie_placa' }, { id: 'em-arq-lonas', tipo: 'lonas' },
+      ];
+      const removerPathsStorage = async (paths) => {
+        const ok = paths.filter(p => p && typeof p === 'string' && !p.startsWith('http'));
+        if (!ok.length) return;
+        try { await sb.storage.from('motoristas-docs').remove(ok); } catch (err) { console.warn(err); }
+      };
+      for (const { id, tipo } of arquivosCfg) {
+        const input = document.getElementById(id);
+        if (!input || !input.files.length) continue;
+        if (!tiposMultiplos.includes(tipo)) {
+          const antigos = anexos.filter(a => a.tipo === tipo);
+          await removerPathsStorage(antigos.map(a => a.path || a.url));
+          const rest = anexos.filter(a => a.tipo !== tipo);
+          anexos.length = 0;
+          anexos.push(...rest);
+        }
+        for (const file of input.files) {
+          const anexo = await uploadAnexoGR(file, motoristaEditandoId, tipo);
+          if (anexo) anexos.push(anexo);
+        }
+      }
+      dados.anexos = anexos;
+    }
+
     await supabaseRequest('PATCH', `${tabela}?id=eq.${motoristaEditandoId}`, dados);
+
+    if (tabela === 'motoristas' && dados.anexos) {
+      try {
+        await supabaseRequest('PATCH', `lote_motoristas?motorista_id=eq.${motoristaEditandoId}`, { anexos: dados.anexos });
+      } catch (e2) { /* lote sem vínculo ignora */ }
+    }
+
     showToast('✅ Motorista atualizado!', 'success');
+    limparAnexosFormularioEditarMotorista();
     fecharEditarMotorista();
     await carregarMotoristasPagina();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
@@ -3606,9 +3728,15 @@ function atualizarBotaoAnexo(inputId, labelId) {
   const input = document.getElementById(inputId);
   const label = document.getElementById(labelId);
   if (!input || !label) return;
-  const file = input.files[0];
   const span = label.querySelector('span');
-  if (file) {
+  const n = input.files.length;
+  if (n > 1) {
+    if (span) span.textContent = '✅ ' + n + ' arquivos';
+    label.style.background = 'rgba(34,197,94,0.1)';
+    label.style.borderColor = 'rgba(34,197,94,0.3)';
+    label.style.color = '#22c55e';
+  } else if (n === 1) {
+    const file = input.files[0];
     const nome = file.name.length > 18 ? file.name.substring(0,16)+'...' : file.name;
     if (span) span.textContent = '✅ ' + nome;
     label.style.background = 'rgba(34,197,94,0.1)';
@@ -3645,7 +3773,7 @@ sb.auth.getSession().then(async ({ data: { session } }) => {
 </script>
 <!-- MODAL EDITAR MOTORISTA -->
 <div class="modal-overlay" id="modal-editar-motorista-overlay" onclick="if(event.target===this)fecharEditarMotorista()">
-  <div class="modal" style="max-width:680px;">
+  <div class="modal" style="max-width:760px;max-height:92vh;overflow-y:auto;">
     <div class="modal-title">
       <span>✏️ Editar Motorista</span>
       <button class="modal-close" onclick="fecharEditarMotorista()">✕</button>
@@ -3685,6 +3813,86 @@ sb.auth.getSession().then(async ({ data: { session } }) => {
         </select>
       </div>
       <div class="form-group"><label>Chave PIX</label><input type="text" id="em-pix" placeholder="Chave PIX"></div>
+    </div>
+    <div id="em-secao-anexos" style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+      <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">📎 Documentos anexados (GR)</div>
+      <div id="em-anexos-atuais" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Substituir ou adicionar arquivos</div>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 12px;line-height:1.45;">Para CNH, ANTT e outros documentos únicos, enviar um arquivo novo substitui o anterior. Em <strong>Foto caminhão</strong> e <strong>Lonas</strong> você pode adicionar várias ou remover itens na lista acima.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <span style="font-size:13px;">Habilitação do motorista (CNH)</span>
+          <div style="display:flex;gap:4px;">
+            <label id="label-em-arq-cnh" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              <span>📎 Anexar</span><input type="file" id="em-arq-cnh" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-cnh','label-em-arq-cnh')">
+            </label>
+            <button type="button" onclick="limparAnexo('em-arq-cnh','label-em-arq-cnh')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <span style="font-size:13px;">Registro na ANTT</span>
+          <div style="display:flex;gap:4px;">
+            <label id="label-em-arq-antt" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              <span>📎 Anexar</span><input type="file" id="em-arq-antt" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-antt','label-em-arq-antt')">
+            </label>
+            <button type="button" onclick="limparAnexo('em-arq-antt','label-em-arq-antt')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <span style="font-size:13px;">Documentação do caminhão e carretas</span>
+          <div style="display:flex;gap:4px;">
+            <label id="label-em-arq-doc-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              <span>📎 Anexar</span><input type="file" id="em-arq-doc-caminhao" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-doc-caminhao','label-em-arq-doc-caminhao')">
+            </label>
+            <button type="button" onclick="limparAnexo('em-arq-doc-caminhao','label-em-arq-doc-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <span style="font-size:13px;">Comprovante de residência</span>
+          <div style="display:flex;gap:4px;">
+            <label id="label-em-arq-residencia" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              <span>📎 Anexar</span><input type="file" id="em-arq-residencia" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-residencia','label-em-arq-residencia')">
+            </label>
+            <button type="button" onclick="limparAnexo('em-arq-residencia','label-em-arq-residencia')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <span style="font-size:13px;">Foto do caminhão e carretas com as placas visíveis</span>
+          <div style="display:flex;gap:4px;">
+            <label id="label-em-arq-foto-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              <span>📎 Anexar</span><input type="file" id="em-arq-foto-caminhao" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('em-arq-foto-caminhao','label-em-arq-foto-caminhao')">
+            </label>
+            <button type="button" onclick="limparAnexo('em-arq-foto-caminhao','label-em-arq-foto-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <span style="font-size:13px;">Foto do motorista (selfie segurando a CNH)</span>
+          <div style="display:flex;gap:4px;">
+            <label id="label-em-arq-selfie-cnh" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              <span>📎 Anexar</span><input type="file" id="em-arq-selfie-cnh" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-selfie-cnh','label-em-arq-selfie-cnh')">
+            </label>
+            <button type="button" onclick="limparAnexo('em-arq-selfie-cnh','label-em-arq-selfie-cnh')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <span style="font-size:13px;">Foto do motorista (selfie ao lado do veículo, mostrando a placa)</span>
+          <div style="display:flex;gap:4px;">
+            <label id="label-em-arq-selfie-placa" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              <span>📎 Anexar</span><input type="file" id="em-arq-selfie-placa" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-selfie-placa','label-em-arq-selfie-placa')">
+            </label>
+            <button type="button" onclick="limparAnexo('em-arq-selfie-placa','label-em-arq-selfie-placa')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <span style="font-size:13px;">Fotos das lonas que serão utilizadas</span>
+          <div style="display:flex;gap:4px;">
+            <label id="label-em-arq-lonas" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              <span>📎 Anexar</span><input type="file" id="em-arq-lonas" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('em-arq-lonas','label-em-arq-lonas')">
+            </label>
+            <button type="button" onclick="limparAnexo('em-arq-lonas','label-em-arq-lonas')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="form-actions">
       <button class="btn-secondary" onclick="fecharEditarMotorista()">Cancelar</button>
