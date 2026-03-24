@@ -3103,6 +3103,21 @@ function aplicarPermissoes(setor, perms) {
 let grData = [];
 let grMotoristaSelecionadoId = null;
 
+/** Limpa todos os inputs de arquivo e rótulos do modal Cadastrar Motorista GR */
+function limparAnexosFormularioCadastroMotoristaGR() {
+  const pares = [
+    ['gr-arq-cnh', 'label-gr-arq-cnh'],
+    ['gr-arq-antt', 'label-gr-arq-antt'],
+    ['gr-arq-doc-caminhao', 'label-gr-arq-doc-caminhao'],
+    ['gr-arq-residencia', 'label-gr-arq-residencia'],
+    ['gr-arq-foto-caminhao', 'label-gr-arq-foto-caminhao'],
+    ['gr-arq-selfie-cnh', 'label-gr-arq-selfie-cnh'],
+    ['gr-arq-selfie-placa', 'label-gr-arq-selfie-placa'],
+    ['gr-arq-lonas', 'label-gr-arq-lonas'],
+  ];
+  pares.forEach(([inputId, labelId]) => limparAnexo(inputId, labelId));
+}
+
 function abrirCadastroMotoristaGR() {
   // Reset form
   ['gr-nome','gr-placa','gr-contato','gr-cpf','gr-nome-titular','gr-cpf-titular','gr-banco','gr-agencia','gr-conta','gr-pix',
@@ -3113,6 +3128,7 @@ function abrirCadastroMotoristaGR() {
   ].forEach(id => { const el = document.getElementById(id); if(el) el.checked = false; });
   document.querySelectorAll('input[name="gr-ck-prazo-saldo"]').forEach(r => r.checked = false);
   selecionarTipoPagamentoGR('conta_bancaria');
+  limparAnexosFormularioCadastroMotoristaGR();
   document.getElementById('modal-cadastro-motorista-overlay').classList.add('open');
 }
 
@@ -3208,6 +3224,7 @@ async function salvarMotoristaGR() {
     }
 
     showToast('✅ Motorista cadastrado! Aguardando análise GR.', 'success');
+    limparAnexosFormularioCadastroMotoristaGR();
     fecharCadastroMotoristaGR();
     carregarGR();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
