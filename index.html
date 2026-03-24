@@ -579,6 +579,14 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       </div>
     </div>
 
+    <!-- Motoristas já vinculados ao lote (remover se adicionou por engano) -->
+    <div style="background:var(--surface2);border-radius:8px;padding:16px;margin-bottom:16px;border:1px solid var(--border);">
+      <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Motoristas neste lote</div>
+      <div id="lista-motoristas-do-lote" style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;">
+        <div class="loading">Carregando...</div>
+      </div>
+    </div>
+
     <!-- SELECIONAR MOTORISTA APROVADO -->
     <div id="aba-adicionar">
     <div style="background:var(--surface2);border-radius:8px;padding:16px;margin-bottom:16px;">
@@ -600,8 +608,6 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       </div>
     </div>
     </div>
-
-    <!-- ABA MOTORISTAS INSERIDOS -->
   </div>
 </div>
 
@@ -1785,7 +1791,34 @@ async function carregarMotoristas() {
       const l = lotes.find(x => parseInt(x.id) === parseInt(loteAtualId));
       if (l) l.status = 'finalizado';
       showToast('🎉 Lote finalizado! 100% carregado!', 'success');
+    } else if (pesoTotal > 0 && totalCarregado < pesoTotal) {
+      const l = lotes.find(x => parseInt(x.id) === parseInt(loteAtualId));
+      const statusAtual = l?.status || loteAtualDados?.status;
+      if (statusAtual === 'finalizado') {
+        await supabaseRequest('PATCH', `lotes?id=eq.${loteAtualId}`, { status: 'liberado' });
+        if (l) l.status = 'liberado';
+        if (loteAtualDados) loteAtualDados.status = 'liberado';
+      }
     }
+
+    const boxLote = document.getElementById('lista-motoristas-do-lote');
+    if (boxLote) {
+      if (!motoristas.length) {
+        boxLote.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px;">Nenhum motorista neste lote ainda.</div>';
+      } else {
+        const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+        boxLote.innerHTML = motoristas.map((m) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;flex-wrap:wrap;">
+        <div style="min-width:0;flex:1;">
+          <div style="font-weight:700;font-size:14px;">${esc(m.nome)}</div>
+          <div style="font-size:12px;color:var(--muted);">Placa: ${esc(m.placa)} · ${parseFloat(m.peso_saida || 0).toFixed(2)} ton · <span style="text-transform:capitalize">${esc(m.status || '—')}</span></div>
+        </div>
+        <button type="button" class="btn-secondary" style="padding:8px 12px;font-size:12px;white-space:nowrap;" onclick="removerMotorista(${m.id})" title="Remove só deste lote">Remover do lote</button>
+      </div>`).join('');
+      }
+    }
+
+    if (loteAtualId) filtrarLotes();
   } catch(e) {
     console.error('Erro ao carregar motoristas:', e);
   }
@@ -1893,7 +1926,7 @@ async function adicionarMotorista() {
 }
 
 async function removerMotorista(id) {
-  if (!confirm('Remover este motorista?')) return;
+  if (!confirm('Remover este motorista deste lote? Ele continua cadastrado na GR; só sai deste lote.')) return;
   try {
     await supabaseRequest('DELETE', `lote_motoristas?id=eq.${id}`);
     registrarLog('motorista', 'Motorista removido', `ID: ${id}`);
