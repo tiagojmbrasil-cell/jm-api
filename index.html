@@ -145,9 +145,11 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     <button onclick="showPage('lotes')">Lotes</button>
     <button onclick="showPage('motoristas')">Motoristas</button>
     <button onclick="showPage('gr')">GR</button>
+    <button onclick="showPage('cadastro')">Cadastro</button>
     <button onclick="showPage('status-lote')">Status do Lote</button>
     <button onclick="showPage('clientes')">Clientes</button>
     <button onclick="showPage('fiscal')">Fiscal</button>
+    <button onclick="showPage('financeiro')">Financeiro</button>
     <button id="nav-seguranca" onclick="showPage('seguranca')" style="display:none">Segurança</button>
   </nav>
   <button class="btn-logout" onclick="fazerLogout()">Sair</button>
@@ -174,18 +176,18 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
 <div class="page" id="page-nova">
   <div class="card">
     <div class="form-title"><span></span> Registrar Nova Cotação</div>
-    <div class="section-divider">Cliente e Vendedor</div>
+    <div class="section-divider">Dados da Cotação</div>
     <div class="form-grid">
       <div class="form-group">
-        <label>Nome do Cliente / Empresa</label>
-        <input type="text" id="f-cliente" placeholder="Ex: Empresa ABC Ltda">
+        <label>Cliente</label>
+        <input type="text" id="f-cliente" placeholder="Ex: Empresa ABC Ltda" required>
       </div>
       <div class="form-group">
-        <label>Vendedor Responsável</label>
-        <input type="text" id="f-vendedor" placeholder="Nome do vendedor">
+        <label>Quantidade</label>
+        <input type="number" id="f-quantidade" placeholder="Ex: 25" min="0" step="0.01" required>
       </div>
     </div>
-    <div class="section-divider">Rota da Carga</div>
+    <div class="section-divider">Rota</div>
     <div class="form-grid">
       <div class="form-group">
         <label>Origem</label>
@@ -197,6 +199,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
             autocomplete="off"
             oninput="buscarCidade(this.value,'f-origem-list')"
             onkeydown="navegarAutocomplete(event,'f-origem-list')"
+            required
           >
           <div id="f-origem-list" class="autocomplete-list" style="display:none"></div>
         </div>
@@ -211,51 +214,24 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
             autocomplete="off"
             oninput="buscarCidade(this.value,'f-destino-list')"
             onkeydown="navegarAutocomplete(event,'f-destino-list')"
+            required
           >
           <div id="f-destino-list" class="autocomplete-list" style="display:none"></div>
         </div>
       </div>
     </div>
-    <div class="section-divider">Dados da Carga</div>
-    <div class="form-grid">
-      <div class="form-group full">
-        <label>Produto</label>
-        <input type="text" id="f-produto" placeholder="Ex: Soja, Milho, Aço...">
-      </div>
-      <div class="form-group">
-        <label>Tipo de Carga</label>
-        <input type="text" id="f-tipo" placeholder="Ex: Granel, Frigorificado...">
-      </div>
-      <div class="form-group">
-        <label>Peso (ton)</label>
-        <input type="number" id="f-peso" placeholder="Ex: 5" min="0" step="0.1">
-      </div>
-    </div>
-    <div class="section-divider">Valor e Status</div>
+    <div class="section-divider">Produto e Preço</div>
     <div class="form-grid">
       <div class="form-group">
-        <label>Valor Cotado</label>
+        <label>Tipo de produto</label>
+        <input type="text" id="f-tipo-produto" placeholder="Ex: Soja, Milho, Fertilizante..." required>
+      </div>
+      <div class="form-group">
+        <label>Preço</label>
         <div style="position:relative">
           <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
-          <input type="number" id="f-valor" placeholder="0,00" step="0.01" min="0" style="padding-left:36px">
+          <input type="number" id="f-preco" placeholder="0,00" step="0.01" min="0" style="padding-left:36px" required>
         </div>
-      </div>
-      <div class="form-group">
-        <label>Status</label>
-        <select id="f-status">
-          <option value="pendente">Pendente</option>
-          <option value="em_negociacao">Em Negociação</option>
-          <option value="aprovada">Aprovada</option>
-          <option value="reprovada">Reprovada</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Data da Cotação</label>
-        <input type="date" id="f-data">
-      </div>
-      <div class="form-group full">
-        <label>Observações</label>
-        <textarea id="f-obs" placeholder="Informações adicionais..."></textarea>
       </div>
     </div>
     <div class="form-actions">
@@ -277,7 +253,6 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
           <option value="pendente">Pendente</option>
           <option value="aprovada">Aprovada</option>
           <option value="reprovada">Reprovada</option>
-          <option value="em_negociacao">Em Negociação</option>
         </select>
       </div>
     </div>
@@ -322,6 +297,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
           <option value="aguardando">Aguardando</option>
           <option value="aguardando_inicio">Aguardando Início</option>
           <option value="aguardando_produto">Aguardando Produto</option>
+          <option value="aguardando_informacoes">Aguardando Informações</option>
           <option value="buscando">Buscando</option>
           <option value="fechada">Fechada</option>
           <option value="finalizado">Finalizado</option>
@@ -410,6 +386,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
           <option value="liberado">Liberado</option>
           <option value="aceita">Aceita</option>
           <option value="aguardando">Aguardando</option>
+          <option value="aguardando_informacoes">Aguardando Informações</option>
           <option value="buscando">Buscando</option>
           <option value="finalizado">Finalizado</option>
           <option value="suspenso">Suspenso</option>
@@ -429,14 +406,21 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       <button class="modal-close" onclick="fecharModalBtn()">✕</button>
     </div>
     <div id="modal-content"></div>
-    <div class="status-select-row">
-      <label>Alterar Status:</label>
-      <select id="modal-status" onchange="atualizarStatus()">
-        <option value="pendente">Pendente</option>
-        <option value="em_negociacao">Em Negociação</option>
-        <option value="aprovada">Aprovada</option>
-        <option value="reprovada">Reprovada</option>
-      </select>
+    <div id="modal-cotacao-acoes" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:none;">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;">Decisão da Cotação (Comercial)</div>
+      <div style="display:flex;gap:10px;">
+        <button type="button" class="btn-primary" style="flex:1;background:var(--green);" onclick="aprovarCotacao()">✅ Aprovar</button>
+        <button type="button" class="btn-primary" style="flex:1;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.35);" onclick="prepararReprovacaoCotacao()">❌ Reprovar</button>
+      </div>
+      <div id="modal-motivo-reprovacao-wrap" style="display:none;margin-top:12px;">
+        <div class="form-group">
+          <label>Motivo do não fechamento</label>
+          <textarea id="modal-motivo-reprovacao" placeholder="Descreva o motivo..." style="min-height:90px;"></textarea>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+          <button type="button" class="btn-primary" style="background:#ef4444;" onclick="reprovarCotacao()">Salvar Reprovação</button>
+        </div>
+      </div>
     </div>
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;">
       <button onclick="excluirCotacao()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer;">🗑 Excluir Cotação</button>
@@ -462,6 +446,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
           <option value="liberado">Liberado</option>
           <option value="aceita">Aceita</option>
           <option value="aguardando">Aguardando</option>
+          <option value="aguardando_informacoes">Aguardando Informações</option>
           <option value="buscando">Buscando</option>
           <option value="finalizado">Finalizado</option>
           <option value="suspenso">Suspenso</option>
@@ -773,6 +758,20 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       </div>
     </div>
     <div id="motoristas-page-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- CADASTRO -->
+<div class="page" id="page-cadastro">
+  <div class="card">
+    <div class="table-header">
+      <h2>Painel — Cadastro</h2>
+      <div class="filters">
+        <input type="text" id="filtro-cadastro-busca" placeholder="🔍 Buscar motorista, CPF..." oninput="filtrarCadastro()">
+        <button class="btn-secondary" onclick="carregarCadastro()" style="padding:8px 14px;font-size:13px;">🔄 Atualizar</button>
+      </div>
+    </div>
+    <div id="cadastro-table"><div class="loading">Carregando...</div></div>
   </div>
 </div>
 
@@ -1244,6 +1243,26 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
   </div>
 </div>
 
+<!-- FINANCEIRO -->
+<div class="page" id="page-financeiro">
+  <div class="card">
+    <div class="table-header">
+      <h2>Painel — Financeiro</h2>
+      <div class="filters">
+        <input type="text" id="filtro-fin-busca" placeholder="🔍 Buscar motorista, CPF..." oninput="filtrarFinanceiro()">
+        <select id="filtro-fin-status" onchange="filtrarFinanceiro()">
+          <option value="">Todos</option>
+          <option value="fotos_inseridas">Fotos inseridas</option>
+          <option value="manifesto_encerrado">Manifesto encerrado</option>
+          <option value="saldo_agendado">Saldo agendado</option>
+        </select>
+        <button onclick="carregarFinanceiro()" class="btn-secondary" style="padding:8px 14px;font-size:13px;">🔄 Atualizar</button>
+      </div>
+    </div>
+    <div id="financeiro-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
 <!-- SEGURANÇA -->
 <div class="page" id="page-seguranca">
   <div class="stats" style="grid-template-columns:repeat(3,1fr)">
@@ -1336,6 +1355,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
 <script>
 let cotacoes = [];
 let cotacaoAtualId = null;
+let cotacaoAtualDados = null;
 let lotes = [];
 let sb = null;
 
@@ -1421,18 +1441,20 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  const idx = ['dashboard','nova','lista','lotes','motoristas','gr','status-lote','clientes','fiscal','seguranca'].indexOf(name);
+  const idx = ['dashboard','nova','lista','lotes','motoristas','gr','cadastro','status-lote','clientes','fiscal','financeiro','seguranca'].indexOf(name);
   if (idx >= 0) document.querySelectorAll('nav button')[idx].classList.add('active');
   if (name === 'dashboard') carregarDashboard();
   if (name === 'lista') carregarLista();
   if (name === 'lotes') { carregarLotes(); carregarClientesSelect('l-cliente'); document.getElementById('l-data').value = new Date().toISOString().split('T')[0]; }
   if (name === 'motoristas') carregarMotoristasPagina();
   if (name === 'gr') carregarGR();
+  if (name === 'cadastro') carregarCadastro();
   if (name === 'status-lote') carregarStatusLote();
   if (name === 'clientes') carregarClientes();
   if (name === 'fiscal') carregarFiscal();
+  if (name === 'financeiro') carregarFinanceiro();
   if (name === 'seguranca') { carregarSeguranca(); carregarLogs(); }
-  if (name === 'nova') document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
+  if (name === 'nova') resetForm();
 
   // Reaplicar read-only se necessário
   if (permissoesAtual && permissoesAtual[name] === 1) {
@@ -1459,7 +1481,7 @@ async function carregarDashboard() {
     document.getElementById('stat-total').textContent = cotacoes.length;
     document.getElementById('stat-aprovadas').textContent = cotacoes.filter(c => c.status === 'aprovada').length;
     document.getElementById('stat-reprovadas').textContent = cotacoes.filter(c => c.status === 'reprovada').length;
-    document.getElementById('stat-pendentes').textContent = cotacoes.filter(c => c.status === 'pendente' || c.status === 'em_negociacao').length;
+    document.getElementById('stat-pendentes').textContent = cotacoes.filter(c => c.status === 'pendente').length;
     document.getElementById('dashboard-table').innerHTML = renderTabela(cotacoes.slice(0, 8));
   } catch(e) {
     document.getElementById('dashboard-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao conectar.</p></div>';
@@ -1492,15 +1514,14 @@ function filtrarTabela() {
 
 function renderTabela(dados) {
   if (!dados.length) return '<div class="empty"><div class="empty-icon">📋</div><p>Nenhuma cotação encontrada.</p></div>';
-  return `<table><thead><tr><th>#</th><th>Cliente</th><th>Rota</th><th>Tipo</th><th>Valor</th><th>Vendedor</th><th>Data</th><th>Status</th></tr></thead><tbody>
+  return `<table><thead><tr><th>#</th><th>Cliente</th><th>Rota</th><th>Qtd.</th><th>Produto</th><th>Preço</th><th>Status</th></tr></thead><tbody>
     ${dados.map(c => `<tr onclick="abrirModal(${c.id})">
       <td style="color:var(--muted);font-size:12px">#${c.id}</td>
       <td><strong>${c.cliente_nome || '—'}</strong></td>
       <td style="font-size:12px;color:var(--muted)">${c.origem || '—'} → ${c.destino || '—'}</td>
-      <td style="font-size:12px">${c.tipo_carga || '—'}</td>
-      <td class="valor-cell">R$ ${Number(c.valor_cotado || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
-      <td style="font-size:12px">${c.vendedor_nome || '—'}</td>
-      <td style="font-size:12px;color:var(--muted)">${formatDate(c.data_cotacao)}</td>
+      <td style="font-size:12px">${c.quantidade ? Number(c.quantidade).toLocaleString('pt-BR') : '—'}</td>
+      <td style="font-size:12px">${c.tipo_produto || '—'}</td>
+      <td class="valor-cell">R$ ${Number(c.preco || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
       <td>${badgeStatus(c.status)}</td>
     </tr>`).join('')}
   </tbody></table>`;
@@ -1509,26 +1530,27 @@ function renderTabela(dados) {
 // SALVAR COTAÇÃO
 async function salvarCotacao() {
   const cliente = document.getElementById('f-cliente').value.trim();
-  if (!cliente) { showToast('Informe ao menos o nome do cliente', 'error'); return; }
+  const origem = document.getElementById('f-origem').value.trim();
+  const destino = document.getElementById('f-destino').value.trim();
+  const quantidade = document.getElementById('f-quantidade').value;
+  const tipoProduto = document.getElementById('f-tipo-produto').value.trim();
+  const preco = document.getElementById('f-preco').value;
+  if (!cliente || !origem || !destino || !quantidade || !tipoProduto || !preco) {
+    showToast('Preencha todos os campos da cotação', 'error');
+    return;
+  }
   try {
     const clientes = await supabaseRequest('GET', `clientes?nome=eq.${encodeURIComponent(cliente)}&select=id`);
     let clienteId = clientes && clientes.length ? clientes[0].id : (await supabaseRequest('POST', 'clientes', { nome: cliente }))[0].id;
-    let vendedorId = null;
-    const vendedorNome = document.getElementById('f-vendedor').value.trim();
-    if (vendedorNome) {
-      const vendedores = await supabaseRequest('GET', `vendedores?nome=eq.${encodeURIComponent(vendedorNome)}&select=id`);
-      vendedorId = vendedores && vendedores.length ? vendedores[0].id : (await supabaseRequest('POST', 'vendedores', { nome: vendedorNome }))[0].id;
-    }
     await supabaseRequest('POST', 'cotacoes', {
-      cliente_id: clienteId, vendedor_id: vendedorId,
-      origem: document.getElementById('f-origem').value || null,
-      destino: document.getElementById('f-destino').value || null,
-      tipo_carga: document.getElementById('f-tipo').value || null,
-      peso_kg: document.getElementById('f-peso').value || null,
-      valor_cotado: parseFloat(document.getElementById('f-valor').value) || null,
-      status: document.getElementById('f-status').value,
-      data_cotacao: document.getElementById('f-data').value || null,
-      observacao: document.getElementById('f-obs').value || null,
+      cliente_id: clienteId,
+      origem,
+      destino,
+      quantidade: parseFloat(quantidade),
+      tipo_produto: tipoProduto,
+      preco: parseFloat(preco),
+      status: 'pendente',
+      motivo_nao_fechamento: null,
     });
     registrarLog('cotacao', 'Cotação salva', `Cliente: ${document.getElementById('f-cliente')?.value||'—'}`);
     showToast('✅ Cotação salva!', 'success');
@@ -1539,11 +1561,9 @@ async function salvarCotacao() {
 }
 
 function resetForm() {
-  ['f-cliente','f-vendedor','f-origem','f-destino','f-tipo','f-peso','f-valor','f-obs'].forEach(id => {
+  ['f-cliente','f-origem','f-destino','f-quantidade','f-tipo-produto','f-preco'].forEach(id => {
     document.getElementById(id).value = '';
   });
-  document.getElementById('f-status').value = 'pendente';
-  document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
   const lOrigem = document.getElementById('f-origem-list');
   const lDestino = document.getElementById('f-destino-list');
   if (lOrigem) lOrigem.style.display = 'none';
@@ -1555,29 +1575,75 @@ async function abrirModal(id) {
   const c = cotacoes.find(x => x.id === id);
   if (!c) return;
   cotacaoAtualId = id;
-  document.getElementById('modal-status').value = c.status;
+  cotacaoAtualDados = c;
+  const acoes = document.getElementById('modal-cotacao-acoes');
+  const motivoWrap = document.getElementById('modal-motivo-reprovacao-wrap');
+  const motivoInput = document.getElementById('modal-motivo-reprovacao');
+  if (acoes) acoes.style.display = (setorAtual === 'comercial' && c.status === 'pendente') ? '' : 'none';
+  if (motivoWrap) motivoWrap.style.display = 'none';
+  if (motivoInput) motivoInput.value = '';
   document.getElementById('modal-content').innerHTML = `
     <div class="detail-row"><span class="detail-label">Cliente</span><span class="detail-value">${c.cliente_nome || '—'}</span></div>
-    <div class="detail-row"><span class="detail-label">Vendedor</span><span class="detail-value">${c.vendedor_nome || '—'}</span></div>
     <div class="detail-row"><span class="detail-label">Origem</span><span class="detail-value">${c.origem || '—'}</span></div>
     <div class="detail-row"><span class="detail-label">Destino</span><span class="detail-value">${c.destino || '—'}</span></div>
-    <div class="detail-row"><span class="detail-label">Tipo de Carga</span><span class="detail-value">${c.tipo_carga || '—'}</span></div>
-    <div class="detail-row"><span class="detail-label">Peso</span><span class="detail-value">${c.peso_kg ? c.peso_kg + ' ton' : '—'}</span></div>
-    <div class="detail-row"><span class="detail-label">Valor Cotado</span><span class="detail-value" style="color:var(--accent);font-family:'Syne',sans-serif;font-size:16px">R$ ${Number(c.valor_cotado || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>
-    <div class="detail-row"><span class="detail-label">Data</span><span class="detail-value">${formatDate(c.data_cotacao)}</span></div>
+    <div class="detail-row"><span class="detail-label">Quantidade</span><span class="detail-value">${c.quantidade ? Number(c.quantidade).toLocaleString('pt-BR') : '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Tipo de produto</span><span class="detail-value">${c.tipo_produto || '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Preço</span><span class="detail-value" style="color:var(--accent);font-family:'Syne',sans-serif;font-size:16px">R$ ${Number(c.preco || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>
     <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${badgeStatus(c.status)}</span></div>
-    ${c.observacao ? `<div class="detail-row" style="flex-direction:column;align-items:flex-start;gap:6px"><span class="detail-label">Observação</span><span style="font-size:13px;color:var(--muted);line-height:1.5">${c.observacao}</span></div>` : ''}
+    ${c.motivo_nao_fechamento ? `<div class="detail-row" style="flex-direction:column;align-items:flex-start;gap:6px"><span class="detail-label">Motivo do não fechamento</span><span style="font-size:13px;color:var(--muted);line-height:1.5">${String(c.motivo_nao_fechamento).replace(/</g,'')}</span></div>` : ''}
   `;
   document.getElementById('modal-overlay').classList.add('open');
 }
 
-async function atualizarStatus() {
-  const novoStatus = document.getElementById('modal-status').value;
+function prepararReprovacaoCotacao() {
+  const wrap = document.getElementById('modal-motivo-reprovacao-wrap');
+  if (wrap) wrap.style.display = '';
+  const textarea = document.getElementById('modal-motivo-reprovacao');
+  if (textarea) textarea.focus();
+}
+
+async function aprovarCotacao() {
+  if (!cotacaoAtualId || !cotacaoAtualDados) return;
   try {
-    await supabaseRequest('PATCH', `cotacoes?id=eq.${cotacaoAtualId}`, { status: novoStatus });
+    await supabaseRequest('PATCH', `cotacoes?id=eq.${cotacaoAtualId}`, { status: 'aprovada', motivo_nao_fechamento: null });
+    // Cria lote automaticamente com status aguardando informações
+    await supabaseRequest('POST', 'lotes', {
+      agencia: null,
+      cliente: cotacaoAtualDados.cliente_nome || null,
+      produto: cotacaoAtualDados.tipo_produto || null,
+      status: 'aguardando_informacoes',
+      coleta: null,
+      origem: cotacaoAtualDados.origem || null,
+      entrega: null,
+      destino: cotacaoAtualDados.destino || null,
+      tarifa_empresa: null,
+      tarifa_motorista: null,
+      peso_ton: null,
+      data_lote: null,
+      observacao: `Criado da cotação #${cotacaoAtualId} · Qtd: ${cotacaoAtualDados.quantidade ?? '—'} · Preço: R$ ${Number(cotacaoAtualDados.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}`,
+    });
     const c = cotacoes.find(x => x.id === cotacaoAtualId);
-    if (c) c.status = novoStatus;
-    showToast('Status atualizado!', 'success');
+    if (c) c.status = 'aprovada';
+    registrarLog('cotacao', 'Cotação aprovada', `Cotação: #${cotacaoAtualId}`);
+    registrarLog('lote', 'Lote criado via cotação aprovada', `Cotação: #${cotacaoAtualId}`);
+    showToast('✅ Cotação aprovada e enviada para Lotes!', 'success');
+    fecharModalBtn();
+    cotacoes = [];
+    lotes = [];
+    if (document.getElementById('page-lista').classList.contains('active')) carregarLista();
+    else carregarDashboard();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function reprovarCotacao() {
+  const motivo = document.getElementById('modal-motivo-reprovacao')?.value?.trim();
+  if (!motivo) { showToast('Informe o motivo do não fechamento', 'error'); return; }
+  try {
+    await supabaseRequest('PATCH', `cotacoes?id=eq.${cotacaoAtualId}`, { status: 'reprovada', motivo_nao_fechamento: motivo });
+    const c = cotacoes.find(x => x.id === cotacaoAtualId);
+    if (c) { c.status = 'reprovada'; c.motivo_nao_fechamento = motivo; }
+    registrarLog('cotacao', 'Cotação reprovada', `Cotação: #${cotacaoAtualId} · Motivo: ${motivo}`);
+    showToast('❌ Cotação reprovada.', 'success');
     fecharModalBtn();
     if (document.getElementById('page-lista').classList.contains('active')) filtrarTabela();
     else carregarDashboard();
@@ -1597,7 +1663,7 @@ async function excluirCotacao() {
 }
 
 function fecharModal(e) { if (e.target === document.getElementById('modal-overlay')) fecharModalBtn(); }
-function fecharModalBtn() { document.getElementById('modal-overlay').classList.remove('open'); cotacaoAtualId = null; }
+function fecharModalBtn() { document.getElementById('modal-overlay').classList.remove('open'); cotacaoAtualId = null; cotacaoAtualDados = null; }
 
 // LOTES
 async function salvarLote() {
@@ -1677,8 +1743,8 @@ function renderLotes(dados) {
 }
 
 function badgeLote(s) {
-  const cores = {liberado:'badge-aprovada',aceita:'badge-aprovada',finalizado:'badge-aprovada',finalizando:'badge-aprovada',buscando:'badge-em_negociacao',aguardando:'badge-pendente',aguardando_inicio:'badge-pendente',aguardando_produto:'badge-pendente',suspenso:'badge-reprovada',no_show:'badge-reprovada',paralizado:'badge-reprovada',urgente:'badge-reprovada',fechada:'badge-reprovada'};
-  const nomes = {liberado:'Liberado',aceita:'Aceita',aguardando:'Aguardando',aguardando_inicio:'Ag. Início',aguardando_produto:'Ag. Produto',buscando:'Buscando',fechada:'Fechada',finalizado:'Finalizado',finalizando:'Finalizando',no_show:'No-Show',paralizado:'Paralizado',prob_qualidade:'Prob. Qualidade',ret_domingo:'Ret. Domingo',ret_fds:'Ret. FDS',ret_quarta:'Ret. Quarta',ret_quinta:'Ret. Quinta',ret_sabado:'Ret. Sábado',ret_segunda:'Ret. Segunda',ret_sexta:'Ret. Sexta',ret_terca:'Ret. Terça',sab_dom:'Sab/Dom',sab_ate_11:'Sab até 11h',sab_ate_17:'Sab até 17h',sem_cota:'Sem Cota',sem_produto:'Sem Produto',suspenso:'Suspenso',urgente:'Urgente'};
+  const cores = {liberado:'badge-aprovada',aceita:'badge-aprovada',finalizado:'badge-aprovada',finalizando:'badge-aprovada',buscando:'badge-em_negociacao',aguardando:'badge-pendente',aguardando_inicio:'badge-pendente',aguardando_produto:'badge-pendente',aguardando_informacoes:'badge-pendente',suspenso:'badge-reprovada',no_show:'badge-reprovada',paralizado:'badge-reprovada',urgente:'badge-reprovada',fechada:'badge-reprovada'};
+  const nomes = {liberado:'Liberado',aceita:'Aceita',aguardando:'Aguardando',aguardando_inicio:'Ag. Início',aguardando_produto:'Ag. Produto',aguardando_informacoes:'Ag. Informações',buscando:'Buscando',fechada:'Fechada',finalizado:'Finalizado',finalizando:'Finalizando',no_show:'No-Show',paralizado:'Paralizado',prob_qualidade:'Prob. Qualidade',ret_domingo:'Ret. Domingo',ret_fds:'Ret. FDS',ret_quarta:'Ret. Quarta',ret_quinta:'Ret. Quinta',ret_sabado:'Ret. Sábado',ret_segunda:'Ret. Segunda',ret_sexta:'Ret. Sexta',ret_terca:'Ret. Terça',sab_dom:'Sab/Dom',sab_ate_11:'Sab até 11h',sab_ate_17:'Sab até 17h',sem_cota:'Sem Cota',sem_produto:'Sem Produto',suspenso:'Suspenso',urgente:'Urgente'};
   return `<span class="badge ${cores[s]||'badge-pendente'}">${nomes[s]||s}</span>`;
 }
 
@@ -1695,7 +1761,7 @@ async function excluirLote(id) {
 
 // HELPERS
 function badgeStatus(s) {
-  const map = {pendente:'Pendente',aprovada:'Aprovada',reprovada:'Reprovada',em_negociacao:'Em Negociação'};
+  const map = {pendente:'Pendente',aprovada:'Aprovada',reprovada:'Reprovada'};
   return `<span class="badge badge-${s}">${map[s]||s}</span>`;
 }
 
@@ -2120,23 +2186,33 @@ function badgeMotorista(s) {
   const cores = {
     em_negociacao: 'color:#3b82f6;background:rgba(59,130,246,0.12)',
     cadastro: 'color:#8b5cf6;background:rgba(139,92,246,0.12)',
+    aguardando_cadastro: 'color:#eab308;background:rgba(234,179,8,0.12)',
+    cadastro_realizado: 'color:#22c55e;background:rgba(34,197,94,0.12)',
     validando_gr_interna: 'color:#eab308;background:rgba(234,179,8,0.12)',
     validando_gr_externa: 'color:#f97316;background:rgba(249,115,22,0.12)',
     liberado_carregar: 'color:#22c55e;background:rgba(34,197,94,0.12)',
     aguardando_nota: 'color:#eab308;background:rgba(234,179,8,0.12)',
     documento_emitido: 'color:#22c55e;background:rgba(34,197,94,0.12)',
     carregado: 'color:#22c55e;background:rgba(34,197,94,0.12)',
+    fotos_inseridas: 'color:#f97316;background:rgba(249,115,22,0.12)',
+    adiantamento_pago: 'color:#22c55e;background:rgba(34,197,94,0.12)',
     em_transito: 'color:#3b82f6;background:rgba(59,130,246,0.12)',
     aguardando_coleta: 'color:#eab308;background:rgba(234,179,8,0.12)',
     aguardando_descarga: 'color:#f97316;background:rgba(249,115,22,0.12)',
+    manifesto_encerrado: 'color:#06b6d4;background:rgba(6,182,212,0.12)',
+    saldo_agendado: 'color:#3b82f6;background:rgba(59,130,246,0.12)',
+    saldo_pago: 'color:#22c55e;background:rgba(34,197,94,0.12)',
   };
   const nomes = {
     em_negociacao:'Em Negociação', cadastro:'Cadastro',
+    aguardando_cadastro:'Ag. Cadastro', cadastro_realizado:'Cadastro realizado',
     validando_gr_interna:'Valid. GR Interna', validando_gr_externa:'Valid. GR Externa',
     liberado_carregar:'Liberado Carregar', aguardando_nota:'Ag. Nota',
     documento_emitido:'Doc. Emitido', carregado:'Carregado',
+    fotos_inseridas:'Fotos inseridas', adiantamento_pago:'Adiantamento pago',
     em_transito:'Em Trânsito', aguardando_coleta:'Ag. Coleta',
     aguardando_descarga:'Ag. Descarga',
+    manifesto_encerrado:'Manifesto encerrado', saldo_agendado:'Saldo agendado', saldo_pago:'Saldo pago',
   };
   const style = cores[s] || 'color:var(--muted);background:var(--surface2)';
   return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;${style}">${nomes[s]||s}</span>`;
@@ -2903,19 +2979,23 @@ const ABAS_SISTEMA = [
   { id: 'lotes',       label: '📦 Lotes' },
   { id: 'motoristas',  label: '🚛 Motoristas' },
   { id: 'gr',          label: '🔍 GR' },
+  { id: 'cadastro',    label: '🧾 Cadastro' },
   { id: 'status-lote', label: '📍 Status do Lote' },
   { id: 'clientes',    label: '👥 Clientes' },
   { id: 'fiscal',      label: '💼 Fiscal' },
+  { id: 'financeiro',  label: '💰 Financeiro' },
   { id: 'seguranca',   label: '🔒 Segurança' },
 ];
 
 // Permissões padrão por setor: 0=oculto, 1=só ver, 2=acesso total
 const PERMISSOES_PADRAO = {
-  administrativo: { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, gr:2, 'status-lote':2, clientes:2, fiscal:2, seguranca:2 },
-  comercial:      { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, gr:0, 'status-lote':2, clientes:2, fiscal:0, seguranca:0 },
-  logistico:      { dashboard:2, nova:0, lista:1, lotes:2, motoristas:2, gr:1, 'status-lote':2, clientes:0, fiscal:0, seguranca:0 },
-  fiscal:         { dashboard:2, nova:0, lista:1, lotes:0, motoristas:1, gr:0, 'status-lote':2, clientes:0, fiscal:2, seguranca:0 },
-  gr:             { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:2, 'status-lote':1, clientes:0, fiscal:0, seguranca:0 },
+  administrativo: { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, gr:2, cadastro:2, 'status-lote':2, clientes:2, fiscal:2, financeiro:2, seguranca:2 },
+  comercial:      { dashboard:2, nova:2, lista:2, lotes:1, motoristas:0, gr:0, cadastro:0, 'status-lote':0, clientes:2, fiscal:0, financeiro:0, seguranca:0 },
+  logistico:      { dashboard:2, nova:0, lista:1, lotes:2, motoristas:2, gr:0, cadastro:0, 'status-lote':2, clientes:0, fiscal:0, financeiro:0, seguranca:0 },
+  gr:             { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:2, cadastro:0, 'status-lote':1, clientes:0, fiscal:0, financeiro:0, seguranca:0 },
+  cadastro:       { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:2, 'status-lote':0, clientes:0, fiscal:0, financeiro:0, seguranca:0 },
+  fiscal:         { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:0, 'status-lote':1, clientes:0, fiscal:2, financeiro:0, seguranca:0 },
+  financeiro:     { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:0, 'status-lote':0, clientes:0, fiscal:0, financeiro:2, seguranca:0 },
 };
 
 function getPermissoesUsuario(u) {
@@ -2929,7 +3009,7 @@ function renderUsuarios(perfis) {
     document.getElementById('usuarios-table').innerHTML = '<div class="empty"><div class="empty-icon">👥</div><p>Nenhum usuário encontrado.</p></div>';
     return;
   }
-  const cores = { administrativo:'#f97316', comercial:'#3b82f6', logistico:'#22c55e', fiscal:'#8b5cf6', gr:'#ec4899' };
+  const cores = { administrativo:'#f97316', comercial:'#3b82f6', logistico:'#22c55e', fiscal:'#8b5cf6', gr:'#ec4899', cadastro:'#a3e635', financeiro:'#facc15' };
 
   document.getElementById('usuarios-table').innerHTML = perfis.map(u => {
     const perms = getPermissoesUsuario(u);
@@ -2952,8 +3032,10 @@ function renderUsuarios(perfis) {
           <select onchange="alterarSetor('${u.id}', this.value)" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;">
             <option value="comercial" ${u.setor==='comercial'?'selected':''}>Comercial</option>
             <option value="logistico" ${u.setor==='logistico'?'selected':''}>Logístico</option>
+            <option value="cadastro" ${u.setor==='cadastro'?'selected':''}>Cadastro</option>
             <option value="fiscal" ${u.setor==='fiscal'?'selected':''}>Fiscal</option>
             <option value="gr" ${u.setor==='gr'?'selected':''}>GR</option>
+            <option value="financeiro" ${u.setor==='financeiro'?'selected':''}>Financeiro</option>
             <option value="administrativo" ${u.setor==='administrativo'?'selected':''}>Administrativo</option>
           </select>
           <button onclick="toggleAtivo('${u.id}', ${u.ativo})" style="background:${u.ativo?'rgba(239,68,68,0.1)':'rgba(34,197,94,0.1)'};color:${u.ativo?'#ef4444':'#22c55e'};border:1px solid ${u.ativo?'rgba(239,68,68,0.3)':'rgba(34,197,94,0.3)'};border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">
@@ -3102,7 +3184,7 @@ function aplicarPermissoes(setor, perms) {
   setorAtual = setor;
   permissoesAtual = perms || PERMISSOES_PADRAO[setor] || PERMISSOES_PADRAO['comercial'];
 
-  const paginas = ['dashboard','nova','lista','lotes','motoristas','gr','status-lote','clientes','fiscal','seguranca'];
+  const paginas = ['dashboard','nova','lista','lotes','motoristas','gr','cadastro','status-lote','clientes','fiscal','financeiro','seguranca'];
   const botoesNav = document.querySelectorAll('nav button');
 
   paginas.forEach((p, i) => {
@@ -3114,7 +3196,7 @@ function aplicarPermissoes(setor, perms) {
 
   // Badge do setor
   const badge = document.getElementById('setor-badge');
-  const cores = { administrativo:'#f97316', comercial:'#3b82f6', logistico:'#22c55e', fiscal:'#8b5cf6', gr:'#ec4899' };
+  const cores = { administrativo:'#f97316', comercial:'#3b82f6', logistico:'#22c55e', fiscal:'#8b5cf6', gr:'#ec4899', cadastro:'#a3e635', financeiro:'#facc15' };
   if (badge) {
     badge.textContent = setor.toUpperCase();
     badge.style.background = cores[setor] || '#888';
@@ -3151,6 +3233,202 @@ function aplicarPermissoes(setor, perms) {
   // Navegar para primeira aba visível
   const primeiraVisivel = paginas.find(p => (permissoesAtual[p] ?? 0) > 0) || 'dashboard';
   showPage(primeiraVisivel);
+}
+
+// ============ CADASTRO ============
+let cadastroData = [];
+
+async function carregarCadastro() {
+  try {
+    const el = document.getElementById('cadastro-table');
+    if (!el) return;
+    el.innerHTML = '<div class="loading">Carregando...</div>';
+    cadastroData = await supabaseRequest('GET', 'motoristas?status=eq.aguardando_cadastro&order=criado_em.desc&limit=500') || [];
+    filtrarCadastro();
+  } catch (e) {
+    document.getElementById('cadastro-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
+  }
+}
+
+function filtrarCadastro() {
+  const busca = (document.getElementById('filtro-cadastro-busca')?.value || '').toLowerCase();
+  const filtrados = (cadastroData || []).filter(m => {
+    return !busca ||
+      (m.nome||'').toLowerCase().includes(busca) ||
+      (m.cpf||'').includes(busca) ||
+      (m.placa||'').toLowerCase().includes(busca);
+  });
+  renderCadastro(filtrados);
+}
+
+function renderCadastro(dados) {
+  const el = document.getElementById('cadastro-table');
+  if (!el) return;
+  if (!dados.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🧾</div><p>Nenhum motorista aguardando cadastro.</p></div>';
+    return;
+  }
+  el.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>#</th><th>Motorista</th><th>CPF</th><th>Placa</th><th>Contato</th><th>Status</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${dados.map(m => `<tr>
+          <td style="color:var(--muted);font-size:12px">#${m.id}</td>
+          <td><strong>${m.nome || '—'}</strong></td>
+          <td style="font-size:12px">${m.cpf || '—'}</td>
+          <td style="font-size:12px">${m.placa || '—'}</td>
+          <td style="font-size:12px">${m.contato || '—'}</td>
+          <td>${badgeMotorista(m.status || 'aguardando_cadastro')}</td>
+          <td><button class="btn-primary" style="padding:6px 10px;font-size:12px;" onclick="marcarCadastroRealizado(${m.id})">✅ Cadastro realizado</button></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function marcarCadastroRealizado(id) {
+  if (!confirm('Confirmar: cadastro realizado no sistema externo?')) return;
+  try {
+    await supabaseRequest('PATCH', `motoristas?id=eq.${id}`, { status: 'cadastro_realizado' });
+    registrarLog('motorista', 'Cadastro realizado', `Motorista: #${id}`);
+    showToast('✅ Cadastro marcado como realizado.', 'success');
+    await carregarCadastro();
+  } catch (e) {
+    showToast('Erro: ' + e.message, 'error');
+  }
+}
+
+// ============ FINANCEIRO ============
+let financeiroData = [];
+
+async function carregarFinanceiro() {
+  try {
+    const el = document.getElementById('financeiro-table');
+    if (!el) return;
+    el.innerHTML = '<div class="loading">Carregando...</div>';
+    financeiroData = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800') || [];
+    filtrarFinanceiro();
+  } catch (e) {
+    document.getElementById('financeiro-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
+  }
+}
+
+function filtrarFinanceiro() {
+  const busca = (document.getElementById('filtro-fin-busca')?.value || '').toLowerCase();
+  const status = (document.getElementById('filtro-fin-status')?.value || '');
+  const elegiveis = ['fotos_inseridas','manifesto_encerrado','saldo_agendado'];
+  const filtrados = (financeiroData || []).filter(m => {
+    const st = m.status || '';
+    if (!elegiveis.includes(st)) return false;
+    const matchBusca = !busca ||
+      (m.nome||'').toLowerCase().includes(busca) ||
+      (m.cpf||'').includes(busca) ||
+      String(m.lote_id||'').includes(busca);
+    const matchStatus = !status || st === status;
+    return matchBusca && matchStatus;
+  });
+  renderFinanceiro(filtrados);
+}
+
+function renderFinanceiro(dados) {
+  const el = document.getElementById('financeiro-table');
+  if (!el) return;
+  if (!dados.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">💰</div><p>Nenhuma tarefa pendente no Financeiro.</p></div>';
+    return;
+  }
+  const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  el.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>#</th><th>Motorista</th><th>CPF</th><th>Lote</th><th>Status</th><th>Ações</th>
+      </tr></thead>
+      <tbody>
+        ${dados.map(m => {
+          const st = m.status || '';
+          const acoes = st === 'fotos_inseridas'
+            ? `<div style="display:flex;gap:8px;flex-wrap:wrap;">
+                 <input type="date" id="fin-adiantamento-data-${m.id}" style="width:auto;font-size:12px;padding:6px 10px;" />
+                 <button class="btn-primary" style="padding:6px 10px;font-size:12px;background:var(--green);" onclick="aprovarAdiantamento(${m.id})">✅ Aprovar</button>
+                 <button class="btn-secondary" style="padding:6px 10px;font-size:12px;border-color:rgba(239,68,68,0.4);color:#ef4444;" onclick="reprovarFinanceiro(${m.id}, 'adiantamento')">❌ Reprovar</button>
+               </div>`
+            : st === 'manifesto_encerrado'
+            ? `<div style="display:flex;gap:8px;flex-wrap:wrap;">
+                 <button class="btn-primary" style="padding:6px 10px;font-size:12px;background:var(--green);" onclick="aprovarManifesto(${m.id})">✅ Aprovar</button>
+                 <button class="btn-secondary" style="padding:6px 10px;font-size:12px;border-color:rgba(239,68,68,0.4);color:#ef4444;" onclick="reprovarFinanceiro(${m.id}, 'manifesto')">❌ Reprovar</button>
+               </div>`
+            : `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                 <input type="date" id="fin-saldo-data-${m.id}" style="width:auto;font-size:12px;padding:6px 10px;" />
+                 <button class="btn-primary" style="padding:6px 10px;font-size:12px;background:var(--blue);" onclick="salvarDataSaldo(${m.id})">📅 Agendar saldo</button>
+                 <button class="btn-primary" style="padding:6px 10px;font-size:12px;background:var(--green);" onclick="marcarSaldoPago(${m.id})">✅ Saldo pago</button>
+               </div>`;
+          return `<tr>
+            <td style="color:var(--muted);font-size:12px">#${m.id}</td>
+            <td><strong>${esc(m.nome || '—')}</strong></td>
+            <td style="font-size:12px">${esc(m.cpf || '—')}</td>
+            <td style="font-size:12px;color:var(--muted)">#${esc(m.lote_id || '—')}</td>
+            <td>${badgeMotorista(st)}</td>
+            <td>${acoes}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function aprovarAdiantamento(id) {
+  const dt = document.getElementById(`fin-adiantamento-data-${id}`)?.value;
+  if (!dt) { showToast('Informe a data de pagamento do adiantamento', 'error'); return; }
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'adiantamento_pago', financeiro_adiantamento_data: dt, financeiro_adiantamento_motivo: null });
+    registrarLog('financeiro', 'Adiantamento aprovado', `Lote_motoristas: #${id} · Data: ${dt}`);
+    showToast('✅ Adiantamento aprovado.', 'success');
+    await carregarFinanceiro();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function aprovarManifesto(id) {
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'saldo_agendado', financeiro_saldo_motivo: null });
+    registrarLog('financeiro', 'Manifesto aprovado', `Lote_motoristas: #${id}`);
+    showToast('✅ Manifesto aprovado. Agende o saldo.', 'success');
+    await carregarFinanceiro();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function reprovarFinanceiro(id, etapa) {
+  const motivo = prompt('Motivo da reprovação:');
+  if (!motivo || !motivo.trim()) return;
+  try {
+    if (etapa === 'adiantamento') {
+      await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { financeiro_adiantamento_motivo: motivo.trim() });
+    } else {
+      await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { financeiro_saldo_motivo: motivo.trim() });
+    }
+    registrarLog('financeiro', 'Reprovado', `ID: #${id} · Etapa: ${etapa} · Motivo: ${motivo.trim()}`);
+    showToast('❌ Reprovação registrada.', 'success');
+    await carregarFinanceiro();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function salvarDataSaldo(id) {
+  const dt = document.getElementById(`fin-saldo-data-${id}`)?.value;
+  if (!dt) { showToast('Informe a data do saldo', 'error'); return; }
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { financeiro_saldo_data: dt });
+    registrarLog('financeiro', 'Saldo agendado', `ID: #${id} · Data: ${dt}`);
+    showToast('📅 Saldo agendado.', 'success');
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function marcarSaldoPago(id) {
+  if (!confirm('Confirmar: saldo pago?')) return;
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'saldo_pago' });
+    registrarLog('financeiro', 'Saldo pago', `ID: #${id}`);
+    showToast('✅ Saldo pago. Processo finalizado.', 'success');
+    await carregarFinanceiro();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 
 // ============ GR - GERENCIAMENTO DE RISCO ============
@@ -3247,6 +3525,7 @@ async function salvarMotoristaGR() {
       tipo_conta: document.getElementById('gr-tipo-conta').value || null,
       tipo_chave_pix: document.getElementById('gr-tipo-pix').value || null,
       chave_pix: document.getElementById('gr-pix').value || null,
+      status: 'aguardando_gr',
       gr_status: 'pendente',
       checklist,
       anexos: [],
@@ -3494,12 +3773,14 @@ async function salvarDecisaoGR() {
   try {
     await supabaseRequest('PATCH', `motoristas?id=eq.${grMotoristaSelecionadoId}`, {
       gr_status: decisao,
+      status: decisao === 'aprovado' ? 'aguardando_cadastro' : 'reprovado_gr',
       gr_motivo: decisao === 'reprovado' ? document.getElementById('mgr-motivo').value.trim() : null,
       gr_analisado_em: new Date().toISOString(),
     });
     const m = grData.find(x => x.id === grMotoristaSelecionadoId);
     if (m) {
       m.gr_status = decisao;
+      m.status = decisao === 'aprovado' ? 'aguardando_cadastro' : 'reprovado_gr';
       m.gr_motivo = decisao === 'reprovado' ? document.getElementById('mgr-motivo').value.trim() : null;
     }
     showToast(decisao === 'aprovado' ? '✅ Motorista aprovado!' : '❌ Motorista reprovado!', 'success');
