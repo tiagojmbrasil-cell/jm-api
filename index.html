@@ -743,6 +743,10 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
         <input type="text" id="filtro-mot-busca" placeholder="🔍 Buscar motorista, CPF ou lote..." oninput="filtrarMotoristasPagina()">
         <select id="filtro-mot-status" onchange="filtrarMotoristasPagina()">
           <option value="">Todos os status</option>
+          <option value="aguardando_gr">⏳ Aguardando GR</option>
+          <option value="aguardando_cadastro">🧾 Aguardando Cadastro</option>
+          <option value="cadastro_realizado">✅ Cadastro Realizado</option>
+          <option value="reprovado_gr">❌ Reprovado GR</option>
           <option value="em_negociacao">Em Negociação</option>
           <option value="cadastro">Cadastro</option>
           <option value="validando_gr_interna">Validando GR Interna</option>
@@ -751,7 +755,14 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
           <option value="aguardando_nota">Aguardando Nota</option>
           <option value="documento_emitido">Documento Emitido</option>
           <option value="carregado">Carregado</option>
+          <option value="fotos_inseridas">Fotos Inseridas</option>
+          <option value="adiantamento_pago">Adiantamento Pago</option>
           <option value="em_transito">Em Trânsito</option>
+          <option value="aguardando_chegada">Aguardando Chegada</option>
+          <option value="aguardando_encerramento_mdfe">Ag. Encerramento MDFe</option>
+          <option value="manifesto_encerrado">Manifesto Encerrado</option>
+          <option value="saldo_agendado">Saldo Agendado</option>
+          <option value="saldo_pago">Saldo Pago</option>
           <option value="aguardando_coleta">Aguardando Coleta</option>
           <option value="aguardando_descarga">Aguardando Descarga</option>
         </select>
@@ -1105,6 +1116,8 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
           <option value="documento_emitido">Documento Emitido</option>
           <option value="carregado">Carregado</option>
           <option value="em_transito">Em Trânsito</option>
+          <option value="aguardando_chegada">Aguardando Chegada</option>
+          <option value="aguardando_encerramento_mdfe">Ag. Encerramento MDFe</option>
           <option value="aguardando_coleta">Aguardando Coleta</option>
           <option value="aguardando_descarga">Aguardando Descarga</option>
         </select>
@@ -1124,6 +1137,13 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
 
     <!-- Status -->
     <div id="mf-status-bar" style="margin-bottom:16px;"></div>
+
+    <!-- Botão Encerrar MDFe — aparece só quando aguardando_encerramento_mdfe -->
+    <div id="mf-secao-mdfe" style="display:none;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.3);border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:10px;">⚠️ Aguardando Encerramento do MDFe</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">O motorista foi finalizado pelo setor financeiro. Realize o encerramento do MDFe no sistema externo e confirme abaixo.</p>
+      <button onclick="confirmarEncerramentoMDFe()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding:10px 24px;cursor:pointer;">📄 Encerrar MDFe</button>
+    </div>
 
     <!-- Seção Motorista -->
     <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
@@ -1236,6 +1256,8 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
         <option value="documento_emitido">Documento Emitido</option>
         <option value="carregado">Carregado</option>
         <option value="em_transito">Em Trânsito</option>
+        <option value="aguardando_chegada">Aguardando Chegada</option>
+        <option value="aguardando_encerramento_mdfe">Ag. Encerramento MDFe</option>
         <option value="aguardando_coleta">Aguardando Coleta</option>
         <option value="aguardando_descarga">Aguardando Descarga</option>
       </select>
@@ -1253,6 +1275,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
         <select id="filtro-fin-status" onchange="filtrarFinanceiro()">
           <option value="">Todos</option>
           <option value="fotos_inseridas">Fotos inseridas</option>
+          <option value="adiantamento_pago">Adiantamento pago</option>
           <option value="manifesto_encerrado">Manifesto encerrado</option>
           <option value="saldo_agendado">Saldo agendado</option>
         </select>
@@ -2184,6 +2207,8 @@ async function atualizarStatusMotorista(id, novoStatus) {
 
 function badgeMotorista(s) {
   const cores = {
+    aguardando_gr: 'color:#eab308;background:rgba(234,179,8,0.12)',
+    reprovado_gr: 'color:#ef4444;background:rgba(239,68,68,0.12)',
     em_negociacao: 'color:#3b82f6;background:rgba(59,130,246,0.12)',
     cadastro: 'color:#8b5cf6;background:rgba(139,92,246,0.12)',
     aguardando_cadastro: 'color:#eab308;background:rgba(234,179,8,0.12)',
@@ -2197,6 +2222,8 @@ function badgeMotorista(s) {
     fotos_inseridas: 'color:#f97316;background:rgba(249,115,22,0.12)',
     adiantamento_pago: 'color:#22c55e;background:rgba(34,197,94,0.12)',
     em_transito: 'color:#3b82f6;background:rgba(59,130,246,0.12)',
+    aguardando_chegada: 'color:#eab308;background:rgba(234,179,8,0.12)',
+    aguardando_encerramento_mdfe: 'color:#f97316;background:rgba(249,115,22,0.12)',
     aguardando_coleta: 'color:#eab308;background:rgba(234,179,8,0.12)',
     aguardando_descarga: 'color:#f97316;background:rgba(249,115,22,0.12)',
     manifesto_encerrado: 'color:#06b6d4;background:rgba(6,182,212,0.12)',
@@ -2204,14 +2231,16 @@ function badgeMotorista(s) {
     saldo_pago: 'color:#22c55e;background:rgba(34,197,94,0.12)',
   };
   const nomes = {
+    aguardando_gr:'Ag. GR', reprovado_gr:'Reprovado GR',
     em_negociacao:'Em Negociação', cadastro:'Cadastro',
     aguardando_cadastro:'Ag. Cadastro', cadastro_realizado:'Cadastro realizado',
     validando_gr_interna:'Valid. GR Interna', validando_gr_externa:'Valid. GR Externa',
     liberado_carregar:'Liberado Carregar', aguardando_nota:'Ag. Nota',
     documento_emitido:'Doc. Emitido', carregado:'Carregado',
     fotos_inseridas:'Fotos inseridas', adiantamento_pago:'Adiantamento pago',
-    em_transito:'Em Trânsito', aguardando_coleta:'Ag. Coleta',
-    aguardando_descarga:'Ag. Descarga',
+    em_transito:'Em Trânsito', aguardando_chegada:'Ag. Chegada',
+    aguardando_encerramento_mdfe:'Ag. Encerramento MDFe',
+    aguardando_coleta:'Ag. Coleta', aguardando_descarga:'Ag. Descarga',
     manifesto_encerrado:'Manifesto encerrado', saldo_agendado:'Saldo agendado', saldo_pago:'Saldo pago',
   };
   const style = cores[s] || 'color:var(--muted);background:var(--surface2)';
@@ -2614,6 +2643,10 @@ async function abrirFiscalModal(id) {
   document.getElementById('mf-status').innerHTML = badgeMotorista(m.status);
   document.getElementById('mf-status-select').value = m.status || 'em_negociacao';
 
+  // Mostra seção MDFe só se status for aguardando_encerramento_mdfe
+  const secaoMdfe = document.getElementById('mf-secao-mdfe');
+  if (secaoMdfe) secaoMdfe.style.display = m.status === 'aguardando_encerramento_mdfe' ? '' : 'none';
+
   document.getElementById('mf-lote').textContent = 'Lote #' + m.lote_id;
   document.getElementById('mf-cliente').textContent = m.lote ? (m.lote.cliente || '—') : '—';
   document.getElementById('mf-produto').textContent = m.lote ? (m.lote.produto || '—') : '—';
@@ -2756,9 +2789,31 @@ async function atualizarStatusFiscal() {
       m.status = novoStatus;
       document.getElementById('mf-status-bar').innerHTML = badgeMotorista(novoStatus);
       document.getElementById('mf-status').innerHTML = badgeMotorista(novoStatus);
+      // Atualiza visibilidade da seção MDFe
+      const secaoMdfe = document.getElementById('mf-secao-mdfe');
+      if (secaoMdfe) secaoMdfe.style.display = novoStatus === 'aguardando_encerramento_mdfe' ? '' : 'none';
     }
     registrarLog('fiscal', 'Status fiscal atualizado', `ID: ${motoristFiscalId}, Novo status: ${novoStatus}`);
     showToast('Status atualizado!', 'success');
+    renderFiscal(fiscalData);
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function confirmarEncerramentoMDFe() {
+  if (!confirm('Deseja realizar o encerramento do MDFe?\nApós confirmar, o motorista irá para o Financeiro com status Manifesto Encerrado.')) return;
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: 'manifesto_encerrado' });
+    const m = fiscalData.find(x => x.id === motoristFiscalId);
+    if (m) {
+      m.status = 'manifesto_encerrado';
+      document.getElementById('mf-status-bar').innerHTML = badgeMotorista('manifesto_encerrado');
+      document.getElementById('mf-status').innerHTML = badgeMotorista('manifesto_encerrado');
+      document.getElementById('mf-status-select').value = 'manifesto_encerrado';
+      const secaoMdfe = document.getElementById('mf-secao-mdfe');
+      if (secaoMdfe) secaoMdfe.style.display = 'none';
+    }
+    registrarLog('fiscal', 'MDFe encerrado — enviado ao Financeiro', `ID: #${motoristFiscalId}`);
+    showToast('✅ MDFe encerrado! Motorista enviado ao Financeiro.', 'success');
     renderFiscal(fiscalData);
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
@@ -3317,7 +3372,7 @@ async function carregarFinanceiro() {
 function filtrarFinanceiro() {
   const busca = (document.getElementById('filtro-fin-busca')?.value || '').toLowerCase();
   const status = (document.getElementById('filtro-fin-status')?.value || '');
-  const elegiveis = ['fotos_inseridas','manifesto_encerrado','saldo_agendado'];
+  const elegiveis = ['fotos_inseridas','adiantamento_pago','manifesto_encerrado','saldo_agendado'];
   const filtrados = (financeiroData || []).filter(m => {
     const st = m.status || '';
     if (!elegiveis.includes(st)) return false;
@@ -3352,6 +3407,13 @@ function renderFinanceiro(dados) {
                  <input type="date" id="fin-adiantamento-data-${m.id}" style="width:auto;font-size:12px;padding:6px 10px;" />
                  <button class="btn-primary" style="padding:6px 10px;font-size:12px;background:var(--green);" onclick="aprovarAdiantamento(${m.id})">✅ Aprovar</button>
                  <button class="btn-secondary" style="padding:6px 10px;font-size:12px;border-color:rgba(239,68,68,0.4);color:#ef4444;" onclick="reprovarFinanceiro(${m.id}, 'adiantamento')">❌ Reprovar</button>
+               </div>`
+            : st === 'adiantamento_pago'
+            ? `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                 <span style="font-size:12px;color:var(--muted);">Status de trânsito:</span>
+                 <button class="btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="alterarTransito(${m.id},'em_transito')">🚛 Em Trânsito</button>
+                 <button class="btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="alterarTransito(${m.id},'aguardando_chegada')">⏳ Ag. Chegada</button>
+                 <button class="btn-secondary" style="padding:6px 10px;font-size:12px;border-color:rgba(34,197,94,0.4);color:#22c55e;" onclick="confirmarFinalizar(${m.id})">✅ Finalizado</button>
                </div>`
             : st === 'manifesto_encerrado'
             ? `<div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -3427,6 +3489,25 @@ async function marcarSaldoPago(id) {
     await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'saldo_pago' });
     registrarLog('financeiro', 'Saldo pago', `ID: #${id}`);
     showToast('✅ Saldo pago. Processo finalizado.', 'success');
+    await carregarFinanceiro();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function alterarTransito(id, novoStatus) {
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: novoStatus });
+    registrarLog('financeiro', 'Status de trânsito alterado', `ID: #${id} · Status: ${novoStatus}`);
+    showToast('🚛 Status atualizado!', 'success');
+    await carregarFinanceiro();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function confirmarFinalizar(id) {
+  if (!confirm('Tem certeza que deseja finalizar este motorista?\nApós finalizar, ele irá para o Fiscal para encerramento do MDFe.')) return;
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'aguardando_encerramento_mdfe' });
+    registrarLog('financeiro', 'Motorista finalizado — enviado ao Fiscal', `ID: #${id}`);
+    showToast('✅ Finalizado! Aguardando encerramento do MDFe no Fiscal.', 'success');
     await carregarFinanceiro();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
