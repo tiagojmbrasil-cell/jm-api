@@ -2766,6 +2766,7 @@ function renderFiscal(dados) {
     document.getElementById('fiscal-table').innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>Nenhum motorista encontrado.</p></div>';
     return;
   }
+  const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
   document.getElementById('fiscal-table').innerHTML = `
     <table>
       <thead><tr>
@@ -2777,42 +2778,36 @@ function renderFiscal(dados) {
         <th>Lote / Cliente</th>
         <th>Rota</th>
         <th>Peso Saída</th>
-        <th>Status GR</th>
         <th>Pagamento</th>
-        <th>Dados Bancários / PIX</th>
-        <th>Titular</th>
+        <th>Ação</th>
       </tr></thead>
       <tbody>
         ${dados.map(m => {
-          const isPix = m.tipo_pagamento === 'chave_pix';
-          const dadosPagamento = isPix
-            ? `<div style="display:flex;flex-direction:column;gap:3px;">
-                <span style="font-size:11px;color:var(--muted)">${nomeTipoPix(m.tipo_chave_pix)}</span>
-                <span style="color:var(--green);font-weight:600;word-break:break-all">${m.chave_pix || '—'}</span>
+          const st = m.status || '';
+          const acao = st === 'aguardando_emissao_doc'
+            ? `<div style="display:flex;gap:8px;">
+                 <button class="btn-primary" style="padding:6px 12px;font-size:12px;background:var(--green);" onclick="emitirDocumento(${m.id})">✅ Documento Emitido</button>
+                 <button class="btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="abrirFiscalModal(${m.id})">👁️ Ver</button>
                </div>`
-            : `<div style="display:flex;flex-direction:column;gap:3px;">
-                <span style="font-weight:600">${m.banco || '—'}</span>
-                <span style="color:var(--muted);font-size:11px">Ag: ${m.agencia || '—'} | Cc: ${m.numero_conta || '—'} ${m.tipo_conta ? '(' + m.tipo_conta.charAt(0).toUpperCase() + m.tipo_conta.slice(1) + ')' : ''}</span>
-               </div>`;
-          return `<tr onclick="abrirFiscalModal(${m.id})" style="cursor:pointer">
+            : st === 'aguardando_encerramento_mdfe'
+            ? `<div style="display:flex;gap:8px;">
+                 <button class="btn-primary" style="padding:6px 12px;font-size:12px;background:var(--accent);" onclick="abrirFiscalModal(${m.id})">📄 Encerrar MDFe</button>
+               </div>`
+            : `<button class="btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="abrirFiscalModal(${m.id})">👁️ Ver</button>`;
+          return `<tr>
             <td style="color:var(--muted);font-size:12px">#${m.id}</td>
-            <td><strong>${m.nome || '—'}</strong></td>
-            <td style="font-size:12px">${m.cpf || '—'}</td>
-            <td style="font-size:12px">${m.placa || '—'}</td>
-            <td>${badgeMotorista(m.status)}</td>
+            <td><strong>${esc(m.nome || '—')}</strong></td>
+            <td style="font-size:12px">${esc(m.cpf || '—')}</td>
+            <td style="font-size:12px">${esc(m.placa || '—')}</td>
+            <td>${badgeMotorista(st)}</td>
             <td style="font-size:12px">
               <span style="color:var(--muted)">Lote #${m.lote_id}</span><br>
-              <strong>${m.lote ? m.lote.cliente || '—' : '—'}</strong>
+              <strong>${m.lote ? esc(m.lote.cliente || '—') : '—'}</strong>
             </td>
-            <td style="font-size:12px;color:var(--muted)">${m.lote ? (m.lote.origem||'—') + ' → ' + (m.lote.destino||'—') : '—'}</td>
+            <td style="font-size:12px;color:var(--muted)">${m.lote ? esc(m.lote.origem||'—') + ' → ' + esc(m.lote.destino||'—') : '—'}</td>
             <td style="font-size:12px;color:var(--accent);font-weight:600">${m.peso_saida ? m.peso_saida + ' ton' : '—'}</td>
-            <td>${badgeGR(m.gr_status || 'pendente')}</td>
             <td>${badgeTipoPagamento(m.tipo_pagamento)}</td>
-            <td style="font-size:12px">${dadosPagamento}</td>
-            <td style="font-size:12px">
-              <div style="font-weight:600">${m.nome_titular || '—'}</div>
-              <div style="color:var(--muted);font-size:11px">${m.cpf_titular || ''}</div>
-            </td>
+            <td>${acao}</td>
           </tr>`;
         }).join('')}
       </tbody>
@@ -2994,6 +2989,23 @@ async function emitirDocumentoFiscal() {
     showToast('✅ Documento emitido! Motorista enviado ao Logístico para fotos do carregamento.', 'success');
     fecharModalFiscalBtn();
     renderFiscal(fiscalData);
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+// Chamado diretamente da tabela (sem modal aberto)
+async function emitirDocumento(loteMotId) {
+  if (!confirm('Confirmar: documento emitido?\nO motorista será enviado ao Logístico para inserir as fotos do carregamento.')) return;
+  try {
+    const statusFinal = 'aguardando_fotos';
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${loteMotId}`, { status: statusFinal });
+    // Sincroniza tabela motoristas
+    const reg = fiscalData.find(x => x.id === loteMotId);
+    if (reg?.motorista_id) {
+      await supabaseRequest('PATCH', `motoristas?id=eq.${reg.motorista_id}`, { status: statusFinal });
+    }
+    registrarLog('fiscal', 'Documento emitido — enviado ao Logístico para fotos', `LoteMot: #${loteMotId}`);
+    showToast('✅ Documento emitido! Motorista enviado ao Logístico para fotos do carregamento.', 'success');
+    await carregarFiscal();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 
@@ -3712,36 +3724,52 @@ async function confirmarAnexoNF() {
     document.getElementById('mlog-nf-arquivo-status').textContent = 'Fazendo upload...';
     const file = input.files[0];
     const ext = file.name.split('.').pop();
-    const path = `motoristas/${logisticoMotoristaSelecionadoId}/nf_${Date.now()}.${ext}`;
+    const motoristaId = logisticoMotoristaSelecionadoId;
+    const path = `motoristas/${motoristaId}/nf_${Date.now()}.${ext}`;
     const { error: upErr } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
     if (upErr) throw new Error('Erro no upload: ' + upErr.message);
 
-    // Atualiza tabela motoristas com status e anexo
-    const motAtual = await supabaseRequest('GET', `motoristas?id=eq.${logisticoMotoristaSelecionadoId}`) || [];
-    const anexosAtuais = motAtual[0]?.anexos || [];
-    const novosAnexos = [...anexosAtuais, { tipo: 'nf', nome: file.name, path }];
-    await supabaseRequest('PATCH', `motoristas?id=eq.${logisticoMotoristaSelecionadoId}`, {
+    const novoAnexo = { tipo: 'nf', nome: file.name, path };
+
+    // 1. Atualiza tabela motoristas
+    const motAtual = await supabaseRequest('GET', `motoristas?id=eq.${motoristaId}`) || [];
+    const anexosMotorista = [...(motAtual[0]?.anexos || []), novoAnexo];
+    await supabaseRequest('PATCH', `motoristas?id=eq.${motoristaId}`, {
       status: 'aguardando_emissao_doc',
-      anexos: novosAnexos,
+      anexos: anexosMotorista,
     });
 
-    // Atualiza lote_motoristas — busca por motorista_id OU por lote_id + motorista_id
-    const loteMotReg = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${logisticoMotoristaSelecionadoId}&order=criado_em.desc&limit=1`) || [];
-    if (loteMotReg.length) {
-      await supabaseRequest('PATCH', `lote_motoristas?id=eq.${loteMotReg[0].id}`, {
-        status: 'aguardando_emissao_doc',
-        anexos: [...(loteMotReg[0].anexos || []), { tipo: 'nf', nome: file.name, path }],
-      });
-    } else {
-      // Se não encontrou por motorista_id, tenta pelo lote_id vinculado ao motorista
-      showToast('⚠️ NF salva no motorista, mas sem vínculo de lote encontrado. Verifique se o motorista está vinculado a um lote.', 'error');
+    // 2. Busca o registro em lote_motoristas por motorista_id
+    let loteMotReg = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${motoristaId}`) || [];
+
+    // Fallback: se não achou por motorista_id, busca pelo nome (compatibilidade)
+    if (!loteMotReg.length && motAtual[0]?.nome) {
+      loteMotReg = await supabaseRequest('GET', `lote_motoristas?nome=eq.${encodeURIComponent(motAtual[0].nome)}`) || [];
     }
 
-    registrarLog('logistico', 'NF anexada — enviado ao Fiscal', `ID: #${logisticoMotoristaSelecionadoId}`);
-    showToast('✅ NF anexada! Motorista enviado ao Fiscal para emissão do documento.', 'success');
+    if (loteMotReg.length) {
+      // Pega o mais recente
+      const reg = loteMotReg[0];
+      const anexosLote = [...(reg.anexos || []), novoAnexo];
+      await supabaseRequest('PATCH', `lote_motoristas?id=eq.${reg.id}`, {
+        status: 'aguardando_emissao_doc',
+        anexos: anexosLote,
+      });
+      registrarLog('logistico', 'NF anexada — enviado ao Fiscal', `Motorista: #${motoristaId} | LoteMot: #${reg.id}`);
+      showToast('✅ NF anexada! Motorista enviado ao Fiscal para emissão do documento.', 'success');
+    } else {
+      // Não encontrou em lote_motoristas — status atualizado só no motorista
+      registrarLog('logistico', 'NF anexada — sem vínculo de lote', `Motorista: #${motoristaId}`);
+      showToast('⚠️ NF salva, mas motorista não está vinculado a nenhum lote ainda. Vincule-o a um lote primeiro.', 'error');
+    }
+
+    document.getElementById('mlog-nf-arquivo-status').textContent = '';
     fecharModalLogisticoNF();
     await carregarLogistico();
-  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+  } catch(e) {
+    document.getElementById('mlog-nf-arquivo-status').textContent = '';
+    showToast('Erro: ' + e.message, 'error');
+  }
 }
 
 // ---- Modal Fotos ----
