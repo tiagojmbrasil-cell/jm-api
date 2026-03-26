@@ -148,6 +148,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     <button onclick="showPage('cadastro')">Cadastro</button>
     <button onclick="showPage('status-lote')">Status do Lote</button>
     <button onclick="showPage('clientes')">Clientes</button>
+    <button onclick="showPage('logistico')">Logístico</button>
     <button onclick="showPage('fiscal')">Fiscal</button>
     <button onclick="showPage('financeiro')">Financeiro</button>
     <button id="nav-seguranca" onclick="showPage('seguranca')" style="display:none">Segurança</button>
@@ -746,6 +747,9 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
           <option value="aguardando_gr">⏳ Aguardando GR</option>
           <option value="aguardando_cadastro">🧾 Aguardando Cadastro</option>
           <option value="cadastro_realizado">✅ Cadastro Realizado</option>
+          <option value="aguardando_nf">📄 Ag. Nota Fiscal</option>
+          <option value="aguardando_emissao_doc">💼 Ag. Emissão Doc</option>
+          <option value="aguardando_fotos">📸 Ag. Fotos Carregamento</option>
           <option value="reprovado_gr">❌ Reprovado GR</option>
           <option value="em_negociacao">Em Negociação</option>
           <option value="cadastro">Cadastro</option>
@@ -1098,6 +1102,133 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
   </div>
 </div>
 
+<!-- LOGÍSTICO -->
+<div class="page" id="page-logistico">
+  <div class="card">
+    <div class="table-header">
+      <h2>Painel — Logístico</h2>
+      <div class="filters">
+        <input type="text" id="filtro-log-busca" placeholder="🔍 Buscar motorista, CPF..." oninput="filtrarLogistico()">
+        <select id="filtro-log-etapa" onchange="filtrarLogistico()">
+          <option value="">Todas as etapas</option>
+          <option value="nf">📄 Anexar NF</option>
+          <option value="fotos">📷 Fotos do Carregamento</option>
+          <option value="transito">🚛 Controle de Trânsito</option>
+        </select>
+        <button onclick="carregarLogistico()" class="btn-secondary" style="padding:8px 14px;font-size:13px;">🔄 Atualizar</button>
+      </div>
+    </div>
+    <div id="logistico-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- MODAL LOGÍSTICO — ANEXAR NF -->
+<div class="modal-overlay" id="modal-logistico-nf-overlay" onclick="if(event.target===this)fecharModalLogisticoNF()">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-title">
+      <span id="mlog-nf-titulo">Anexar Nota Fiscal</span>
+      <button class="modal-close" onclick="fecharModalLogisticoNF()">✕</button>
+    </div>
+    <div style="background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;">
+      <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <span>🚛 <strong id="mlog-nf-nome">—</strong></span>
+        <span>🪪 CPF: <strong id="mlog-nf-cpf">—</strong></span>
+        <span>🚗 Placa: <strong id="mlog-nf-placa">—</strong></span>
+        <span>📦 <strong id="mlog-nf-lote">—</strong></span>
+      </div>
+    </div>
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Nota Fiscal (NF)</div>
+      <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+        <span style="font-size:13px;">Arquivo da Nota Fiscal</span>
+        <div style="display:flex;gap:4px;">
+          <label id="label-log-nf-arquivo" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+            <span>📎 Anexar</span>
+            <input type="file" id="log-nf-arquivo" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('log-nf-arquivo','label-log-nf-arquivo')">
+          </label>
+          <button type="button" onclick="limparAnexo('log-nf-arquivo','label-log-nf-arquivo')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+        </div>
+      </div>
+      <div id="mlog-nf-arquivo-status" style="font-size:12px;color:var(--muted);margin-top:8px;"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="fecharModalLogisticoNF()">Cancelar</button>
+      <button class="btn-primary" onclick="confirmarAnexoNF()">✅ Confirmar e Enviar ao Fiscal</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LOGÍSTICO — FOTOS DO CARREGAMENTO -->
+<div class="modal-overlay" id="modal-logistico-fotos-overlay" onclick="if(event.target===this)fecharModalLogisticoFotos()">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-title">
+      <span id="mlog-fotos-titulo">Fotos do Carregamento</span>
+      <button class="modal-close" onclick="fecharModalLogisticoFotos()">✕</button>
+    </div>
+    <div style="background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;">
+      <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <span>🚛 <strong id="mlog-fotos-nome">—</strong></span>
+        <span>🪪 CPF: <strong id="mlog-fotos-cpf">—</strong></span>
+        <span>🚗 Placa: <strong id="mlog-fotos-placa">—</strong></span>
+        <span>📦 <strong id="mlog-fotos-lote">—</strong></span>
+      </div>
+    </div>
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Fotos do Carregamento</div>
+      <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+        <span style="font-size:13px;">Fotos do carregamento (múltiplas permitidas)</span>
+        <div style="display:flex;gap:4px;">
+          <label id="label-log-fotos-arquivo" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+            <span>📎 Anexar</span>
+            <input type="file" id="log-fotos-arquivo" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('log-fotos-arquivo','label-log-fotos-arquivo')">
+          </label>
+          <button type="button" onclick="limparAnexo('log-fotos-arquivo','label-log-fotos-arquivo')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="fecharModalLogisticoFotos()">Cancelar</button>
+      <button class="btn-primary" onclick="confirmarFotosCarregamento()">✅ Confirmar e Enviar ao Financeiro</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LOGÍSTICO — CONTROLE DE TRÂNSITO -->
+<div class="modal-overlay" id="modal-logistico-transito-overlay" onclick="if(event.target===this)fecharModalTransito()">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-title">
+      <span id="mlog-transito-titulo">Controle de Trânsito</span>
+      <button class="modal-close" onclick="fecharModalTransito()">✕</button>
+    </div>
+    <div style="background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;">
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+        <span>🚛 <strong id="mlog-transito-nome">—</strong></span>
+        <span>Status atual: <span id="mlog-transito-status"></span></span>
+      </div>
+    </div>
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">Atualizar Status de Trânsito</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button onclick="alterarTransitoModal('em_transito')"
+          style="padding:12px;border-radius:8px;border:2px solid rgba(59,130,246,0.4);background:rgba(59,130,246,0.08);color:#3b82f6;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-align:left;">
+          🚛 Em Trânsito — Motorista saiu com a carga
+        </button>
+        <button onclick="alterarTransitoModal('aguardando_chegada')"
+          style="padding:12px;border-radius:8px;border:2px solid rgba(234,179,8,0.4);background:rgba(234,179,8,0.08);color:#eab308;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-align:left;">
+          ⏳ Aguardando Chegada — Aguardando no destino
+        </button>
+        <button onclick="confirmarFinalizarTransito()"
+          style="padding:12px;border-radius:8px;border:2px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.08);color:#22c55e;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-align:left;">
+          ✅ Finalizado — Entrega concluída, enviar ao Fiscal (MDFe)
+        </button>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="fecharModalTransito()">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <!-- FISCAL -->
 <div class="page" id="page-fiscal">
   <div class="card">
@@ -1113,7 +1244,9 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
           <option value="validando_gr_externa">Validando GR Externa</option>
           <option value="liberado_carregar">Liberado Carregar</option>
           <option value="aguardando_nota">Aguardando Nota</option>
+          <option value="aguardando_emissao_doc">Ag. Emissão Doc</option>
           <option value="documento_emitido">Documento Emitido</option>
+          <option value="aguardando_fotos">Ag. Fotos Carregamento</option>
           <option value="carregado">Carregado</option>
           <option value="em_transito">Em Trânsito</option>
           <option value="aguardando_chegada">Aguardando Chegada</option>
@@ -1253,7 +1386,9 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
         <option value="validando_gr_externa">Validando GR Externa</option>
         <option value="liberado_carregar">Liberado Carregar</option>
         <option value="aguardando_nota">Aguardando Nota</option>
-        <option value="documento_emitido">Documento Emitido</option>
+        <option value="aguardando_emissao_doc">Ag. Emissão Doc</option>
+        <option value="documento_emitido">Documento Emitido ➜ envia ao Logístico</option>
+        <option value="aguardando_fotos">Ag. Fotos Carregamento</option>
         <option value="carregado">Carregado</option>
         <option value="em_transito">Em Trânsito</option>
         <option value="aguardando_chegada">Aguardando Chegada</option>
@@ -1464,7 +1599,7 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  const idx = ['dashboard','nova','lista','lotes','motoristas','gr','cadastro','status-lote','clientes','fiscal','financeiro','seguranca'].indexOf(name);
+  const idx = ['dashboard','nova','lista','lotes','motoristas','gr','cadastro','status-lote','clientes','logistico','fiscal','financeiro','seguranca'].indexOf(name);
   if (idx >= 0) document.querySelectorAll('nav button')[idx].classList.add('active');
   if (name === 'dashboard') carregarDashboard();
   if (name === 'lista') carregarLista();
@@ -1474,6 +1609,7 @@ function showPage(name) {
   if (name === 'cadastro') carregarCadastro();
   if (name === 'status-lote') carregarStatusLote();
   if (name === 'clientes') carregarClientes();
+  if (name === 'logistico') carregarLogistico();
   if (name === 'fiscal') carregarFiscal();
   if (name === 'financeiro') carregarFinanceiro();
   if (name === 'seguranca') { carregarSeguranca(); carregarLogs(); }
@@ -2213,6 +2349,9 @@ function badgeMotorista(s) {
     cadastro: 'color:#8b5cf6;background:rgba(139,92,246,0.12)',
     aguardando_cadastro: 'color:#eab308;background:rgba(234,179,8,0.12)',
     cadastro_realizado: 'color:#22c55e;background:rgba(34,197,94,0.12)',
+    aguardando_nf: 'color:#8b5cf6;background:rgba(139,92,246,0.12)',
+    aguardando_emissao_doc: 'color:#f97316;background:rgba(249,115,22,0.12)',
+    aguardando_fotos: 'color:#eab308;background:rgba(234,179,8,0.12)',
     validando_gr_interna: 'color:#eab308;background:rgba(234,179,8,0.12)',
     validando_gr_externa: 'color:#f97316;background:rgba(249,115,22,0.12)',
     liberado_carregar: 'color:#22c55e;background:rgba(34,197,94,0.12)',
@@ -2234,6 +2373,7 @@ function badgeMotorista(s) {
     aguardando_gr:'Ag. GR', reprovado_gr:'Reprovado GR',
     em_negociacao:'Em Negociação', cadastro:'Cadastro',
     aguardando_cadastro:'Ag. Cadastro', cadastro_realizado:'Cadastro realizado',
+    aguardando_nf:'Ag. Nota Fiscal', aguardando_emissao_doc:'Ag. Emissão Doc', aguardando_fotos:'Ag. Fotos Carregamento',
     validando_gr_interna:'Valid. GR Interna', validando_gr_externa:'Valid. GR Externa',
     liberado_carregar:'Liberado Carregar', aguardando_nota:'Ag. Nota',
     documento_emitido:'Doc. Emitido', carregado:'Carregado',
@@ -2789,12 +2929,19 @@ async function atualizarStatusFiscal() {
       m.status = novoStatus;
       document.getElementById('mf-status-bar').innerHTML = badgeMotorista(novoStatus);
       document.getElementById('mf-status').innerHTML = badgeMotorista(novoStatus);
-      // Atualiza visibilidade da seção MDFe
       const secaoMdfe = document.getElementById('mf-secao-mdfe');
       if (secaoMdfe) secaoMdfe.style.display = novoStatus === 'aguardando_encerramento_mdfe' ? '' : 'none';
     }
-    registrarLog('fiscal', 'Status fiscal atualizado', `ID: ${motoristFiscalId}, Novo status: ${novoStatus}`);
-    showToast('Status atualizado!', 'success');
+    // Se documento emitido → envia automaticamente ao Logístico para fotos do carregamento
+    if (novoStatus === 'documento_emitido') {
+      await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: 'aguardando_fotos' });
+      if (m) m.status = 'aguardando_fotos';
+      registrarLog('fiscal', 'Documento emitido — enviado ao Logístico para fotos', `ID: ${motoristFiscalId}`);
+      showToast('✅ Documento emitido! Motorista enviado ao Logístico para fotos do carregamento.', 'success');
+    } else {
+      registrarLog('fiscal', 'Status fiscal atualizado', `ID: ${motoristFiscalId}, Novo status: ${novoStatus}`);
+      showToast('Status atualizado!', 'success');
+    }
     renderFiscal(fiscalData);
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
@@ -3037,6 +3184,7 @@ const ABAS_SISTEMA = [
   { id: 'cadastro',    label: '🧾 Cadastro' },
   { id: 'status-lote', label: '📍 Status do Lote' },
   { id: 'clientes',    label: '👥 Clientes' },
+  { id: 'logistico',   label: '🏗️ Logístico' },
   { id: 'fiscal',      label: '💼 Fiscal' },
   { id: 'financeiro',  label: '💰 Financeiro' },
   { id: 'seguranca',   label: '🔒 Segurança' },
@@ -3044,13 +3192,13 @@ const ABAS_SISTEMA = [
 
 // Permissões padrão por setor: 0=oculto, 1=só ver, 2=acesso total
 const PERMISSOES_PADRAO = {
-  administrativo: { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, gr:2, cadastro:2, 'status-lote':2, clientes:2, fiscal:2, financeiro:2, seguranca:2 },
-  comercial:      { dashboard:2, nova:2, lista:2, lotes:1, motoristas:0, gr:0, cadastro:0, 'status-lote':0, clientes:2, fiscal:0, financeiro:0, seguranca:0 },
-  logistico:      { dashboard:2, nova:0, lista:1, lotes:2, motoristas:2, gr:0, cadastro:0, 'status-lote':2, clientes:0, fiscal:0, financeiro:0, seguranca:0 },
-  gr:             { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:2, cadastro:0, 'status-lote':1, clientes:0, fiscal:0, financeiro:0, seguranca:0 },
-  cadastro:       { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:2, 'status-lote':0, clientes:0, fiscal:0, financeiro:0, seguranca:0 },
-  fiscal:         { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:0, 'status-lote':1, clientes:0, fiscal:2, financeiro:0, seguranca:0 },
-  financeiro:     { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:0, 'status-lote':0, clientes:0, fiscal:0, financeiro:2, seguranca:0 },
+  administrativo: { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, gr:2, cadastro:2, 'status-lote':2, clientes:2, logistico:2, fiscal:2, financeiro:2, seguranca:2 },
+  comercial:      { dashboard:2, nova:2, lista:2, lotes:1, motoristas:0, gr:0, cadastro:0, 'status-lote':0, clientes:2, logistico:0, fiscal:0, financeiro:0, seguranca:0 },
+  logistico:      { dashboard:2, nova:0, lista:1, lotes:2, motoristas:2, gr:0, cadastro:0, 'status-lote':2, clientes:0, logistico:2, fiscal:0, financeiro:0, seguranca:0 },
+  gr:             { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:2, cadastro:0, 'status-lote':1, clientes:0, logistico:0, fiscal:0, financeiro:0, seguranca:0 },
+  cadastro:       { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:2, 'status-lote':0, clientes:0, logistico:0, fiscal:0, financeiro:0, seguranca:0 },
+  fiscal:         { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:0, 'status-lote':1, clientes:0, logistico:0, fiscal:2, financeiro:0, seguranca:0 },
+  financeiro:     { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:0, 'status-lote':0, clientes:0, logistico:0, fiscal:0, financeiro:2, seguranca:0 },
 };
 
 function getPermissoesUsuario(u) {
@@ -3343,15 +3491,243 @@ function renderCadastro(dados) {
 }
 
 async function marcarCadastroRealizado(id) {
-  if (!confirm('Confirmar: cadastro realizado no sistema externo?')) return;
+  if (!confirm('Confirmar: cadastro realizado no sistema externo?\nO motorista será enviado ao setor Logístico para anexar a Nota Fiscal.')) return;
   try {
-    await supabaseRequest('PATCH', `motoristas?id=eq.${id}`, { status: 'cadastro_realizado' });
-    registrarLog('motorista', 'Cadastro realizado', `Motorista: #${id}`);
-    showToast('✅ Cadastro marcado como realizado.', 'success');
+    await supabaseRequest('PATCH', `motoristas?id=eq.${id}`, { status: 'aguardando_nf' });
+    registrarLog('motorista', 'Cadastro realizado — enviado ao Logístico para NF', `Motorista: #${id}`);
+    showToast('✅ Cadastro realizado! Motorista enviado ao Logístico para NF.', 'success');
     await carregarCadastro();
   } catch (e) {
     showToast('Erro: ' + e.message, 'error');
   }
+}
+
+// ============ LOGÍSTICO ============
+let logisticoData = [];
+let logisticoMotoristaSelecionadoId = null;
+let logisticoMotoristaLoteId = null;
+
+async function carregarLogistico() {
+  try {
+    const el = document.getElementById('logistico-table');
+    if (!el) return;
+    el.innerHTML = '<div class="loading">Carregando...</div>';
+    // Busca motoristas com status de NF e fotos (tabela motoristas)
+    const motoristas = await supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500') || [];
+    // Busca lote_motoristas com status de trânsito
+    const loteMotoristas = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800') || [];
+
+    const statusNF = ['aguardando_nf'];
+    const statusFotos = ['aguardando_fotos'];
+    const statusTransito = ['adiantamento_pago', 'em_transito', 'aguardando_chegada'];
+
+    const motoristasNF = motoristas.filter(m => statusNF.includes(m.status || ''));
+    const motoristasFotos = loteMotoristas.filter(m => statusFotos.includes(m.status || ''));
+    const motoristasTransito = loteMotoristas.filter(m => statusTransito.includes(m.status || ''));
+
+    logisticoData = [
+      ...motoristasNF.map(m => ({ ...m, _origem: 'motoristas', _etapa: 'nf' })),
+      ...motoristasFotos.map(m => ({ ...m, _origem: 'lote_motoristas', _etapa: 'fotos' })),
+      ...motoristasTransito.map(m => ({ ...m, _origem: 'lote_motoristas', _etapa: 'transito' })),
+    ];
+    filtrarLogistico();
+  } catch(e) {
+    document.getElementById('logistico-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
+  }
+}
+
+function filtrarLogistico() {
+  const busca = (document.getElementById('filtro-log-busca')?.value || '').toLowerCase();
+  const etapa = document.getElementById('filtro-log-etapa')?.value || '';
+  const filtrados = logisticoData.filter(m => {
+    const matchBusca = !busca ||
+      (m.nome||'').toLowerCase().includes(busca) ||
+      (m.cpf||'').includes(busca) ||
+      (m.placa||'').toLowerCase().includes(busca);
+    const matchEtapa = !etapa || m._etapa === etapa;
+    return matchBusca && matchEtapa;
+  });
+  renderLogistico(filtrados);
+}
+
+function renderLogistico(dados) {
+  const el = document.getElementById('logistico-table');
+  if (!el) return;
+  if (!dados.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🚛</div><p>Nenhuma tarefa pendente no Logístico.</p></div>';
+    return;
+  }
+  const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  el.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>#</th><th>Motorista</th><th>CPF</th><th>Placa</th><th>Etapa</th><th>Status</th><th>Ação</th>
+      </tr></thead>
+      <tbody>
+        ${dados.map(m => {
+          const st = m.status || '';
+          let etapaLabel = '—';
+          let acao = '—';
+          if (m._etapa === 'nf') {
+            etapaLabel = '📄 Anexar NF';
+            acao = `<button class="btn-primary" style="padding:6px 12px;font-size:12px;" onclick="abrirModalLogisticoNF(${m.id}, '${(m.nome||'').replace(/'/g,"\\'")}', '${m.placa||''}', '${m.cpf||''}', ${m.lote_id||'null'}, '${m._origem}')">📄 Anexar NF</button>`;
+          } else if (m._etapa === 'fotos') {
+            etapaLabel = '📸 Fotos Carregamento';
+            acao = `<button class="btn-primary" style="padding:6px 12px;font-size:12px;background:var(--green);" onclick="abrirModalLogisticoFotos(${m.id}, '${(m.nome||'').replace(/'/g,"\\'")}', '${m.placa||''}', '${m.cpf||''}', ${m.lote_id||'null'}, '${m._origem}')">📸 Inserir Fotos</button>`;
+          } else if (m._etapa === 'transito') {
+            etapaLabel = '🚛 Controle de Trânsito';
+            acao = `<button class="btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="abrirModalTransito(${m.id}, '${(m.nome||'').replace(/'/g,"\\'")}', '${st}', '${m._origem}')">🚛 Gerenciar Trânsito</button>`;
+          }
+          return `<tr>
+            <td style="color:var(--muted);font-size:12px">#${m.id}</td>
+            <td><strong>${esc(m.nome || '—')}</strong></td>
+            <td style="font-size:12px">${esc(m.cpf || '—')}</td>
+            <td style="font-size:12px">${esc(m.placa || '—')}</td>
+            <td style="font-size:12px;font-weight:600;color:var(--accent)">${etapaLabel}</td>
+            <td>${badgeMotorista(st)}</td>
+            <td>${acao}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ---- Modal NF ----
+function abrirModalLogisticoNF(id, nome, placa, cpf, loteId, origem) {
+  logisticoMotoristaSelecionadoId = id;
+  logisticoMotoristaLoteId = loteId;
+  logisticoMotoristaSelecionadoOrigem = origem;
+  document.getElementById('mlog-nf-titulo').textContent = 'Anexar NF — ' + nome;
+  document.getElementById('mlog-nf-nome').textContent = nome || '—';
+  document.getElementById('mlog-nf-placa').textContent = placa || '—';
+  document.getElementById('mlog-nf-cpf').textContent = cpf || '—';
+  document.getElementById('mlog-nf-lote').textContent = loteId ? 'Lote #' + loteId : '—';
+  limparAnexo('log-nf-arquivo', 'label-log-nf-arquivo');
+  document.getElementById('mlog-nf-arquivo-status').textContent = '';
+  document.getElementById('modal-logistico-nf-overlay').classList.add('open');
+}
+
+function fecharModalLogisticoNF() {
+  document.getElementById('modal-logistico-nf-overlay').classList.remove('open');
+  logisticoMotoristaSelecionadoId = null;
+}
+
+async function confirmarAnexoNF() {
+  const input = document.getElementById('log-nf-arquivo');
+  if (!input || !input.files.length) {
+    showToast('Anexe a Nota Fiscal antes de confirmar', 'error'); return;
+  }
+  try {
+    document.getElementById('mlog-nf-arquivo-status').textContent = 'Fazendo upload...';
+    const file = input.files[0];
+    const ext = file.name.split('.').pop();
+    const path = `motoristas/${logisticoMotoristaSelecionadoId}/nf_${Date.now()}.${ext}`;
+    const { error: upErr } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
+    if (upErr) throw new Error('Erro no upload: ' + upErr.message);
+
+    // Salva o anexo NF e muda status para aguardando_emissao_doc (vai ao Fiscal)
+    const tabela = logisticoMotoristaSelecionadoOrigem === 'lote_motoristas' ? 'lote_motoristas' : 'motoristas';
+    const motAtual = await supabaseRequest('GET', `${tabela}?id=eq.${logisticoMotoristaSelecionadoId}`) || [];
+    const anexosAtuais = motAtual[0]?.anexos || [];
+    const novosAnexos = [...anexosAtuais, { tipo: 'nf', nome: file.name, path }];
+    await supabaseRequest('PATCH', `${tabela}?id=eq.${logisticoMotoristaSelecionadoId}`, {
+      status: 'aguardando_emissao_doc',
+      anexos: novosAnexos,
+    });
+    registrarLog('logistico', 'NF anexada — enviado ao Fiscal', `ID: #${logisticoMotoristaSelecionadoId}`);
+    showToast('✅ NF anexada! Motorista enviado ao Fiscal para emissão do documento.', 'success');
+    fecharModalLogisticoNF();
+    await carregarLogistico();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+// ---- Modal Fotos ----
+let logisticoMotoristaSelecionadoOrigem = 'motoristas';
+
+function abrirModalLogisticoFotos(id, nome, placa, cpf, loteId, origem) {
+  logisticoMotoristaSelecionadoId = id;
+  logisticoMotoristaLoteId = loteId;
+  logisticoMotoristaSelecionadoOrigem = origem;
+  document.getElementById('mlog-fotos-titulo').textContent = 'Fotos do Carregamento — ' + nome;
+  document.getElementById('mlog-fotos-nome').textContent = nome || '—';
+  document.getElementById('mlog-fotos-placa').textContent = placa || '—';
+  document.getElementById('mlog-fotos-cpf').textContent = cpf || '—';
+  document.getElementById('mlog-fotos-lote').textContent = loteId ? 'Lote #' + loteId : '—';
+  limparAnexo('log-fotos-arquivo', 'label-log-fotos-arquivo');
+  document.getElementById('modal-logistico-fotos-overlay').classList.add('open');
+}
+
+function fecharModalLogisticoFotos() {
+  document.getElementById('modal-logistico-fotos-overlay').classList.remove('open');
+  logisticoMotoristaSelecionadoId = null;
+}
+
+async function confirmarFotosCarregamento() {
+  const input = document.getElementById('log-fotos-arquivo');
+  if (!input || !input.files.length) {
+    showToast('Insira ao menos uma foto do carregamento', 'error'); return;
+  }
+  try {
+    const tabela = logisticoMotoristaSelecionadoOrigem === 'lote_motoristas' ? 'lote_motoristas' : 'motoristas';
+    const motAtual = await supabaseRequest('GET', `${tabela}?id=eq.${logisticoMotoristaSelecionadoId}`) || [];
+    const anexosAtuais = motAtual[0]?.anexos || [];
+    const novosAnexos = [...anexosAtuais];
+    for (const file of input.files) {
+      const ext = file.name.split('.').pop();
+      const path = `motoristas/${logisticoMotoristaSelecionadoId}/foto_carg_${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
+      const { error: upErr } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
+      if (upErr) throw new Error('Erro upload foto: ' + upErr.message);
+      novosAnexos.push({ tipo: 'foto_carregamento', nome: file.name, path });
+    }
+    await supabaseRequest('PATCH', `${tabela}?id=eq.${logisticoMotoristaSelecionadoId}`, {
+      status: 'fotos_inseridas',
+      anexos: novosAnexos,
+    });
+    registrarLog('logistico', 'Fotos do carregamento inseridas — enviado ao Financeiro', `ID: #${logisticoMotoristaSelecionadoId}`);
+    showToast('✅ Fotos inseridas! Motorista enviado ao Financeiro.', 'success');
+    fecharModalLogisticoFotos();
+    await carregarLogistico();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+// ---- Modal Trânsito ----
+let logisticoTransitoOrigem = 'lote_motoristas';
+
+function abrirModalTransito(id, nome, statusAtual, origem) {
+  logisticoMotoristaSelecionadoId = id;
+  logisticoTransitoOrigem = origem;
+  document.getElementById('mlog-transito-titulo').textContent = 'Trânsito — ' + nome;
+  document.getElementById('mlog-transito-nome').textContent = nome || '—';
+  document.getElementById('mlog-transito-status').innerHTML = badgeMotorista(statusAtual);
+  document.getElementById('modal-logistico-transito-overlay').classList.add('open');
+}
+
+function fecharModalTransito() {
+  document.getElementById('modal-logistico-transito-overlay').classList.remove('open');
+  logisticoMotoristaSelecionadoId = null;
+}
+
+async function alterarTransitoModal(novoStatus) {
+  try {
+    const tabela = logisticoTransitoOrigem === 'lote_motoristas' ? 'lote_motoristas' : 'motoristas';
+    await supabaseRequest('PATCH', `${tabela}?id=eq.${logisticoMotoristaSelecionadoId}`, { status: novoStatus });
+    document.getElementById('mlog-transito-status').innerHTML = badgeMotorista(novoStatus);
+    registrarLog('logistico', 'Status de trânsito alterado', `ID: #${logisticoMotoristaSelecionadoId} · ${novoStatus}`);
+    showToast('🚛 Status atualizado!', 'success');
+    await carregarLogistico();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function confirmarFinalizarTransito() {
+  if (!confirm('Tem certeza que deseja finalizar?\nO motorista será enviado ao Fiscal para encerramento do MDFe.')) return;
+  try {
+    const tabela = logisticoTransitoOrigem === 'lote_motoristas' ? 'lote_motoristas' : 'motoristas';
+    await supabaseRequest('PATCH', `${tabela}?id=eq.${logisticoMotoristaSelecionadoId}`, { status: 'aguardando_encerramento_mdfe' });
+    registrarLog('logistico', 'Motorista finalizado — enviado ao Fiscal (MDFe)', `ID: #${logisticoMotoristaSelecionadoId}`);
+    showToast('✅ Finalizado! Aguardando encerramento do MDFe no Fiscal.', 'success');
+    fecharModalTransito();
+    await carregarLogistico();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 
 // ============ FINANCEIRO ============
