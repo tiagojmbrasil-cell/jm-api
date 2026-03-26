@@ -2180,6 +2180,14 @@ async function adicionarMotorista() {
     const m = motoristaDados[0];
     if (!m) { showToast('Motorista não encontrado', 'error'); return; }
 
+    // Se o motorista já tem um status avançado no fluxo, usa esse — senão começa em em_negociacao
+    const statusAvancados = [
+      'aguardando_nf','aguardando_emissao_doc','aguardando_fotos','fotos_inseridas',
+      'adiantamento_pago','em_transito','aguardando_chegada',
+      'aguardando_encerramento_mdfe','manifesto_encerrado','saldo_agendado','saldo_pago'
+    ];
+    const statusInicial = statusAvancados.includes(m.status) ? m.status : 'em_negociacao';
+
     await supabaseRequest('POST', 'lote_motoristas', {
       lote_id: loteAtualId,
       motorista_id: m.id,
@@ -2188,7 +2196,7 @@ async function adicionarMotorista() {
       contato: m.contato,
       cpf: m.cpf,
       peso_saida: parseFloat(peso),
-      status: 'em_negociacao',
+      status: statusInicial,
       tipo_pagamento: m.tipo_pagamento,
       nome_titular: m.nome_titular,
       cpf_titular: m.cpf_titular,
@@ -2204,7 +2212,7 @@ async function adicionarMotorista() {
       gr_motivo: m.gr_motivo,
     });
 
-    registrarLog('motorista', 'Motorista adicionado', `Nome: ${document.getElementById('nm-nome')?.value||'—'}, Lote: ${loteAtualId}`);
+    registrarLog('motorista', 'Motorista adicionado ao lote', `Nome: ${m.nome||'—'}, Lote: ${loteAtualId}, Status: ${statusInicial}`);
     showToast('✅ Motorista adicionado ao lote!', 'success');
     document.getElementById('nm-peso').value = '';
     document.getElementById('nm-motorista-selecionado-id').value = '';
@@ -2733,13 +2741,40 @@ let fiscalData = [];
 async function carregarFiscal() {
   try {
     document.getElementById('fiscal-table').innerHTML = '<div class="loading">Carregando motoristas...</div>';
-    // Status que pertencem ao fluxo do Fiscal
     const statusFiscal = ['aguardando_emissao_doc', 'aguardando_encerramento_mdfe'];
-    const todos = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500') || [];
-    const motoristas = todos.filter(m => statusFiscal.includes(m.status || ''));
+
+    // Busca em lote_motoristas (fonte principal)
+    const todosLoteMot = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500') || [];
+    const doLoteMot = todosLoteMot.filter(m => statusFiscal.includes(m.status || ''));
+
+    // Busca também em motoristas diretamente (fallback para quem ainda não foi sincronizado)
+    const todosMotoristas = await supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500') || [];
+    const motoristasComStatusFiscal = todosMotoristas.filter(m => statusFiscal.includes(m.status || ''));
+
+    // Para cada motorista com status fiscal direto, verifica se já tem registro em lote_motoristas atualizado
+    // Se não tiver (ou estiver desatualizado), sincroniza e inclui
+    const idsJaNoLoteMot = new Set(doLoteMot.map(m => m.motorista_id).filter(Boolean));
+    const motoristasParaSincronizar = motoristasComStatusFiscal.filter(m => !idsJaNoLoteMot.has(m.id));
+
+    // Sincroniza os que estão na tabela motoristas mas não em lote_motoristas
+    for (const mot of motoristasParaSincronizar) {
+      const loteRegs = todosLoteMot.filter(lm => lm.motorista_id === mot.id || lm.nome === mot.nome);
+      for (const reg of loteRegs) {
+        if (!statusFiscal.includes(reg.status)) {
+          await supabaseRequest('PATCH', `lote_motoristas?id=eq.${reg.id}`, { status: mot.status });
+          reg.status = mot.status; // atualiza localmente
+        }
+      }
+    }
+
+    // Recarrega lote_motoristas após sincronização
+    const todosAtualizado = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500') || [];
+    const motoristas = todosAtualizado.filter(m => statusFiscal.includes(m.status || ''));
+
     const loteIds = [...new Set(motoristas.map(m => m.lote_id))];
     const lotesMap = {};
     await Promise.all(loteIds.map(async lid => {
+      if (!lid) return;
       const l = await supabaseRequest('GET', `lotes?id=eq.${lid}&select=id,cliente,produto,origem,destino,agencia`) || [];
       if (l.length) lotesMap[lid] = l[0];
     }));
@@ -3731,36 +3766,35 @@ async function confirmarAnexoNF() {
 
     const novoAnexo = { tipo: 'nf', nome: file.name, path };
 
-    // 1. Atualiza tabela motoristas
+    // 1. Busca dados atuais do motorista
     const motAtual = await supabaseRequest('GET', `motoristas?id=eq.${motoristaId}`) || [];
-    const anexosMotorista = [...(motAtual[0]?.anexos || []), novoAnexo];
+    const motDados = motAtual[0] || {};
+    const anexosMotorista = [...(motDados.anexos || []), novoAnexo];
+
+    // 2. Atualiza tabela motoristas
     await supabaseRequest('PATCH', `motoristas?id=eq.${motoristaId}`, {
       status: 'aguardando_emissao_doc',
       anexos: anexosMotorista,
     });
 
-    // 2. Busca o registro em lote_motoristas por motorista_id
-    let loteMotReg = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${motoristaId}`) || [];
+    // 3. Busca registro em lote_motoristas por motorista_id
+    const loteMotLista = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${motoristaId}`) || [];
 
-    // Fallback: se não achou por motorista_id, busca pelo nome (compatibilidade)
-    if (!loteMotReg.length && motAtual[0]?.nome) {
-      loteMotReg = await supabaseRequest('GET', `lote_motoristas?nome=eq.${encodeURIComponent(motAtual[0].nome)}`) || [];
-    }
-
-    if (loteMotReg.length) {
-      // Pega o mais recente
-      const reg = loteMotReg[0];
-      const anexosLote = [...(reg.anexos || []), novoAnexo];
-      await supabaseRequest('PATCH', `lote_motoristas?id=eq.${reg.id}`, {
-        status: 'aguardando_emissao_doc',
-        anexos: anexosLote,
-      });
-      registrarLog('logistico', 'NF anexada — enviado ao Fiscal', `Motorista: #${motoristaId} | LoteMot: #${reg.id}`);
+    if (loteMotLista.length) {
+      // Já tem vínculo — atualiza TODOS os registros desse motorista em lote_motoristas
+      for (const reg of loteMotLista) {
+        const anexosLote = [...(reg.anexos || []), novoAnexo];
+        await supabaseRequest('PATCH', `lote_motoristas?id=eq.${reg.id}`, {
+          status: 'aguardando_emissao_doc',
+          anexos: anexosLote,
+        });
+      }
+      registrarLog('logistico', 'NF anexada — enviado ao Fiscal', `Motorista: #${motoristaId}`);
       showToast('✅ NF anexada! Motorista enviado ao Fiscal para emissão do documento.', 'success');
     } else {
-      // Não encontrou em lote_motoristas — status atualizado só no motorista
-      registrarLog('logistico', 'NF anexada — sem vínculo de lote', `Motorista: #${motoristaId}`);
-      showToast('⚠️ NF salva, mas motorista não está vinculado a nenhum lote ainda. Vincule-o a um lote primeiro.', 'error');
+      // Sem vínculo de lote ainda — status já foi salvo no motorista, aparecerá no Fiscal após ser adicionado ao lote
+      registrarLog('logistico', 'NF anexada — sem lote vinculado ainda', `Motorista: #${motoristaId}`);
+      showToast('✅ NF salva! Motorista ainda não está em nenhum lote. Ao ser adicionado ao lote, irá direto ao Fiscal.', 'success');
     }
 
     document.getElementById('mlog-nf-arquivo-status').textContent = '';
