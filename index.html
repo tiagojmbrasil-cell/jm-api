@@ -1742,7 +1742,7 @@ async function salvarCotacao() {
       destino,
       quantidade: parseFloat(quantidade),
       tipo_produto: tipoProduto,
-      preco: parseFloat(preco),
+      valor_cotado: parseFloat(preco),
       status: 'pendente',
       motivo_nao_fechamento: null,
     });
@@ -1927,8 +1927,8 @@ function renderLotes(dados) {
       <td style="font-size:12px">${l.peso_ton ? l.peso_ton + ' ton' : '—'}</td>
       <td style="font-size:12px;color:var(--muted)">${formatDate(l.data_lote)}</td>
       <td>${badgeLote(l.status)}</td>
-      <td style="display:flex;gap:6px;">
-        <button onclick="abrirMotoristas(${l.id})" style="background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🚛 Motoristas</button>
+      <td style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${l.status === 'aguardando_informacoes' ? `<button onclick="abrirInserirInformacoes(${l.id})" style="background:rgba(249,115,22,0.15);color:var(--accent);border:1px solid rgba(249,115,22,0.4);border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-weight:600;">📋 Inserir Informações</button>` : `<button onclick="abrirMotoristas(${l.id})" style="background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🚛 Motoristas</button>`}
         <button onclick="editarLote(${l.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">✏️</button>
         <button onclick="excluirLote(${l.id})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🗑</button>
       </td>
@@ -2022,8 +2022,39 @@ async function salvarEdicaoLote() {
 }
 
 function fecharModalLote(e) { if (e.target === document.getElementById('modal-lote-overlay')) fecharModalLoteBtn(); }
-function fecharModalLoteBtn() { document.getElementById('modal-lote-overlay').classList.remove('open'); loteEditandoId = null; }
+function fecharModalLoteBtn() {
+  document.getElementById('modal-lote-overlay').classList.remove('open');
+  loteEditandoId = null;
+  const titulo = document.querySelector('#modal-lote-overlay .modal-title span');
+  if (titulo) titulo.textContent = 'Editar Lote';
+}
 
+
+// INSERIR INFORMAÇÕES FALTANTES (lote vindo de cotação aprovada)
+async function abrirInserirInformacoes(id) {
+  await carregarClientesSelect('el-cliente');
+  const l = lotes.find(x => x.id === id);
+  if (!l) return;
+  loteEditandoId = id;
+  document.getElementById('el-agencia').value = l.agencia || '';
+  document.getElementById('el-cliente').value = l.cliente || '';
+  document.getElementById('el-produto').value = l.produto || '';
+  // Força status para liberado ao completar informações
+  document.getElementById('el-status').value = 'liberado';
+  document.getElementById('el-coleta').value = l.coleta || '';
+  document.getElementById('el-origem').value = l.origem || '';
+  document.getElementById('el-entrega').value = l.entrega || '';
+  document.getElementById('el-destino').value = l.destino || '';
+  document.getElementById('el-tarifa-emp').value = l.tarifa_empresa || '';
+  document.getElementById('el-tarifa-mot').value = l.tarifa_motorista || '';
+  document.getElementById('el-peso').value = l.peso_ton || '';
+  document.getElementById('el-data').value = l.data_lote || '';
+  document.getElementById('el-obs').value = l.observacao || '';
+  // Título diferenciado
+  const titulo = document.querySelector('#modal-lote-overlay .modal-title span');
+  if (titulo) titulo.textContent = '📋 Inserir Informações do Lote';
+  document.getElementById('modal-lote-overlay').classList.add('open');
+}
 
 // ============ MOTORISTAS ============
 let loteAtualId = null;
