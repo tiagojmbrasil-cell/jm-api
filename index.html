@@ -2204,7 +2204,23 @@ let motoristasPageData = [];
 async function carregarMotoristasPagina() {
   try {
     document.getElementById('motoristas-page-table').innerHTML = '<div class="loading">Carregando...</div>';
-    motoristasPageData = await supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500') || [];
+    const motoristas = await supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500') || [];
+    const loteMotoristas = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800') || [];
+
+    // Para cada motorista, descobre o status mais atual:
+    // Se tiver registro em lote_motoristas com status avançado, usa esse
+    // Caso contrário usa o status do próprio motorista
+    const statusAvancados = [
+      'aguardando_emissao_doc','aguardando_fotos','fotos_inseridas',
+      'adiantamento_pago','em_transito','aguardando_chegada',
+      'aguardando_encerramento_mdfe','manifesto_encerrado',
+      'saldo_agendado','saldo_pago'
+    ];
+    motoristasPageData = motoristas.map(m => {
+      const loteReg = loteMotoristas.find(lm => lm.motorista_id === m.id);
+      const statusFinal = (loteReg && statusAvancados.includes(loteReg.status)) ? loteReg.status : m.status;
+      return { ...m, status: statusFinal, _lote_id: loteReg?.lote_id || null };
+    });
     filtrarMotoristasPagina();
   } catch(e) {
     document.getElementById('motoristas-page-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
@@ -2218,7 +2234,7 @@ function filtrarMotoristasPagina() {
     const matchBusca = !busca ||
       (m.nome||'').toLowerCase().includes(busca) ||
       (m.cpf||'').includes(busca) ||
-      String(m.lote_id).includes(busca) ||
+      String(m._lote_id||'').includes(busca) ||
       (m.placa||'').toLowerCase().includes(busca);
     const matchStatus = !status || m.status === status;
     return matchBusca && matchStatus;
@@ -2235,7 +2251,7 @@ function renderMotoristasPagina(dados) {
     <table>
       <thead><tr>
         <th>#</th><th>Motorista</th><th>CPF</th><th>Placa</th><th>Contato</th>
-        <th>Status GR</th><th>Pagamento</th><th></th>
+        <th>Status no Processo</th><th>Status GR</th><th>Pagamento</th><th></th>
       </tr></thead>
       <tbody>
         ${dados.map(m => `<tr>
@@ -2244,6 +2260,7 @@ function renderMotoristasPagina(dados) {
           <td style="font-size:12px">${m.cpf || '—'}</td>
           <td style="font-size:12px">${m.placa || '—'}</td>
           <td style="font-size:12px">${m.contato || '—'}</td>
+          <td>${badgeMotorista(m.status || 'aguardando_gr')}</td>
           <td>${badgeGR(m.gr_status || 'pendente')}</td>
           <td>${badgeTipoPagamento(m.tipo_pagamento)}</td>
           <td style="display:flex;gap:6px;">
@@ -2681,11 +2698,14 @@ let fiscalData = [];
 async function carregarFiscal() {
   try {
     document.getElementById('fiscal-table').innerHTML = '<div class="loading">Carregando motoristas...</div>';
-    const motoristas = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500') || [];
+    // Status que pertencem ao fluxo do Fiscal
+    const statusFiscal = ['aguardando_emissao_doc', 'aguardando_encerramento_mdfe'];
+    const todos = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500') || [];
+    const motoristas = todos.filter(m => statusFiscal.includes(m.status || ''));
     const loteIds = [...new Set(motoristas.map(m => m.lote_id))];
     const lotesMap = {};
     await Promise.all(loteIds.map(async lid => {
-      const l = await supabaseRequest('GET', `lotes?id=eq.${lid}&select=id,cliente,produto,origem,destino`) || [];
+      const l = await supabaseRequest('GET', `lotes?id=eq.${lid}&select=id,cliente,produto,origem,destino,agencia`) || [];
       if (l.length) lotesMap[lid] = l[0];
     }));
     fiscalData = motoristas.map(m => ({ ...m, lote: lotesMap[m.lote_id] || null }));
@@ -2923,23 +2943,31 @@ async function abrirFiscalModal(id) {
 async function atualizarStatusFiscal() {
   const novoStatus = document.getElementById('mf-status-select').value;
   try {
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: novoStatus });
+    // Se documento_emitido → envia ao Logístico com aguardando_fotos
+    const statusFinal = novoStatus === 'documento_emitido' ? 'aguardando_fotos' : novoStatus;
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: statusFinal });
+
+    // Sincroniza status na tabela motoristas também (pelo motorista_id)
+    const loteMotReg = fiscalData.find(x => x.id === motoristFiscalId);
+    if (loteMotReg?.motorista_id) {
+      await supabaseRequest('PATCH', `motoristas?id=eq.${loteMotReg.motorista_id}`, { status: statusFinal });
+    }
+
     const m = fiscalData.find(x => x.id === motoristFiscalId);
     if (m) {
-      m.status = novoStatus;
-      document.getElementById('mf-status-bar').innerHTML = badgeMotorista(novoStatus);
-      document.getElementById('mf-status').innerHTML = badgeMotorista(novoStatus);
+      m.status = statusFinal;
+      document.getElementById('mf-status-bar').innerHTML = badgeMotorista(statusFinal);
+      document.getElementById('mf-status').innerHTML = badgeMotorista(statusFinal);
       const secaoMdfe = document.getElementById('mf-secao-mdfe');
-      if (secaoMdfe) secaoMdfe.style.display = novoStatus === 'aguardando_encerramento_mdfe' ? '' : 'none';
+      if (secaoMdfe) secaoMdfe.style.display = statusFinal === 'aguardando_encerramento_mdfe' ? '' : 'none';
     }
-    // Se documento emitido → envia automaticamente ao Logístico para fotos do carregamento
+
     if (novoStatus === 'documento_emitido') {
-      await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: 'aguardando_fotos' });
-      if (m) m.status = 'aguardando_fotos';
       registrarLog('fiscal', 'Documento emitido — enviado ao Logístico para fotos', `ID: ${motoristFiscalId}`);
       showToast('✅ Documento emitido! Motorista enviado ao Logístico para fotos do carregamento.', 'success');
+      fecharModalFiscalBtn();
     } else {
-      registrarLog('fiscal', 'Status fiscal atualizado', `ID: ${motoristFiscalId}, Novo status: ${novoStatus}`);
+      registrarLog('fiscal', 'Status fiscal atualizado', `ID: ${motoristFiscalId}, Status: ${statusFinal}`);
       showToast('Status atualizado!', 'success');
     }
     renderFiscal(fiscalData);
@@ -2950,6 +2978,11 @@ async function confirmarEncerramentoMDFe() {
   if (!confirm('Deseja realizar o encerramento do MDFe?\nApós confirmar, o motorista irá para o Financeiro com status Manifesto Encerrado.')) return;
   try {
     await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: 'manifesto_encerrado' });
+    // Sincroniza motoristas
+    const loteMotReg = fiscalData.find(x => x.id === motoristFiscalId);
+    if (loteMotReg?.motorista_id) {
+      await supabaseRequest('PATCH', `motoristas?id=eq.${loteMotReg.motorista_id}`, { status: 'manifesto_encerrado' });
+    }
     const m = fiscalData.find(x => x.id === motoristFiscalId);
     if (m) {
       m.status = 'manifesto_encerrado';
@@ -2961,6 +2994,7 @@ async function confirmarEncerramentoMDFe() {
     }
     registrarLog('fiscal', 'MDFe encerrado — enviado ao Financeiro', `ID: #${motoristFiscalId}`);
     showToast('✅ MDFe encerrado! Motorista enviado ao Financeiro.', 'success');
+    fecharModalFiscalBtn();
     renderFiscal(fiscalData);
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
@@ -3625,15 +3659,24 @@ async function confirmarAnexoNF() {
     const { error: upErr } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
     if (upErr) throw new Error('Erro no upload: ' + upErr.message);
 
-    // Salva o anexo NF e muda status para aguardando_emissao_doc (vai ao Fiscal)
-    const tabela = logisticoMotoristaSelecionadoOrigem === 'lote_motoristas' ? 'lote_motoristas' : 'motoristas';
-    const motAtual = await supabaseRequest('GET', `${tabela}?id=eq.${logisticoMotoristaSelecionadoId}`) || [];
+    // Atualiza tabela motoristas com status e anexo
+    const motAtual = await supabaseRequest('GET', `motoristas?id=eq.${logisticoMotoristaSelecionadoId}`) || [];
     const anexosAtuais = motAtual[0]?.anexos || [];
     const novosAnexos = [...anexosAtuais, { tipo: 'nf', nome: file.name, path }];
-    await supabaseRequest('PATCH', `${tabela}?id=eq.${logisticoMotoristaSelecionadoId}`, {
+    await supabaseRequest('PATCH', `motoristas?id=eq.${logisticoMotoristaSelecionadoId}`, {
       status: 'aguardando_emissao_doc',
       anexos: novosAnexos,
     });
+
+    // Também atualiza lote_motoristas (onde o Fiscal lê) pelo motorista_id
+    const loteMotReg = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${logisticoMotoristaSelecionadoId}`) || [];
+    if (loteMotReg.length) {
+      await supabaseRequest('PATCH', `lote_motoristas?id=eq.${loteMotReg[0].id}`, {
+        status: 'aguardando_emissao_doc',
+        anexos: novosAnexos,
+      });
+    }
+
     registrarLog('logistico', 'NF anexada — enviado ao Fiscal', `ID: #${logisticoMotoristaSelecionadoId}`);
     showToast('✅ NF anexada! Motorista enviado ao Fiscal para emissão do documento.', 'success');
     fecharModalLogisticoNF();
@@ -3668,22 +3711,28 @@ async function confirmarFotosCarregamento() {
     showToast('Insira ao menos uma foto do carregamento', 'error'); return;
   }
   try {
-    const tabela = logisticoMotoristaSelecionadoOrigem === 'lote_motoristas' ? 'lote_motoristas' : 'motoristas';
-    const motAtual = await supabaseRequest('GET', `${tabela}?id=eq.${logisticoMotoristaSelecionadoId}`) || [];
+    // As fotos ficam em lote_motoristas (origem sempre é lote_motoristas nessa etapa)
+    const loteMotId = logisticoMotoristaSelecionadoId;
+    const motAtual = await supabaseRequest('GET', `lote_motoristas?id=eq.${loteMotId}`) || [];
     const anexosAtuais = motAtual[0]?.anexos || [];
+    const motoristaId = motAtual[0]?.motorista_id;
     const novosAnexos = [...anexosAtuais];
     for (const file of input.files) {
       const ext = file.name.split('.').pop();
-      const path = `motoristas/${logisticoMotoristaSelecionadoId}/foto_carg_${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
+      const path = `motoristas/${loteMotId}/foto_carg_${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
       const { error: upErr } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
       if (upErr) throw new Error('Erro upload foto: ' + upErr.message);
       novosAnexos.push({ tipo: 'foto_carregamento', nome: file.name, path });
     }
-    await supabaseRequest('PATCH', `${tabela}?id=eq.${logisticoMotoristaSelecionadoId}`, {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${loteMotId}`, {
       status: 'fotos_inseridas',
       anexos: novosAnexos,
     });
-    registrarLog('logistico', 'Fotos do carregamento inseridas — enviado ao Financeiro', `ID: #${logisticoMotoristaSelecionadoId}`);
+    // Sincroniza status na tabela motoristas
+    if (motoristaId) {
+      await supabaseRequest('PATCH', `motoristas?id=eq.${motoristaId}`, { status: 'fotos_inseridas' });
+    }
+    registrarLog('logistico', 'Fotos do carregamento inseridas — enviado ao Financeiro', `ID: #${loteMotId}`);
     showToast('✅ Fotos inseridas! Motorista enviado ao Financeiro.', 'success');
     fecharModalLogisticoFotos();
     await carregarLogistico();
@@ -3709,8 +3758,10 @@ function fecharModalTransito() {
 
 async function alterarTransitoModal(novoStatus) {
   try {
-    const tabela = logisticoTransitoOrigem === 'lote_motoristas' ? 'lote_motoristas' : 'motoristas';
-    await supabaseRequest('PATCH', `${tabela}?id=eq.${logisticoMotoristaSelecionadoId}`, { status: novoStatus });
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`, { status: novoStatus });
+    // Sincroniza motoristas
+    const reg = await supabaseRequest('GET', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`) || [];
+    if (reg[0]?.motorista_id) await supabaseRequest('PATCH', `motoristas?id=eq.${reg[0].motorista_id}`, { status: novoStatus });
     document.getElementById('mlog-transito-status').innerHTML = badgeMotorista(novoStatus);
     registrarLog('logistico', 'Status de trânsito alterado', `ID: #${logisticoMotoristaSelecionadoId} · ${novoStatus}`);
     showToast('🚛 Status atualizado!', 'success');
@@ -3721,8 +3772,10 @@ async function alterarTransitoModal(novoStatus) {
 async function confirmarFinalizarTransito() {
   if (!confirm('Tem certeza que deseja finalizar?\nO motorista será enviado ao Fiscal para encerramento do MDFe.')) return;
   try {
-    const tabela = logisticoTransitoOrigem === 'lote_motoristas' ? 'lote_motoristas' : 'motoristas';
-    await supabaseRequest('PATCH', `${tabela}?id=eq.${logisticoMotoristaSelecionadoId}`, { status: 'aguardando_encerramento_mdfe' });
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`, { status: 'aguardando_encerramento_mdfe' });
+    // Sincroniza motoristas
+    const reg = await supabaseRequest('GET', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`) || [];
+    if (reg[0]?.motorista_id) await supabaseRequest('PATCH', `motoristas?id=eq.${reg[0].motorista_id}`, { status: 'aguardando_encerramento_mdfe' });
     registrarLog('logistico', 'Motorista finalizado — enviado ao Fiscal (MDFe)', `ID: #${logisticoMotoristaSelecionadoId}`);
     showToast('✅ Finalizado! Aguardando encerramento do MDFe no Fiscal.', 'success');
     fecharModalTransito();
