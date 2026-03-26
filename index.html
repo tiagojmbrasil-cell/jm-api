@@ -1377,25 +1377,34 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     </div>
 
     <!-- Alterar status -->
-    <div class="status-select-row">
-      <label>Alterar Status:</label>
-      <select id="mf-status-select" onchange="atualizarStatusFiscal()">
-        <option value="em_negociacao">Em Negociação</option>
-        <option value="cadastro">Cadastro</option>
-        <option value="validando_gr_interna">Validando GR Interna</option>
-        <option value="validando_gr_externa">Validando GR Externa</option>
-        <option value="liberado_carregar">Liberado Carregar</option>
-        <option value="aguardando_nota">Aguardando Nota</option>
-        <option value="aguardando_emissao_doc">Ag. Emissão Doc</option>
-        <option value="documento_emitido">Documento Emitido ➜ envia ao Logístico</option>
-        <option value="aguardando_fotos">Ag. Fotos Carregamento</option>
-        <option value="carregado">Carregado</option>
-        <option value="em_transito">Em Trânsito</option>
-        <option value="aguardando_chegada">Aguardando Chegada</option>
-        <option value="aguardando_encerramento_mdfe">Ag. Encerramento MDFe</option>
-        <option value="aguardando_coleta">Aguardando Coleta</option>
-        <option value="aguardando_descarga">Aguardando Descarga</option>
-      </select>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+      <!-- Botão principal de ação do Fiscal -->
+      <button id="mf-btn-doc-emitido" onclick="emitirDocumentoFiscal()" style="width:100%;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;padding:14px 28px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;transition:all 0.15s;box-shadow:0 4px 14px rgba(34,197,94,0.3);">
+        <span style="font-size:20px;">📄</span> Documento Emitido — Enviar ao Logístico
+      </button>
+      <!-- Ajuste de status manual (para correções) -->
+      <details style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+        <summary style="font-size:12px;color:var(--muted);cursor:pointer;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">⚙️ Ajuste manual de status</summary>
+        <div class="status-select-row" style="margin-top:12px;">
+          <label>Status:</label>
+          <select id="mf-status-select" onchange="atualizarStatusFiscal()">
+            <option value="em_negociacao">Em Negociação</option>
+            <option value="cadastro">Cadastro</option>
+            <option value="validando_gr_interna">Validando GR Interna</option>
+            <option value="validando_gr_externa">Validando GR Externa</option>
+            <option value="liberado_carregar">Liberado Carregar</option>
+            <option value="aguardando_nota">Aguardando Nota</option>
+            <option value="aguardando_emissao_doc">Ag. Emissão Doc</option>
+            <option value="aguardando_fotos">Ag. Fotos Carregamento</option>
+            <option value="carregado">Carregado</option>
+            <option value="em_transito">Em Trânsito</option>
+            <option value="aguardando_chegada">Aguardando Chegada</option>
+            <option value="aguardando_encerramento_mdfe">Ag. Encerramento MDFe</option>
+            <option value="aguardando_coleta">Aguardando Coleta</option>
+            <option value="aguardando_descarga">Aguardando Descarga</option>
+          </select>
+        </div>
+      </details>
     </div>
   </div>
 </div>
@@ -1418,6 +1427,32 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       </div>
     </div>
     <div id="financeiro-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- MODAL FINANCEIRO — FOTOS CARREGAMENTO -->
+<div class="modal-overlay" id="modal-fin-fotos-overlay" onclick="if(event.target===this)fecharModalFinFotos()">
+  <div class="modal" style="max-width:720px;">
+    <div class="modal-title">
+      <span id="mfin-titulo">📸 Fotos do Carregamento</span>
+      <button class="modal-close" onclick="fecharModalFinFotos()">✕</button>
+    </div>
+
+    <!-- Info do motorista -->
+    <div style="background:var(--surface2);border-radius:10px;padding:14px 16px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">MOTORISTA</div><div style="font-weight:600;font-size:13px" id="mfin-nome">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CPF</div><div style="font-weight:600;font-size:13px" id="mfin-cpf">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">LOTE</div><div style="font-weight:600;font-size:13px" id="mfin-lote">—</div></div>
+    </div>
+
+    <!-- Galeria de fotos -->
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:10px;">📎 Arquivos Anexados</div>
+    <div id="mfin-fotos-container" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;max-height:50vh;overflow-y:auto;padding-right:4px;">
+      <div style="text-align:center;padding:24px;color:var(--muted);">Carregando fotos...</div>
+    </div>
+
+    <!-- Ações -->
+    <div id="mfin-acoes" style="border-top:1px solid var(--border);padding-top:16px;"></div>
   </div>
 </div>
 
@@ -2835,6 +2870,10 @@ async function abrirFiscalModal(id) {
 
   document.getElementById('modal-fiscal-overlay').classList.add('open');
 
+  // Mostrar botão "Documento Emitido" apenas para status aguardando_emissao_doc
+  const btnDocEmitido = document.getElementById('mf-btn-doc-emitido');
+  if (btnDocEmitido) btnDocEmitido.style.display = m.status === 'aguardando_emissao_doc' ? '' : 'none';
+
   // ---- CHECKLIST ----
   const ck = m.checklist || {};
   const fmt = v => v ? 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '—';
@@ -2938,6 +2977,24 @@ async function abrirFiscalModal(id) {
       containerAnexos.innerHTML = `<div style="font-size:13px;color:var(--red);">Erro ao carregar arquivos: ${e.message}</div>`;
     }
   }
+}
+
+async function emitirDocumentoFiscal() {
+  if (!confirm('Confirmar emissão do documento?\nO motorista será enviado ao Logístico para fotos do carregamento.')) return;
+  try {
+    const statusFinal = 'aguardando_fotos';
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: statusFinal });
+    const loteMotReg = fiscalData.find(x => x.id === motoristFiscalId);
+    if (loteMotReg?.motorista_id) {
+      await supabaseRequest('PATCH', `motoristas?id=eq.${loteMotReg.motorista_id}`, { status: statusFinal });
+    }
+    const m = fiscalData.find(x => x.id === motoristFiscalId);
+    if (m) { m.status = statusFinal; }
+    registrarLog('fiscal', 'Documento emitido — enviado ao Logístico para fotos', `ID: ${motoristFiscalId}`);
+    showToast('✅ Documento emitido! Motorista enviado ao Logístico para fotos do carregamento.', 'success');
+    fecharModalFiscalBtn();
+    renderFiscal(fiscalData);
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 
 async function atualizarStatusFiscal() {
@@ -3668,13 +3725,16 @@ async function confirmarAnexoNF() {
       anexos: novosAnexos,
     });
 
-    // Também atualiza lote_motoristas (onde o Fiscal lê) pelo motorista_id
-    const loteMotReg = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${logisticoMotoristaSelecionadoId}`) || [];
+    // Atualiza lote_motoristas — busca por motorista_id OU por lote_id + motorista_id
+    const loteMotReg = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${logisticoMotoristaSelecionadoId}&order=criado_em.desc&limit=1`) || [];
     if (loteMotReg.length) {
       await supabaseRequest('PATCH', `lote_motoristas?id=eq.${loteMotReg[0].id}`, {
         status: 'aguardando_emissao_doc',
-        anexos: novosAnexos,
+        anexos: [...(loteMotReg[0].anexos || []), { tipo: 'nf', nome: file.name, path }],
       });
+    } else {
+      // Se não encontrou por motorista_id, tenta pelo lote_id vinculado ao motorista
+      showToast('⚠️ NF salva no motorista, mas sem vínculo de lote encontrado. Verifique se o motorista está vinculado a um lote.', 'error');
     }
 
     registrarLog('logistico', 'NF anexada — enviado ao Fiscal', `ID: #${logisticoMotoristaSelecionadoId}`);
@@ -3832,10 +3892,8 @@ function renderFinanceiro(dados) {
         ${dados.map(m => {
           const st = m.status || '';
           const acoes = st === 'fotos_inseridas'
-            ? `<div style="display:flex;gap:8px;flex-wrap:wrap;">
-                 <input type="date" id="fin-adiantamento-data-${m.id}" style="width:auto;font-size:12px;padding:6px 10px;" />
-                 <button class="btn-primary" style="padding:6px 10px;font-size:12px;background:var(--green);" onclick="aprovarAdiantamento(${m.id})">✅ Aprovar</button>
-                 <button class="btn-secondary" style="padding:6px 10px;font-size:12px;border-color:rgba(239,68,68,0.4);color:#ef4444;" onclick="reprovarFinanceiro(${m.id}, 'adiantamento')">❌ Reprovar</button>
+            ? `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                 <button class="btn-primary" style="padding:6px 14px;font-size:12px;background:var(--blue);display:flex;align-items:center;gap:5px;" onclick="abrirModalFinFotos(${m.id})">📸 Ver Fotos e Aprovar</button>
                </div>`
             : st === 'adiantamento_pago'
             ? `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
@@ -3865,6 +3923,113 @@ function renderFinanceiro(dados) {
         }).join('')}
       </tbody>
     </table>`;
+}
+
+let financeiroModalId = null;
+
+function fecharModalFinFotos() {
+  document.getElementById('modal-fin-fotos-overlay').classList.remove('open');
+  financeiroModalId = null;
+}
+
+async function abrirModalFinFotos(id) {
+  financeiroModalId = id;
+  const m = (financeiroData || []).find(x => x.id === id);
+  if (!m) return;
+
+  document.getElementById('mfin-titulo').textContent = '📸 Fotos do Carregamento — ' + (m.nome || '#' + id);
+  document.getElementById('mfin-nome').textContent = m.nome || '—';
+  document.getElementById('mfin-cpf').textContent = m.cpf || '—';
+  document.getElementById('mfin-lote').textContent = 'Lote #' + (m.lote_id || '—');
+
+  const container = document.getElementById('mfin-fotos-container');
+  container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">⏳ Carregando arquivos...</div>';
+
+  // Gera URLs assinadas para os anexos
+  const anexos = m.anexos || [];
+  if (!anexos.length) {
+    container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Nenhum arquivo anexado neste registro.</div>';
+  } else {
+    try {
+      const paths = anexos.map(a => a.path || a.url).filter(Boolean);
+      const { data: signedUrls, error } = await sb.storage.from('motoristas-docs').createSignedUrls(paths, 3600);
+      if (error) throw error;
+      const urlMap = {};
+      (signedUrls || []).forEach(s => { urlMap[s.path] = s.signedUrl; });
+
+      const nomeAnexo = {
+        nf: 'Nota Fiscal', foto_carregamento: 'Foto Carregamento',
+        cnh: 'CNH', antt: 'ANTT', doc_caminhao: 'Doc. Caminhão',
+        residencia: 'Comp. Residência', foto_caminhao: 'Foto Caminhão',
+        selfie_cnh: 'Selfie CNH', selfie_placa: 'Selfie Placa', lonas: 'Lonas'
+      };
+
+      container.innerHTML = anexos.map(a => {
+        const caminho = a.path || a.url;
+        const url = urlMap[caminho] || caminho;
+        const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome || '');
+        const label = nomeAnexo[a.tipo] || a.tipo || 'Arquivo';
+        const isFoto = a.tipo === 'foto_carregamento';
+        return `
+        <div style="background:var(--surface2);border:1px solid ${isFoto ? 'rgba(249,115,22,0.3)' : 'var(--border)'};border-radius:10px;overflow:hidden;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;gap:10px;">
+            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+              <span style="font-size:18px;flex-shrink:0;">${isFoto ? '📸' : isImg ? '🖼️' : '📄'}</span>
+              <div>
+                <div style="font-size:12px;font-weight:600;color:${isFoto ? 'var(--accent)' : 'var(--text)'};">${label}</div>
+                <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:250px;">${a.nome || 'arquivo'}</div>
+              </div>
+            </div>
+            <a href="${url}" target="_blank" style="display:flex;align-items:center;gap:5px;background:rgba(59,130,246,0.15);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0;">
+              ${isImg ? '🔍 Visualizar' : '⬇️ Abrir'}
+            </a>
+          </div>
+          ${isImg ? `<div style="padding:0 14px 14px;"><a href="${url}" target="_blank"><img src="${url}" alt="${label}" style="width:100%;max-height:260px;object-fit:contain;border-radius:6px;background:#000;cursor:zoom-in;" loading="lazy" onerror="this.style.display='none'"></a></div>` : ''}
+        </div>`;
+      }).join('');
+    } catch(e) {
+      container.innerHTML = `<div style="text-align:center;padding:24px;color:var(--red);font-size:13px;">Erro ao carregar arquivos: ${e.message}</div>`;
+    }
+  }
+
+  // Ações de aprovação dentro do modal
+  const acoes = document.getElementById('mfin-acoes');
+  acoes.innerHTML = `
+    <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:12px;">Ação — Adiantamento</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;">Data de Pagamento</label>
+        <input type="date" id="mfin-adiantamento-data" style="font-size:13px;padding:8px 12px;width:auto;">
+      </div>
+      <button onclick="aprovarAdiantamentoModal()" style="background:var(--green);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding:10px 22px;cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:18px;">✅ Aprovar Adiantamento</button>
+      <button onclick="reprovarFinanceiroModal()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:10px 18px;cursor:pointer;margin-top:18px;">❌ Reprovar</button>
+    </div>`;
+
+  document.getElementById('modal-fin-fotos-overlay').classList.add('open');
+}
+
+async function aprovarAdiantamentoModal() {
+  const dt = document.getElementById('mfin-adiantamento-data')?.value;
+  if (!dt) { showToast('Informe a data de pagamento do adiantamento', 'error'); return; }
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${financeiroModalId}`, { status: 'adiantamento_pago', financeiro_adiantamento_data: dt, financeiro_adiantamento_motivo: null });
+    registrarLog('financeiro', 'Adiantamento aprovado', `Lote_motoristas: #${financeiroModalId} · Data: ${dt}`);
+    showToast('✅ Adiantamento aprovado.', 'success');
+    fecharModalFinFotos();
+    await carregarFinanceiro();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function reprovarFinanceiroModal() {
+  const motivo = prompt('Motivo da reprovação:');
+  if (!motivo || !motivo.trim()) return;
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${financeiroModalId}`, { financeiro_adiantamento_motivo: motivo.trim() });
+    registrarLog('financeiro', 'Reprovado', `ID: #${financeiroModalId} · Etapa: adiantamento · Motivo: ${motivo.trim()}`);
+    showToast('❌ Reprovação registrada.', 'success');
+    fecharModalFinFotos();
+    await carregarFinanceiro();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 
 async function aprovarAdiantamento(id) {
