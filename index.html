@@ -151,7 +151,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     <button onclick="showPage('logistico')">Logístico</button>
     <button onclick="showPage('fiscal')">Fiscal</button>
     <button onclick="showPage('financeiro')">Financeiro</button>
-    <button id="nav-seguranca" onclick="showPage('seguranca')" style="display:none">Segurança</button>
+    <button id="nav-seguranca" onclick="showPage('seguranca')">🔒 Segurança</button>
   </nav>
   <button class="btn-logout" onclick="fazerLogout()">Sair</button>
 </header>
@@ -3421,7 +3421,7 @@ function aplicarPermissoes(setor, perms) {
   setorAtual = setor;
   permissoesAtual = perms || PERMISSOES_PADRAO[setor] || PERMISSOES_PADRAO['comercial'];
 
-  const paginas = ['dashboard','nova','lista','lotes','motoristas','gr','cadastro','status-lote','clientes','fiscal','financeiro','seguranca'];
+  const paginas = ['dashboard','nova','lista','lotes','motoristas','gr','cadastro','status-lote','clientes','logistico','fiscal','financeiro','seguranca'];
   const botoesNav = document.querySelectorAll('nav button');
 
   paginas.forEach((p, i) => {
