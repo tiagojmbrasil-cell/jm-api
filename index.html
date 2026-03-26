@@ -3725,23 +3725,16 @@ async function confirmarAnexoNF() {
       anexos: novosAnexos,
     });
 
-    // Atualiza `lote_motoristas` (onde o Fiscal lê).
-    // Usa motorista_id + lote_id para evitar atualizar o registro errado quando existe histórico.
-    const loteMotReg = await supabaseRequest(
-      'GET',
-      `lote_motoristas?motorista_id=eq.${logisticoMotoristaSelecionadoId}&lote_id=eq.${logisticoMotoristaLoteId}&order=criado_em.desc&limit=1`
-    ) || [];
+    // Atualiza lote_motoristas — busca por motorista_id OU por lote_id + motorista_id
+    const loteMotReg = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${logisticoMotoristaSelecionadoId}&order=criado_em.desc&limit=1`) || [];
     if (loteMotReg.length) {
-      const anexosExistentes = loteMotReg[0].anexos || [];
-      const anexosSemNF = anexosExistentes.filter(a => a.tipo !== 'nf');
-      const anexosFinais = [...anexosSemNF, { tipo: 'nf', nome: file.name, path }];
       await supabaseRequest('PATCH', `lote_motoristas?id=eq.${loteMotReg[0].id}`, {
         status: 'aguardando_emissao_doc',
-        anexos: anexosFinais,
+        anexos: [...(loteMotReg[0].anexos || []), { tipo: 'nf', nome: file.name, path }],
       });
     } else {
-      // Fallback (se não achou por motorista_id + lote_id)
-      showToast('⚠️ NF salva no motorista, mas sem vínculo de lote_motoristas encontrado. Verifique se o motorista está vinculado a um lote.', 'error');
+      // Se não encontrou por motorista_id, tenta pelo lote_id vinculado ao motorista
+      showToast('⚠️ NF salva no motorista, mas sem vínculo de lote encontrado. Verifique se o motorista está vinculado a um lote.', 'error');
     }
 
     registrarLog('logistico', 'NF anexada — enviado ao Fiscal', `ID: #${logisticoMotoristaSelecionadoId}`);
