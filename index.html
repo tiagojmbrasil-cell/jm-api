@@ -1725,30 +1725,45 @@ function renderTabela(dados) {
 
 // SALVAR COTAÇÃO
 async function salvarCotacao() {
-  const clienteNome = document.getElementById('f-cliente').value;
+  const sel = document.getElementById('f-cliente');
+  const clienteCadastroId = sel.value;
+  const clienteNome = sel.options[sel.selectedIndex]?.dataset?.nome || sel.options[sel.selectedIndex]?.textContent || '';
   const origem = document.getElementById('f-origem').value.trim();
   const destino = document.getElementById('f-destino').value.trim();
   const quantidade = document.getElementById('f-quantidade').value;
   const tipoProduto = document.getElementById('f-tipo-produto').value.trim();
   const preco = document.getElementById('f-preco').value;
-  if (!clienteNome || !origem || !destino || !quantidade || !tipoProduto || !preco) {
+
+  if (!clienteCadastroId || !origem || !destino || !quantidade || !tipoProduto || !preco) {
     showToast('Preencha todos os campos da cotação', 'error');
     return;
   }
+
   try {
-    // Busca cliente pelo nome na tabela clientes_cadastro
-    const clientes = await supabaseRequest('GET', `clientes_cadastro?or=(razao_social.eq.${encodeURIComponent(clienteNome)},nome_fantasia.eq.${encodeURIComponent(clienteNome)})&select=id`);
-    let clienteId = clientes && clientes.length ? clientes[0].id : null;
+    // Garante que o cliente existe na tabela 'clientes' (FK de cotacoes)
+    // Busca primeiro, se não existir cria
+    const clientesExist = await supabaseRequest('GET', `clientes?nome=eq.${encodeURIComponent(clienteNome)}`) || [];
+    let clienteId;
+    if (clientesExist.length) {
+      clienteId = clientesExist[0].id;
+    } else {
+      const novoCliente = await supabaseRequest('POST', 'clientes', { nome: clienteNome });
+      clienteId = novoCliente?.[0]?.id;
+    }
+
+    if (!clienteId) throw new Error('Não foi possível obter o ID do cliente.');
+
     await supabaseRequest('POST', 'cotacoes', {
       cliente_id: clienteId,
       origem,
       destino,
       quantidade: parseFloat(quantidade),
       tipo_produto: tipoProduto,
-      valor_cotado: parseFloat(preco),
+      preco: parseFloat(preco),
       status: 'pendente',
       motivo_nao_fechamento: null,
     });
+
     registrarLog('cotacao', 'Cotação salva', `Cliente: ${clienteNome}`);
     showToast('✅ Cotação salva!', 'success');
     resetForm();
@@ -2676,9 +2691,10 @@ async function carregarClientesSelect(selectId) {
     clientes.forEach(c => {
       const nome = c.nome_fantasia || c.razao_social;
       const opt = document.createElement('option');
-      opt.value = nome;
+      opt.value = c.id;           // usa o ID numérico como value
+      opt.dataset.nome = nome;    // guarda o nome para referência
       opt.textContent = nome;
-      if (nome === valorAtual) opt.selected = true;
+      if (String(c.id) === String(valorAtual)) opt.selected = true;
       sel.appendChild(opt);
     });
   } catch(e) { console.error('Erro ao carregar clientes:', e); }
