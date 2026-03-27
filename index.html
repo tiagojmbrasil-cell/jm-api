@@ -181,11 +181,13 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     <div class="form-grid">
       <div class="form-group">
         <label>Cliente</label>
-        <input type="text" id="f-cliente" placeholder="Ex: Empresa ABC Ltda" required>
+        <select id="f-cliente" required>
+          <option value="">Selecione um cliente...</option>
+        </select>
       </div>
       <div class="form-group">
-        <label>Quantidade</label>
-        <input type="number" id="f-quantidade" placeholder="Ex: 25" min="0" step="0.01" required>
+        <label>Peso Total (ton)</label>
+        <input type="number" id="f-quantidade" placeholder="Ex: 25.5" min="0" step="0.1" required>
       </div>
     </div>
     <div class="section-divider">Rota</div>
@@ -1648,7 +1650,7 @@ function showPage(name) {
   if (name === 'fiscal') carregarFiscal();
   if (name === 'financeiro') carregarFinanceiro();
   if (name === 'seguranca') { carregarSeguranca(); carregarLogs(); }
-  if (name === 'nova') resetForm();
+  if (name === 'nova') { carregarClientesSelect('f-cliente'); resetForm(); }
 
   // Reaplicar read-only se necessário
   if (permissoesAtual && permissoesAtual[name] === 1) {
@@ -1723,19 +1725,20 @@ function renderTabela(dados) {
 
 // SALVAR COTAÇÃO
 async function salvarCotacao() {
-  const cliente = document.getElementById('f-cliente').value.trim();
+  const clienteNome = document.getElementById('f-cliente').value;
   const origem = document.getElementById('f-origem').value.trim();
   const destino = document.getElementById('f-destino').value.trim();
   const quantidade = document.getElementById('f-quantidade').value;
   const tipoProduto = document.getElementById('f-tipo-produto').value.trim();
   const preco = document.getElementById('f-preco').value;
-  if (!cliente || !origem || !destino || !quantidade || !tipoProduto || !preco) {
+  if (!clienteNome || !origem || !destino || !quantidade || !tipoProduto || !preco) {
     showToast('Preencha todos os campos da cotação', 'error');
     return;
   }
   try {
-    const clientes = await supabaseRequest('GET', `clientes?nome=eq.${encodeURIComponent(cliente)}&select=id`);
-    let clienteId = clientes && clientes.length ? clientes[0].id : (await supabaseRequest('POST', 'clientes', { nome: cliente }))[0].id;
+    // Busca cliente pelo nome na tabela clientes_cadastro
+    const clientes = await supabaseRequest('GET', `clientes_cadastro?or=(razao_social.eq.${encodeURIComponent(clienteNome)},nome_fantasia.eq.${encodeURIComponent(clienteNome)})&select=id`);
+    let clienteId = clientes && clientes.length ? clientes[0].id : null;
     await supabaseRequest('POST', 'cotacoes', {
       cliente_id: clienteId,
       origem,
@@ -1746,7 +1749,7 @@ async function salvarCotacao() {
       status: 'pendente',
       motivo_nao_fechamento: null,
     });
-    registrarLog('cotacao', 'Cotação salva', `Cliente: ${document.getElementById('f-cliente')?.value||'—'}`);
+    registrarLog('cotacao', 'Cotação salva', `Cliente: ${clienteNome}`);
     showToast('✅ Cotação salva!', 'success');
     resetForm();
     cotacoes = [];
@@ -1755,9 +1758,11 @@ async function salvarCotacao() {
 }
 
 function resetForm() {
-  ['f-cliente','f-origem','f-destino','f-quantidade','f-tipo-produto','f-preco'].forEach(id => {
+  ['f-origem','f-destino','f-quantidade','f-tipo-produto','f-preco'].forEach(id => {
     document.getElementById(id).value = '';
   });
+  const sel = document.getElementById('f-cliente');
+  if (sel) sel.selectedIndex = 0;
   const lOrigem = document.getElementById('f-origem-list');
   const lDestino = document.getElementById('f-destino-list');
   if (lOrigem) lOrigem.style.display = 'none';
@@ -1812,9 +1817,9 @@ async function aprovarCotacao() {
       destino: cotacaoAtualDados.destino || null,
       tarifa_empresa: null,
       tarifa_motorista: null,
-      peso_ton: null,
+      peso_ton: cotacaoAtualDados.quantidade || null,
       data_lote: null,
-      observacao: `Criado da cotação #${cotacaoAtualId} · Qtd: ${cotacaoAtualDados.quantidade ?? '—'} · Preço: R$ ${Number(cotacaoAtualDados.valor_cotado||cotacaoAtualDados.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}`,
+      observacao: `Criado da cotação #${cotacaoAtualId} · Peso: ${cotacaoAtualDados.quantidade ?? '—'} ton · Preço: R$ ${Number(cotacaoAtualDados.valor_cotado||cotacaoAtualDados.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}`,
     });
     const c = cotacoes.find(x => x.id === cotacaoAtualId);
     if (c) c.status = 'aprovada';
