@@ -1715,7 +1715,7 @@ function renderTabela(dados) {
       <td style="font-size:12px;color:var(--muted)">${c.origem || '—'} → ${c.destino || '—'}</td>
       <td style="font-size:12px">${c.quantidade ? Number(c.quantidade).toLocaleString('pt-BR') : '—'}</td>
       <td style="font-size:12px">${c.tipo_produto || '—'}</td>
-      <td class="valor-cell">R$ ${Number(c.preco || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+      <td class="valor-cell">R$ ${Number(c.valor_cotado || c.preco || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
       <td>${badgeStatus(c.status)}</td>
     </tr>`).join('')}
   </tbody></table>`;
@@ -1773,7 +1773,7 @@ async function abrirModal(id) {
   const acoes = document.getElementById('modal-cotacao-acoes');
   const motivoWrap = document.getElementById('modal-motivo-reprovacao-wrap');
   const motivoInput = document.getElementById('modal-motivo-reprovacao');
-  if (acoes) acoes.style.display = (setorAtual === 'comercial' && c.status === 'pendente') ? '' : 'none';
+  if (acoes) acoes.style.display = (['comercial','administrativo'].includes(setorAtual) && c.status === 'pendente') ? '' : 'none';
   if (motivoWrap) motivoWrap.style.display = 'none';
   if (motivoInput) motivoInput.value = '';
   document.getElementById('modal-content').innerHTML = `
@@ -1782,7 +1782,7 @@ async function abrirModal(id) {
     <div class="detail-row"><span class="detail-label">Destino</span><span class="detail-value">${c.destino || '—'}</span></div>
     <div class="detail-row"><span class="detail-label">Quantidade</span><span class="detail-value">${c.quantidade ? Number(c.quantidade).toLocaleString('pt-BR') : '—'}</span></div>
     <div class="detail-row"><span class="detail-label">Tipo de produto</span><span class="detail-value">${c.tipo_produto || '—'}</span></div>
-    <div class="detail-row"><span class="detail-label">Preço</span><span class="detail-value" style="color:var(--accent);font-family:'Syne',sans-serif;font-size:16px">R$ ${Number(c.preco || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>
+    <div class="detail-row"><span class="detail-label">Preço</span><span class="detail-value" style="color:var(--accent);font-family:'Syne',sans-serif;font-size:16px">R$ ${Number(c.valor_cotado || c.preco || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>
     <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${badgeStatus(c.status)}</span></div>
     ${c.motivo_nao_fechamento ? `<div class="detail-row" style="flex-direction:column;align-items:flex-start;gap:6px"><span class="detail-label">Motivo do não fechamento</span><span style="font-size:13px;color:var(--muted);line-height:1.5">${String(c.motivo_nao_fechamento).replace(/</g,'')}</span></div>` : ''}
   `;
@@ -1814,7 +1814,7 @@ async function aprovarCotacao() {
       tarifa_motorista: null,
       peso_ton: null,
       data_lote: null,
-      observacao: `Criado da cotação #${cotacaoAtualId} · Qtd: ${cotacaoAtualDados.quantidade ?? '—'} · Preço: R$ ${Number(cotacaoAtualDados.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}`,
+      observacao: `Criado da cotação #${cotacaoAtualId} · Qtd: ${cotacaoAtualDados.quantidade ?? '—'} · Preço: R$ ${Number(cotacaoAtualDados.valor_cotado||cotacaoAtualDados.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}`,
     });
     const c = cotacoes.find(x => x.id === cotacaoAtualId);
     if (c) c.status = 'aprovada';
