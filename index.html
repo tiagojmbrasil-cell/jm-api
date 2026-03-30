@@ -98,6 +98,10 @@ td{padding:14px;color:var(--text);}
 .autocomplete-item:last-child{border-bottom:none;}
 .autocomplete-item:hover,.autocomplete-item.active{background:rgba(249,115,22,0.15);}
 .logs-table-wrap{width:100%;}
+
+.campo-invalido{border-color:var(--red)!important;box-shadow:0 0 0 3px rgba(239,68,68,0.15)!important;}
+.campo-invalido-label{color:var(--red)!important;}
+
 .logs-table-wrap--expanded{max-height:min(70vh,560px);overflow-y:auto;border:1px solid var(--border);border-radius:8px;}
 .logs-table-wrap--expanded table{margin:0;}
 .logs-actions-footer{margin-top:14px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border);}
@@ -170,6 +174,26 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       <button class="btn-secondary" onclick="showPage('lista')">Ver todas →</button>
     </div>
     <div id="dashboard-table"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- DASHBOARD CLIENTE -->
+<div class="page" id="page-dashboard-cliente">
+  <div class="card" style="margin-bottom:20px">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
+      <div style="width:44px;height:44px;border-radius:50%;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;font-size:22px;">📦</div>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;" id="dc-boas-vindas">Olá!</div>
+        <div style="font-size:13px;color:var(--muted)">Acompanhe em tempo real o status das suas cargas</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="table-header">
+      <h2>Minhas Cargas</h2>
+      <button class="btn-secondary" style="font-size:13px;padding:8px 14px;" onclick="carregarDashboardCliente()">🔄 Atualizar</button>
+    </div>
+    <div id="dc-lotes-table"><div class="loading">Carregando suas cargas...</div></div>
   </div>
 </div>
 
@@ -1518,10 +1542,21 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
           <option value="fiscal">Fiscal</option>
           <option value="gr">GR</option>
           <option value="administrativo">Administrativo</option>
+          <option value="cliente">Cliente (Portal)</option>
         </select>
       </div>
     </div>
     <div class="form-actions">
+      <div id="campo-cliente-nome" style="display:none;" class="form-group full" style="grid-column:1/-1">
+        <label>Nome do Cliente (igual ao cadastrado em Lotes)</label>
+        <input type="text" id="nu-cliente-nome" placeholder="Ex: TERA FERTILIZANTES">
+      </div>
+      <script>
+        document.getElementById('nu-setor').addEventListener('change', function() {
+          const campo = document.getElementById('campo-cliente-nome');
+          if (campo) campo.style.display = this.value === 'cliente' ? '' : 'none';
+        });
+      </script>
       <button class="btn-primary" onclick="criarUsuario()">+ Criar Usuário</button>
     </div>
   </div>
@@ -1650,6 +1685,7 @@ function showPage(name) {
   if (name === 'fiscal') carregarFiscal();
   if (name === 'financeiro') carregarFinanceiro();
   if (name === 'seguranca') { carregarSeguranca(); carregarLogs(); }
+  if (name === 'dashboard-cliente') carregarDashboardCliente();
   if (name === 'nova') { carregarClientesSelect('f-cliente'); resetForm(); }
 
   // Reaplicar read-only se necessário
@@ -1724,51 +1760,72 @@ function renderTabela(dados) {
 }
 
 // SALVAR COTAÇÃO
+let _salvandoCotacao = false;
 async function salvarCotacao() {
-  const sel = document.getElementById('f-cliente');
-  const clienteNome = sel.value; // value agora é o nome
-  const clienteCadastroId = sel.options[sel.selectedIndex]?.dataset?.id || null;
-  const origem = document.getElementById('f-origem').value.trim();
-  const destino = document.getElementById('f-destino').value.trim();
-  const quantidade = document.getElementById('f-quantidade').value;
-  const tipoProduto = document.getElementById('f-tipo-produto').value.trim();
-  const preco = document.getElementById('f-preco').value;
+  if (_salvandoCotacao) return;
 
-  if (!clienteNome || !origem || !destino || !quantidade || !tipoProduto || !preco) {
-    showToast('Preencha todos os campos da cotação', 'error');
+  // Limpa destaques anteriores
+  ['f-cliente','f-origem','f-destino','f-quantidade','f-tipo-produto','f-preco'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.classList.remove('campo-invalido'); el.previousElementSibling?.classList.remove('campo-invalido-label'); }
+  });
+
+  const sel = document.getElementById('f-cliente');
+  const clienteNome = sel.value;
+  const campos = [
+    { id:'f-cliente', val: clienteNome },
+    { id:'f-origem', val: document.getElementById('f-origem').value.trim() },
+    { id:'f-destino', val: document.getElementById('f-destino').value.trim() },
+    { id:'f-quantidade', val: document.getElementById('f-quantidade').value },
+    { id:'f-tipo-produto', val: document.getElementById('f-tipo-produto').value.trim() },
+    { id:'f-preco', val: document.getElementById('f-preco').value },
+  ];
+  const invalidos = campos.filter(c => !c.val);
+  if (invalidos.length) {
+    invalidos.forEach(c => {
+      const el = document.getElementById(c.id);
+      if (el) { el.classList.add('campo-invalido'); el.previousElementSibling?.classList.add('campo-invalido-label'); }
+    });
+    showToast('Preencha todos os campos obrigatórios', 'error');
     return;
   }
 
+  const btn = document.querySelector('#page-nova .btn-primary');
+  const txtOriginal = btn?.textContent || '';
   try {
-    // Garante que o cliente existe na tabela 'clientes' (FK de cotacoes)
+    _salvandoCotacao = true;
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; }
+
+    const origem = campos[1].val, destino = campos[2].val;
+    const quantidade = campos[3].val, tipoProduto = campos[4].val, preco = campos[5].val;
+
     const clientesExist = await supabaseRequest('GET', `clientes?nome=eq.${encodeURIComponent(clienteNome)}`) || [];
     let clienteId;
-    if (clientesExist.length) {
-      clienteId = clientesExist[0].id;
-    } else {
+    if (clientesExist.length) { clienteId = clientesExist[0].id; }
+    else {
       const novoCliente = await supabaseRequest('POST', 'clientes', { nome: clienteNome });
       clienteId = novoCliente?.[0]?.id;
     }
-
     if (!clienteId) throw new Error('Não foi possível obter o ID do cliente.');
 
     await supabaseRequest('POST', 'cotacoes', {
-      cliente_id: clienteId,
-      origem,
-      destino,
+      cliente_id: clienteId, origem, destino,
       quantidade: parseFloat(quantidade),
       tipo_produto: tipoProduto,
       preco: parseFloat(preco),
       status: 'pendente',
       motivo_nao_fechamento: null,
     });
-
     registrarLog('cotacao', 'Cotação salva', `Cliente: ${clienteNome}`);
     showToast('✅ Cotação salva!', 'success');
     resetForm();
     cotacoes = [];
     setTimeout(() => showPage('lista'), 1200);
   } catch(e) { showToast('Erro ao salvar: ' + e.message, 'error'); }
+  finally {
+    _salvandoCotacao = false;
+    if (btn) { btn.disabled = false; btn.textContent = txtOriginal; }
+  }
 }
 
 function resetForm() {
@@ -1879,8 +1936,38 @@ function fecharModal(e) { if (e.target === document.getElementById('modal-overla
 function fecharModalBtn() { document.getElementById('modal-overlay').classList.remove('open'); cotacaoAtualId = null; cotacaoAtualDados = null; }
 
 // LOTES
+let _salvandoLote = false;
 async function salvarLote() {
+  if (_salvandoLote) return;
+
+  // Limpa destaques anteriores
+  const camposLote = ['l-agencia','l-cliente','l-produto','l-coleta','l-origem','l-entrega','l-destino','l-tarifa-emp','l-tarifa-mot','l-peso','l-data'];
+  camposLote.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.classList.remove('campo-invalido'); el.previousElementSibling?.classList.remove('campo-invalido-label'); }
+  });
+
+  const obrigatorios = [
+    { id:'l-agencia' }, { id:'l-cliente' }, { id:'l-produto' },
+    { id:'l-coleta' }, { id:'l-origem' }, { id:'l-entrega' }, { id:'l-destino' },
+    { id:'l-tarifa-emp' }, { id:'l-tarifa-mot' }, { id:'l-peso' }, { id:'l-data' },
+  ];
+  const invalidos = obrigatorios.filter(c => !document.getElementById(c.id)?.value?.trim());
+  if (invalidos.length) {
+    invalidos.forEach(c => {
+      const el = document.getElementById(c.id);
+      if (el) { el.classList.add('campo-invalido'); el.previousElementSibling?.classList.add('campo-invalido-label'); }
+    });
+    showToast('Preencha todos os campos obrigatórios', 'error');
+    return;
+  }
+
+  const btn = document.querySelector('#page-lotes .btn-primary');
+  const txtOriginal = btn?.textContent || '';
   try {
+    _salvandoLote = true;
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; }
+
     await supabaseRequest('POST', 'lotes', {
       agencia: document.getElementById('l-agencia').value || null,
       cliente: document.getElementById('l-cliente').value || null,
@@ -1894,7 +1981,6 @@ async function salvarLote() {
       tarifa_motorista: document.getElementById('l-tarifa-mot').value || null,
       peso_ton: document.getElementById('l-peso').value || null,
       data_lote: document.getElementById('l-data').value || null,
-
       observacao: document.getElementById('l-obs').value || null,
     });
     registrarLog('lote', 'Lote criado', `Cliente: ${document.getElementById('l-cliente')?.value||'—'}`);
@@ -1903,6 +1989,10 @@ async function salvarLote() {
     lotes = [];
     setTimeout(() => carregarLotes(), 1000);
   } catch(e) { showToast('Erro ao salvar: ' + e.message, 'error'); }
+  finally {
+    _salvandoLote = false;
+    if (btn) { btn.disabled = false; btn.textContent = txtOriginal; }
+  }
 }
 
 function resetLote() {
@@ -3426,6 +3516,7 @@ const ABAS_SISTEMA = [
   { id: 'fiscal',      label: '💼 Fiscal' },
   { id: 'financeiro',  label: '💰 Financeiro' },
   { id: 'seguranca',   label: '🔒 Segurança' },
+  { id: 'dashboard-cliente', label: '📦 Minhas Cargas' },
 ];
 
 // Permissões padrão por setor: 0=oculto, 1=só ver, 2=acesso total
@@ -3437,6 +3528,7 @@ const PERMISSOES_PADRAO = {
   cadastro:       { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:2, 'status-lote':0, clientes:0, logistico:0, fiscal:0, financeiro:0, seguranca:0 },
   fiscal:         { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:0, 'status-lote':1, clientes:0, logistico:0, fiscal:2, financeiro:0, seguranca:0 },
   financeiro:     { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:0, 'status-lote':0, clientes:0, logistico:0, fiscal:0, financeiro:2, seguranca:0 },
+  cliente:        { 'dashboard-cliente':2, dashboard:0, nova:0, lista:0, lotes:0, motoristas:0, gr:0, cadastro:0, 'status-lote':0, clientes:0, logistico:0, fiscal:0, financeiro:0, seguranca:0 },
 };
 
 function getPermissoesUsuario(u) {
@@ -3450,7 +3542,7 @@ function renderUsuarios(perfis) {
     document.getElementById('usuarios-table').innerHTML = '<div class="empty"><div class="empty-icon">👥</div><p>Nenhum usuário encontrado.</p></div>';
     return;
   }
-  const cores = { administrativo:'#f97316', comercial:'#3b82f6', logistico:'#22c55e', fiscal:'#8b5cf6', gr:'#ec4899', cadastro:'#a3e635', financeiro:'#facc15' };
+  const cores = { administrativo:'#f97316', comercial:'#3b82f6', logistico:'#22c55e', fiscal:'#8b5cf6', gr:'#ec4899', cadastro:'#a3e635', financeiro:'#facc15', cliente:'#06b6d4' };
 
   document.getElementById('usuarios-table').innerHTML = perfis.map(u => {
     const perms = getPermissoesUsuario(u);
@@ -3478,6 +3570,7 @@ function renderUsuarios(perfis) {
             <option value="gr" ${u.setor==='gr'?'selected':''}>GR</option>
             <option value="financeiro" ${u.setor==='financeiro'?'selected':''}>Financeiro</option>
             <option value="administrativo" ${u.setor==='administrativo'?'selected':''}>Administrativo</option>
+            <option value="cliente" ${u.setor==='cliente'?'selected':''}>Cliente (Portal)</option>
           </select>
           <button onclick="toggleAtivo('${u.id}', ${u.ativo})" style="background:${u.ativo?'rgba(239,68,68,0.1)':'rgba(34,197,94,0.1)'};color:${u.ativo?'#ef4444':'#22c55e'};border:1px solid ${u.ativo?'rgba(239,68,68,0.3)':'rgba(34,197,94,0.3)'};border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">
             ${u.ativo ? 'Desativar' : 'Ativar'}
@@ -3574,21 +3667,30 @@ async function criarUsuario() {
   const email = document.getElementById('nu-email').value.trim();
   const senha = document.getElementById('nu-senha').value;
   const setor = document.getElementById('nu-setor').value;
+  const clienteNome = document.getElementById('nu-cliente-nome')?.value?.trim() || '';
   if (!email || !senha) { showToast('Email e senha são obrigatórios', 'error'); return; }
   if (senha.length < 6) { showToast('Senha deve ter mínimo 6 caracteres', 'error'); return; }
+  if (setor === 'cliente' && !clienteNome) { showToast('Informe o nome do cliente para o portal', 'error'); return; }
   try {
     const resp = await fetch(API_URL + '?acao=criar_usuario', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, senha, nome, setor })
+      body: JSON.stringify({ email, senha, nome: nome || clienteNome, setor })
     });
     const result = await resp.json();
     if (!resp.ok) throw new Error(result.error || 'Erro ao criar usuário');
-    registrarLog('usuario', 'Usuário criado', `Email: ${email}, Setor: ${setor}`);
+    // Se for cliente, salva o cliente_nome no perfil
+    if (setor === 'cliente' && result.userId) {
+      await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${result.userId}`, { cliente_nome: clienteNome });
+    }
+    registrarLog('usuario', 'Usuário criado', `Email: ${email}, Setor: ${setor}${clienteNome ? ', Cliente: ' + clienteNome : ''}`);
     showToast('✅ Usuário criado com sucesso!', 'success');
     document.getElementById('nu-nome').value = '';
     document.getElementById('nu-email').value = '';
     document.getElementById('nu-senha').value = '';
+    if (document.getElementById('nu-cliente-nome')) document.getElementById('nu-cliente-nome').value = '';
+    const campo = document.getElementById('campo-cliente-nome');
+    if (campo) campo.style.display = 'none';
     carregarSeguranca();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
@@ -3625,7 +3727,7 @@ function aplicarPermissoes(setor, perms) {
   setorAtual = setor;
   permissoesAtual = perms || PERMISSOES_PADRAO[setor] || PERMISSOES_PADRAO['comercial'];
 
-  const paginas = ['dashboard','nova','lista','lotes','motoristas','gr','cadastro','status-lote','clientes','logistico','fiscal','financeiro','seguranca'];
+  const paginas = ['dashboard','nova','lista','lotes','motoristas','gr','cadastro','status-lote','clientes','logistico','fiscal','financeiro','seguranca','dashboard-cliente'];
   const botoesNav = document.querySelectorAll('nav button');
 
   paginas.forEach((p, i) => {
@@ -3672,6 +3774,14 @@ function aplicarPermissoes(setor, perms) {
   });
 
   // Navegar para primeira aba visível
+  // Setor cliente vai direto para o portal
+  if (setor === 'cliente') {
+    // Garante que a página existe antes de navegar
+    if (document.getElementById('page-dashboard-cliente')) {
+      showPage('dashboard-cliente');
+    }
+    return;
+  }
   const primeiraVisivel = paginas.find(p => (permissoesAtual[p] ?? 0) > 0) || 'dashboard';
   showPage(primeiraVisivel);
 }
@@ -4266,6 +4376,102 @@ async function confirmarFinalizar(id) {
     showToast('✅ Finalizado! Aguardando encerramento do MDFe no Fiscal.', 'success');
     await carregarFinanceiro();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+
+// ============ PORTAL DO CLIENTE ============
+let clienteNomeAtual = '';
+
+async function carregarDashboardCliente() {
+  const el = document.getElementById('dc-lotes-table');
+  if (!el) return;
+  el.innerHTML = '<div class="loading">Carregando suas cargas...</div>';
+  try {
+    // Identifica o nome do cliente pelo perfil do usuário logado
+    if (!clienteNomeAtual) {
+      const perfis = await supabaseRequest('GET', `usuarios_perfil?id=eq.${userAtual?.id}`) || [];
+      clienteNomeAtual = perfis[0]?.cliente_nome || perfis[0]?.nome || '';
+    }
+    document.getElementById('dc-boas-vindas').textContent = `Olá, ${clienteNomeAtual || 'Cliente'}!`;
+
+    if (!clienteNomeAtual) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Perfil de cliente não configurado. Contate o administrador.</p></div>';
+      return;
+    }
+
+    // Busca lotes do cliente
+    const todos = await supabaseRequest('GET', 'lotes?order=criado_em.desc&limit=200') || [];
+    const meuLotes = todos.filter(l => (l.cliente||'').toLowerCase() === clienteNomeAtual.toLowerCase());
+
+    if (!meuLotes.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">📦</div><p>Nenhuma carga encontrada para sua empresa.</p></div>';
+      return;
+    }
+
+    // Para cada lote, busca motoristas vinculados
+    const lotesComMotoristas = await Promise.all(meuLotes.map(async l => {
+      const mots = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${l.id}`) || [];
+      return { ...l, motoristas: mots };
+    }));
+
+    const statusLabel = {
+      liberado:'Liberado', aceita:'Aceita', aguardando:'Aguardando',
+      aguardando_informacoes:'Aguardando Informações', buscando:'Buscando',
+      finalizado:'Finalizado', suspenso:'Suspenso', urgente:'Urgente',
+    };
+    const statusCor = {
+      liberado:'var(--green)', aceita:'var(--green)', finalizado:'var(--green)',
+      aguardando:'var(--yellow)', aguardando_informacoes:'var(--yellow)', buscando:'var(--blue)',
+      suspenso:'var(--red)', urgente:'var(--red)',
+    };
+    const motStatusLabel = {
+      aguardando_nf:'Aguardando NF', aguardando_emissao_doc:'Aguardando Emissão Doc',
+      aguardando_fotos:'Aguardando Fotos', fotos_inseridas:'Fotos Inseridas',
+      adiantamento_pago:'Adiantamento Pago', em_transito:'Em Trânsito',
+      aguardando_chegada:'Aguardando Chegada', aguardando_encerramento_mdfe:'Ag. Encerramento MDFe',
+      manifesto_encerrado:'Manifesto Encerrado', saldo_agendado:'Saldo Agendado',
+      saldo_pago:'Saldo Pago', em_negociacao:'Em Negociação',
+    };
+
+    el.innerHTML = lotesComMotoristas.map(l => {
+      const cor = statusCor[l.status] || 'var(--muted)';
+      const label = statusLabel[l.status] || l.status || '—';
+      const pct = l.peso_ton > 0 ? Math.min(100, ((l.motoristas.reduce((s,m) => s + parseFloat(m.peso_saida||0),0)) / parseFloat(l.peso_ton)) * 100) : 0;
+      const motRows = l.motoristas.length
+        ? l.motoristas.map(m => `
+            <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:8px;padding:10px 14px;margin-top:8px;flex-wrap:wrap;gap:8px;">
+              <div>
+                <div style="font-weight:600;font-size:13px;">🚛 ${m.nome || '—'}</div>
+                <div style="font-size:12px;color:var(--muted);">Placa: ${m.placa||'—'} · Peso: ${m.peso_saida||'—'} ton</div>
+              </div>
+              <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(59,130,246,0.12);color:#3b82f6;">${motStatusLabel[m.status]||m.status||'—'}</span>
+            </div>`).join('')
+        : '<div style="font-size:13px;color:var(--muted);margin-top:8px;padding:10px;">Nenhum motorista vinculado ainda.</div>';
+
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;">Lote #${l.id} — ${l.produto||'—'}</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:4px;">📍 ${l.origem||'—'} → ${l.destino||'—'}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">📅 ${l.data_lote ? l.data_lote.split('-').reverse().join('/') : '—'} · ${l.agencia||'—'}</div>
+          </div>
+          <span style="font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;background:${cor}18;color:${cor};border:1px solid ${cor}40;">${label}</span>
+        </div>
+        ${l.peso_ton ? `<div style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px;">
+            <span>Progresso de carregamento</span><span>${pct.toFixed(0)}%</span>
+          </div>
+          <div style="background:var(--border);border-radius:20px;height:8px;overflow:hidden;">
+            <div style="height:100%;background:${pct>=100?'var(--green)':pct>60?'var(--yellow)':'var(--accent)'};border-radius:20px;width:${pct}%;transition:width 0.3s;"></div>
+          </div>
+        </div>` : ''}
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:4px;">Motoristas</div>
+        ${motRows}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar: ${e.message}</p></div>`;
+  }
 }
 
 // ============ GR - GERENCIAMENTO DE RISCO ============
