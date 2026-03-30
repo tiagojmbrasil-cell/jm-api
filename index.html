@@ -1708,6 +1708,9 @@ async function fazerLogin() {
   if (error) { erro.textContent = 'Email ou senha incorretos'; erro.style.display = 'block'; return; }
   const user = (await sb.auth.getUser()).data.user;
   userAtual = user;
+  // Limpa cache de cliente anterior antes de carregar o novo perfil
+  clienteIdAtual = null;
+  clienteNomeAtual = '';
   await carregarPerfilUsuario(user.id);
   registrarLog('login', 'Login realizado', `Email: ${user.email}`);
   document.getElementById('login-screen').style.display = 'none';
@@ -1716,6 +1719,10 @@ async function fazerLogin() {
 async function fazerLogout() {
   registrarLog('login', 'Logout realizado', `Email: ${userAtual?.email || '—'}`);
   await sb.auth.signOut();
+  // Limpa todos os dados do usuário em memória para evitar cache entre sessões
+  userAtual = null;
+  clienteIdAtual = null;
+  clienteNomeAtual = '';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-email').value = '';
   document.getElementById('login-senha').value = '';
@@ -4538,13 +4545,11 @@ async function carregarDashboardCliente() {
   if (!el) return;
   el.innerHTML = '<div class="loading">Carregando suas cargas...</div>';
   try {
-    // Carrega perfil do usuário para obter cliente_id e cliente_nome
-    if (!clienteIdAtual && !clienteNomeAtual) {
-      const perfis = await supabaseRequest('GET', `usuarios_perfil?id=eq.${userAtual?.id}`) || [];
-      const perfil = perfis[0] || {};
-      clienteIdAtual = perfil.cliente_id || null;
-      clienteNomeAtual = perfil.cliente_nome || perfil.nome || '';
-    }
+    // Sempre busca o perfil do banco para garantir dados atualizados do usuário logado
+    const perfis = await supabaseRequest('GET', `usuarios_perfil?id=eq.${userAtual?.id}`) || [];
+    const perfil = perfis[0] || {};
+    clienteIdAtual = perfil.cliente_id || null;
+    clienteNomeAtual = perfil.cliente_nome || perfil.nome || '';
 
     // Se tem cliente_id, busca nome atualizado do cadastro
     let nomeExibicao = clienteNomeAtual;
