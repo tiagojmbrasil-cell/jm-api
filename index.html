@@ -271,7 +271,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
 
       <div class="form-group">
         <label>Agência</label>
-        <select id="l-agencia">
+        <select id="l-agencia" required>
           <option value="">Selecione...</option>
           <option>UNIDADE 01 (LUCAS)</option>
           <option>UNIDADE 03 (PEDRO)</option>
@@ -284,17 +284,17 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       </div>
       <div class="form-group">
         <label>Cliente</label>
-        <select id="l-cliente">
+        <select id="l-cliente" required>
           <option value="">Selecione um cliente...</option>
         </select>
       </div>
       <div class="form-group">
         <label>Produto</label>
-        <input type="text" id="l-produto" placeholder="Ex: Soja, Milho, Fertilizante...">
+        <input type="text" id="l-produto" placeholder="Ex: Soja, Milho, Fertilizante..." required>
       </div>
       <div class="form-group">
         <label>Status</label>
-        <select id="l-status">
+        <select id="l-status" required>
           <option value="liberado">Liberado</option>
           <option value="aceita">Aceita</option>
           <option value="aguardando">Aguardando</option>
@@ -327,23 +327,23 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       </div>
       <div class="form-group">
         <label>Coleta</label>
-        <input type="text" id="l-coleta" placeholder="Local de coleta">
+        <input type="text" id="l-coleta" placeholder="Local de coleta" required>
       </div>
       <div class="form-group">
         <label>Origem</label>
         <div style="position:relative">
-          <input type="text" id="l-origem" placeholder="Digite a cidade de origem..." autocomplete="off" oninput="buscarCidade(this.value,'l-origem-list')" onkeydown="navegarAutocomplete(event,'l-origem-list')">
+          <input type="text" id="l-origem" placeholder="Digite a cidade de origem..." autocomplete="off" oninput="buscarCidade(this.value,'l-origem-list')" onkeydown="navegarAutocomplete(event,'l-origem-list')" required>
           <div id="l-origem-list" class="autocomplete-list" style="display:none"></div>
         </div>
       </div>
       <div class="form-group">
         <label>Entrega</label>
-        <input type="text" id="l-entrega" placeholder="Local de entrega">
+        <input type="text" id="l-entrega" placeholder="Local de entrega" required>
       </div>
       <div class="form-group">
         <label>Destino</label>
         <div style="position:relative">
-          <input type="text" id="l-destino" placeholder="Digite a cidade de destino..." autocomplete="off" oninput="buscarCidade(this.value,'l-destino-list')" onkeydown="navegarAutocomplete(event,'l-destino-list')">
+          <input type="text" id="l-destino" placeholder="Digite a cidade de destino..." autocomplete="off" oninput="buscarCidade(this.value,'l-destino-list')" onkeydown="navegarAutocomplete(event,'l-destino-list')" required>
           <div id="l-destino-list" class="autocomplete-list" style="display:none"></div>
         </div>
       </div>
@@ -351,23 +351,23 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
         <label>Tarifa Empresa (R$)</label>
         <div style="position:relative">
           <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
-          <input type="number" id="l-tarifa-emp" placeholder="0,00" step="0.01" min="0" style="padding-left:36px">
+          <input type="number" id="l-tarifa-emp" placeholder="0,00" step="0.01" min="0" style="padding-left:36px" required>
         </div>
       </div>
       <div class="form-group">
         <label>Tarifa Motorista (R$)</label>
         <div style="position:relative">
           <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
-          <input type="number" id="l-tarifa-mot" placeholder="0,00" step="0.01" min="0" style="padding-left:36px">
+          <input type="number" id="l-tarifa-mot" placeholder="0,00" step="0.01" min="0" style="padding-left:36px" required>
         </div>
       </div>
       <div class="form-group">
         <label>Peso Total (ton)</label>
-        <input type="number" id="l-peso" placeholder="Ex: 25.5" step="0.1" min="0">
+        <input type="number" id="l-peso" placeholder="Ex: 25.5" step="0.1" min="0" required>
       </div>
       <div class="form-group">
         <label>Data</label>
-        <input type="date" id="l-data">
+        <input type="date" id="l-data" required>
       </div>
       <div class="form-group full">
         <label>Observação</label>
@@ -821,10 +821,10 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     </div>
 
     <div class="form-grid" style="grid-template-columns:1fr 1fr;">
-      <div class="form-group"><label>Nome</label><input type="text" id="gr-nome" placeholder="Nome do motorista"></div>
-      <div class="form-group"><label>Placa do Veículo</label><input type="text" id="gr-placa" placeholder="Ex: ABC-1234"></div>
-      <div class="form-group"><label>Contato / Telefone</label><input type="text" id="gr-contato" placeholder="Ex: (34) 99999-9999"></div>
-      <div class="form-group"><label>CPF</label><input type="text" id="gr-cpf" placeholder="Ex: 000.000.000-00"></div>
+      <div class="form-group"><label>Nome</label><input type="text" id="gr-nome" placeholder="Nome do motorista" required></div>
+      <div class="form-group"><label>Placa do Veículo</label><input type="text" id="gr-placa" placeholder="Ex: ABC-1234" required></div>
+      <div class="form-group"><label>Contato / Telefone</label><input type="text" id="gr-contato" placeholder="Ex: (34) 99999-9999" required></div>
+      <div class="form-group"><label>CPF</label><input type="text" id="gr-cpf" placeholder="Ex: 000.000.000-00" required></div>
     </div>
 
     <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">Dados Bancários</div>
@@ -840,18 +840,18 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     </div>
     <input type="hidden" id="gr-tipo-pagamento" value="conta_bancaria">
     <div id="gr-campos-conta" class="form-grid" style="grid-template-columns:1fr 1fr;">
-      <div class="form-group"><label>Nome do Titular</label><input type="text" id="gr-nome-titular" placeholder="Nome completo do titular"></div>
-      <div class="form-group"><label>CPF/CNPJ do Titular</label><input type="text" id="gr-cpf-titular" placeholder="CPF ou CNPJ"></div>
-      <div class="form-group"><label>Banco</label><input type="text" id="gr-banco" placeholder="Ex: Bradesco, Itaú..."></div>
-      <div class="form-group"><label>Agência</label><input type="text" id="gr-agencia" placeholder="Ex: 1234"></div>
-      <div class="form-group"><label>Número da Conta</label><input type="text" id="gr-conta" placeholder="Ex: 12345-6"></div>
+      <div class="form-group"><label>Nome do Titular</label><input type="text" id="gr-nome-titular" placeholder="Nome completo do titular" required></div>
+      <div class="form-group"><label>CPF/CNPJ do Titular</label><input type="text" id="gr-cpf-titular" placeholder="CPF ou CNPJ" required></div>
+      <div class="form-group"><label>Banco</label><input type="text" id="gr-banco" placeholder="Ex: Bradesco, Itaú..." required></div>
+      <div class="form-group"><label>Agência</label><input type="text" id="gr-agencia" placeholder="Ex: 1234" required></div>
+      <div class="form-group"><label>Número da Conta</label><input type="text" id="gr-conta" placeholder="Ex: 12345-6" required></div>
       <div class="form-group"><label>Tipo de Conta</label>
-        <select id="gr-tipo-conta"><option value="">Selecione...</option><option value="corrente">Corrente</option><option value="poupanca">Poupança</option></select>
+        <select id="gr-tipo-conta" required><option value="">Selecione...</option><option value="corrente">Corrente</option><option value="poupanca">Poupança</option></select>
       </div>
     </div>
     <div id="gr-campos-pix" class="form-grid" style="grid-template-columns:1fr 1fr;display:none;">
       <div class="form-group"><label>Tipo de Chave PIX</label>
-        <select id="gr-tipo-pix">
+        <select id="gr-tipo-pix" required>
           <option value="">Selecione o tipo...</option>
           <option value="telefone">📱 Telefone</option>
           <option value="cpf">🪪 CPF</option>
@@ -860,16 +860,16 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
           <option value="aleatoria">🔑 Chave Aleatória</option>
         </select>
       </div>
-      <div class="form-group"><label>Chave PIX</label><input type="text" id="gr-pix" placeholder="Chave PIX"></div>
+      <div class="form-group"><label>Chave PIX</label><input type="text" id="gr-pix" placeholder="Chave PIX" required></div>
     </div>
 
     <!-- CHECK LIST -->
     <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:16px;">
       <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">📋 Check List — Documentação</div>
       <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px;">
-        <div class="form-group"><label>Valor do Frete do Motorista (R$)</label><input type="number" id="gr-ck-valor-frete" placeholder="R$ 0,00" step="0.01" min="0"></div>
-        <div class="form-group"><label>Valor da Carga (R$)</label><input type="number" id="gr-ck-valor-carga" placeholder="R$ 0,00" step="0.01" min="0"></div>
-        <div class="form-group full"><label>Canal de Contato do Motorista</label><input type="text" id="gr-ck-canal" placeholder="Ex: WhatsApp, Fretebras, indicação..."></div>
+        <div class="form-group"><label>Valor do Frete do Motorista (R$)</label><input type="number" id="gr-ck-valor-frete" placeholder="R$ 0,00" step="0.01" min="0" required></div>
+        <div class="form-group"><label>Valor da Carga (R$)</label><input type="number" id="gr-ck-valor-carga" placeholder="R$ 0,00" step="0.01" min="0" required></div>
+        <div class="form-group full"><label>Canal de Contato do Motorista</label><input type="text" id="gr-ck-canal" placeholder="Ex: WhatsApp, Fretebras, indicação..." required></div>
       </div>
 
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Documentos Recebidos</div>
@@ -956,15 +956,15 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
           </div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
           <div style="font-size:13px;margin-bottom:6px;">Três contatos de referência profissional</div>
-          <input type="text" id="gr-ck-ref-prof" placeholder="Ex: João (34) 99999-1111, Maria (34) 99999-2222..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;">
+          <input type="text" id="gr-ck-ref-prof" placeholder="Ex: João (34) 99999-1111, Maria (34) 99999-2222..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;" required>
         </div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
           <div style="font-size:13px;margin-bottom:6px;">Três contatos de referência pessoal</div>
-          <input type="text" id="gr-ck-ref-pessoal" placeholder="Ex: Carlos (34) 99999-3333, Ana (34) 99999-4444..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;">
+          <input type="text" id="gr-ck-ref-pessoal" placeholder="Ex: Carlos (34) 99999-3333, Ana (34) 99999-4444..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;" required>
         </div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
           <div style="font-size:13px;margin-bottom:6px;">Contato do proprietário ou responsável pelo veículo</div>
-          <input type="text" id="gr-ck-proprietario" placeholder="Nome e telefone do proprietário..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;">
+          <input type="text" id="gr-ck-proprietario" placeholder="Nome e telefone do proprietário..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;" required>
         </div>
       </div>
 
@@ -4289,6 +4289,80 @@ function selecionarTipoPagamentoGR(tipo) {
 async function salvarMotoristaGR() {
   const nome = document.getElementById('gr-nome').value.trim();
   if (!nome) { showToast('Informe o nome do motorista', 'error'); return; }
+
+  // Validação de campos obrigatórios
+  const camposObrigatorios = [
+    { id: 'gr-placa',    label: 'Placa do Veículo' },
+    { id: 'gr-contato',  label: 'Contato / Telefone' },
+    { id: 'gr-cpf',      label: 'CPF' },
+    { id: 'gr-ck-valor-frete', label: 'Valor do Frete do Motorista' },
+    { id: 'gr-ck-valor-carga', label: 'Valor da Carga' },
+    { id: 'gr-ck-canal', label: 'Canal de Contato do Motorista' },
+    { id: 'gr-ck-ref-prof', label: 'Referências Profissionais' },
+    { id: 'gr-ck-ref-pessoal', label: 'Referências Pessoais' },
+    { id: 'gr-ck-proprietario', label: 'Contato do Proprietário' },
+  ];
+  for (const campo of camposObrigatorios) {
+    const el = document.getElementById(campo.id);
+    if (!el || !el.value.trim()) {
+      showToast('Preencha o campo: ' + campo.label, 'error');
+      el && el.focus();
+      return;
+    }
+  }
+
+  // Validação de dados bancários
+  const tipoPgto = document.getElementById('gr-tipo-pagamento').value;
+  if (tipoPgto === 'conta_bancaria') {
+    const bancarios = [
+      { id: 'gr-nome-titular', label: 'Nome do Titular' },
+      { id: 'gr-cpf-titular',  label: 'CPF/CNPJ do Titular' },
+      { id: 'gr-banco',        label: 'Banco' },
+      { id: 'gr-agencia',      label: 'Agência' },
+      { id: 'gr-conta',        label: 'Número da Conta' },
+      { id: 'gr-tipo-conta',   label: 'Tipo de Conta' },
+    ];
+    for (const campo of bancarios) {
+      const el = document.getElementById(campo.id);
+      if (!el || !el.value.trim()) {
+        showToast('Preencha o campo: ' + campo.label, 'error');
+        el && el.focus();
+        return;
+      }
+    }
+  } else {
+    const pixCampos = [
+      { id: 'gr-tipo-pix', label: 'Tipo de Chave PIX' },
+      { id: 'gr-pix',      label: 'Chave PIX' },
+    ];
+    for (const campo of pixCampos) {
+      const el = document.getElementById(campo.id);
+      if (!el || !el.value.trim()) {
+        showToast('Preencha o campo: ' + campo.label, 'error');
+        el && el.focus();
+        return;
+      }
+    }
+  }
+
+  // Validação de anexos obrigatórios
+  const anexosObrigatorios = [
+    { id: 'gr-arq-cnh',          label: 'CNH do motorista' },
+    { id: 'gr-arq-antt',         label: 'Registro na ANTT' },
+    { id: 'gr-arq-doc-caminhao', label: 'Documento do Caminhão' },
+    { id: 'gr-arq-residencia',   label: 'Comprovante de Residência' },
+    { id: 'gr-arq-foto-caminhao',label: 'Foto do Caminhão' },
+    { id: 'gr-arq-selfie-cnh',   label: 'Selfie com CNH' },
+    { id: 'gr-arq-selfie-placa', label: 'Selfie ao lado do veículo (placa)' },
+    { id: 'gr-arq-lonas',        label: 'Fotos das Lonas' },
+  ];
+  for (const anexo of anexosObrigatorios) {
+    const input = document.getElementById(anexo.id);
+    if (!input || input.files.length === 0) {
+      showToast('Anexe o documento: ' + anexo.label, 'error');
+      return;
+    }
+  }
 
   const prazoSaldoEl = document.querySelector('input[name="gr-ck-prazo-saldo"]:checked');
   const checklist = {
