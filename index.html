@@ -1726,22 +1726,21 @@ function renderTabela(dados) {
 // SALVAR COTAÇÃO
 async function salvarCotacao() {
   const sel = document.getElementById('f-cliente');
-  const clienteCadastroId = sel.value;
-  const clienteNome = sel.options[sel.selectedIndex]?.dataset?.nome || sel.options[sel.selectedIndex]?.textContent || '';
+  const clienteNome = sel.value; // value agora é o nome
+  const clienteCadastroId = sel.options[sel.selectedIndex]?.dataset?.id || null;
   const origem = document.getElementById('f-origem').value.trim();
   const destino = document.getElementById('f-destino').value.trim();
   const quantidade = document.getElementById('f-quantidade').value;
   const tipoProduto = document.getElementById('f-tipo-produto').value.trim();
   const preco = document.getElementById('f-preco').value;
 
-  if (!clienteCadastroId || !origem || !destino || !quantidade || !tipoProduto || !preco) {
+  if (!clienteNome || !origem || !destino || !quantidade || !tipoProduto || !preco) {
     showToast('Preencha todos os campos da cotação', 'error');
     return;
   }
 
   try {
     // Garante que o cliente existe na tabela 'clientes' (FK de cotacoes)
-    // Busca primeiro, se não existir cria
     const clientesExist = await supabaseRequest('GET', `clientes?nome=eq.${encodeURIComponent(clienteNome)}`) || [];
     let clienteId;
     if (clientesExist.length) {
@@ -1759,7 +1758,7 @@ async function salvarCotacao() {
       destino,
       quantidade: parseFloat(quantidade),
       tipo_produto: tipoProduto,
-      valor_cotado: parseFloat(preco),
+      preco: parseFloat(preco),
       status: 'pendente',
       motivo_nao_fechamento: null,
     });
@@ -2534,12 +2533,46 @@ async function buscarCNPJ() {
   if (cnpj.length !== 14) { status.textContent = '⚠️ CNPJ deve ter 14 dígitos'; status.style.color='var(--red)'; return; }
   status.textContent = '🔍 Buscando...'; status.style.color='var(--muted)';
   try {
-    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
-    if (!res.ok) throw new Error('CNPJ não encontrado');
-    const d = await res.json();
+    let d = null;
+
+    // Tenta BrasilAPI primeiro
+    try {
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
+      if (res.ok) d = await res.json();
+    } catch(e) { /* falhou, tenta fallback */ }
+
+    // Fallback: ReceitaWS
+    if (!d) {
+      try {
+        const res2 = await fetch(`https://receitaws.com.br/v1/cnpj/${cnpj}`);
+        if (res2.ok) {
+          const d2 = await res2.json();
+          if (d2.status !== 'ERROR') {
+            // Normaliza campos para o mesmo formato da BrasilAPI
+            d = {
+              razao_social: d2.nome,
+              nome_fantasia: d2.fantasia,
+              cep: d2.cep?.replace(/\D/g,''),
+              logradouro: d2.logradouro,
+              numero: d2.numero,
+              bairro: d2.bairro,
+              complemento: d2.complemento,
+              municipio: d2.municipio,
+              uf: d2.uf,
+              email: d2.email,
+              ddd_telefone_1: d2.telefone?.replace(/\D/g,''),
+              data_inicio_atividade: d2.abertura ? d2.abertura.split('/').reverse().join('-') : '',
+            };
+          }
+        }
+      } catch(e2) { /* fallback também falhou */ }
+    }
+
+    if (!d) throw new Error('CNPJ não encontrado em nenhuma base');
+
     document.getElementById('cl-razao').value = d.razao_social || '';
     document.getElementById('cl-fantasia').value = d.nome_fantasia || d.razao_social || '';
-    document.getElementById('cl-cep').value = d.cep || '';
+    document.getElementById('cl-cep').value = d.cep?.replace(/\D/g,'') || '';
     document.getElementById('cl-endereco').value = d.logradouro || '';
     document.getElementById('cl-numero').value = d.numero || '';
     document.getElementById('cl-bairro').value = d.bairro || '';
@@ -2547,7 +2580,12 @@ async function buscarCNPJ() {
     document.getElementById('cl-cidade').value = d.municipio || '';
     document.getElementById('cl-estado').value = d.uf || '';
     document.getElementById('cl-email').value = d.email || '';
-    document.getElementById('cl-telefone').value = d.ddd_telefone_1 ? '(' + d.ddd_telefone_1.substring(0,2) + ') ' + d.ddd_telefone_1.substring(2) : '';
+    if (d.ddd_telefone_1) {
+      const tel = String(d.ddd_telefone_1).replace(/\D/g,'');
+      document.getElementById('cl-telefone').value = tel.length >= 10
+        ? '(' + tel.substring(0,2) + ') ' + tel.substring(2)
+        : tel;
+    }
     if (d.data_inicio_atividade) document.getElementById('cl-dt-abertura').value = d.data_inicio_atividade;
     status.textContent = '✅ Empresa encontrada: ' + (d.razao_social || '');
     status.style.color = 'var(--green)';
@@ -2701,10 +2739,10 @@ async function carregarClientesSelect(selectId) {
     clientes.forEach(c => {
       const nome = c.nome_fantasia || c.razao_social;
       const opt = document.createElement('option');
-      opt.value = c.id;           // usa o ID numérico como value
-      opt.dataset.nome = nome;    // guarda o nome para referência
+      opt.value = nome;           // salva o NOME como value (usado em lotes.cliente que é TEXT)
+      opt.dataset.id = c.id;      // guarda o ID como data-id para uso em cotações
       opt.textContent = nome;
-      if (String(c.id) === String(valorAtual)) opt.selected = true;
+      if (nome === valorAtual || String(c.id) === String(valorAtual)) opt.selected = true;
       sel.appendChild(opt);
     });
   } catch(e) { console.error('Erro ao carregar clientes:', e); }
