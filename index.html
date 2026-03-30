@@ -2277,20 +2277,51 @@ async function carregarMotoristas() {
         boxLote.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px;">Nenhum motorista neste lote ainda.</div>';
       } else {
         const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-        boxLote.innerHTML = motoristas.map((m) => `
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;flex-wrap:wrap;">
-        <div style="min-width:0;flex:1;">
-          <div style="font-weight:700;font-size:14px;">${esc(m.nome)}</div>
-          <div style="font-size:12px;color:var(--muted);">Placa: ${esc(m.placa)} · ${parseFloat(m.peso_saida || 0).toFixed(2)} ton · <span style="text-transform:capitalize">${esc(m.status || '—')}</span></div>
-        </div>
-        <button type="button" class="btn-secondary" style="padding:8px 12px;font-size:12px;white-space:nowrap;" onclick="removerMotorista(${m.id})" title="Remove só deste lote">Remover do lote</button>
-      </div>`).join('');
+        const statusCargaOpcoes = [
+          { value: 'aguardando',       label: '⏳ Aguardando' },
+          { value: 'carregando',       label: '📦 Carregando' },
+          { value: 'carregado',        label: '✅ Carregado' },
+          { value: 'em_transito',      label: '🚛 Em Trânsito' },
+          { value: 'chegou_destino',   label: '📍 Chegou ao Destino' },
+          { value: 'descarregando',    label: '🔄 Descarregando' },
+          { value: 'concluido',        label: '🏁 Concluído' },
+        ];
+        boxLote.innerHTML = motoristas.map((m) => {
+          const opcoesHtml = statusCargaOpcoes.map(o =>
+            `<option value="${o.value}" ${(m.status_carga || 'aguardando') === o.value ? 'selected' : ''}>${o.label}</option>`
+          ).join('');
+          return `
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+              <div style="min-width:0;flex:1;">
+                <div style="font-weight:700;font-size:14px;">${esc(m.nome)}</div>
+                <div style="font-size:12px;color:var(--muted);">Placa: ${esc(m.placa)} · ${parseFloat(m.peso_saida || 0).toFixed(2)} ton</div>
+              </div>
+              <button type="button" class="btn-secondary" style="padding:6px 10px;font-size:12px;white-space:nowrap;" onclick="removerMotorista(${m.id})" title="Remove só deste lote">Remover</button>
+            </div>
+            <div style="margin-top:10px;display:flex;align-items:center;gap:8px;">
+              <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);white-space:nowrap;">Status p/ cliente:</label>
+              <select onchange="salvarStatusCarga(${m.id}, this.value)" style="flex:1;font-size:12px;padding:5px 10px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text);">
+                ${opcoesHtml}
+              </select>
+            </div>
+          </div>`;
+        }).join('');
       }
     }
 
     if (loteAtualId) filtrarLotes();
   } catch(e) {
     console.error('Erro ao carregar motoristas:', e);
+  }
+}
+
+async function salvarStatusCarga(loteMotId, novoStatus) {
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${loteMotId}`, { status_carga: novoStatus });
+    showToast('✅ Status do cliente atualizado!', 'success');
+  } catch(e) {
+    showToast('Erro ao salvar status: ' + e.message, 'error');
   }
 }
 
@@ -4483,14 +4514,14 @@ async function carregarDashboardCliente() {
       suspenso:'var(--red)', urgente:'var(--red)', no_show:'var(--red)', paralizado:'var(--red)',
     };
     const motStatusLabel = {
-      aguardando_gr:'Aguardando GR', aguardando_cadastro:'Aguardando Cadastro',
-      aguardando_nf:'Aguardando NF', aguardando_emissao_doc:'Aguardando Emissão Doc',
-      aguardando_fotos:'Aguardando Fotos do Carregamento', fotos_inseridas:'Fotos Inseridas',
-      adiantamento_pago:'Adiantamento Pago', em_transito:'Em Trânsito',
-      aguardando_chegada:'Aguardando Chegada no Destino',
-      aguardando_encerramento_mdfe:'Encerrando Manifesto',
-      manifesto_encerrado:'Manifesto Encerrado', saldo_agendado:'Saldo Agendado',
-      saldo_pago:'Saldo Pago — Processo Concluído', em_negociacao:'Em Negociação',
+      aguardando:'Aguardando', carregando:'Carregando', carregado:'Carregado',
+      em_transito:'Em Trânsito', chegou_destino:'Chegou ao Destino',
+      descarregando:'Descarregando', concluido:'Concluído',
+    };
+    const motStatusCor = {
+      aguardando:'var(--muted)', carregando:'var(--yellow)', carregado:'var(--accent)',
+      em_transito:'#3b82f6', chegou_destino:'var(--green)',
+      descarregando:'var(--yellow)', concluido:'var(--green)',
     };
 
     el.innerHTML = lotesComMotoristas.map(l => {
@@ -4501,11 +4532,9 @@ async function carregarDashboardCliente() {
 
       const motRows = l.motoristas.length
         ? l.motoristas.map(m => {
-            const mLabel = motStatusLabel[m.status] || m.status || '—';
-            const mCor = ['saldo_pago','adiantamento_pago'].includes(m.status) ? 'var(--green)'
-              : ['em_transito','aguardando_chegada'].includes(m.status) ? '#3b82f6'
-              : ['fotos_inseridas','aguardando_emissao_doc','aguardando_fotos'].includes(m.status) ? 'var(--yellow)'
-              : 'var(--muted)';
+            const sc = m.status_carga || 'aguardando';
+            const mLabel = motStatusLabel[sc] || sc;
+            const mCor = motStatusCor[sc] || 'var(--muted)';
             return `
               <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:8px;padding:10px 14px;margin-top:8px;flex-wrap:wrap;gap:8px;">
                 <div>
