@@ -1130,7 +1130,8 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
 
 <!-- LOGÍSTICO -->
 <div class="page" id="page-logistico">
-  <div class="card">
+  <!-- SEÇÃO: TAREFAS DO FLUXO (existente) -->
+  <div class="card" style="margin-bottom:20px;">
     <div class="table-header">
       <h2>Painel — Logístico</h2>
       <div class="filters">
@@ -1145,6 +1146,29 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       </div>
     </div>
     <div id="logistico-table"><div class="loading">Carregando...</div></div>
+  </div>
+
+  <!-- SEÇÃO: LOTES REGISTRADOS (somente visualização + motoristas) -->
+  <div class="card">
+    <div class="table-header">
+      <h2>Lotes Registrados</h2>
+      <div class="filters">
+        <input type="text" id="filtro-log-lote-busca" placeholder="🔍 Buscar cliente ou nº do lote..." oninput="filtrarLotesLogistico()">
+        <select id="filtro-log-lote-status" onchange="filtrarLotesLogistico()">
+          <option value="">Todos os status</option>
+          <option value="liberado">Liberado</option>
+          <option value="aceita">Aceita</option>
+          <option value="aguardando">Aguardando</option>
+          <option value="aguardando_informacoes">Aguardando Informações</option>
+          <option value="buscando">Buscando</option>
+          <option value="finalizado">Finalizado</option>
+          <option value="suspenso">Suspenso</option>
+          <option value="urgente">Urgente</option>
+        </select>
+        <button onclick="carregarLotesLogistico()" class="btn-secondary" style="padding:8px 14px;font-size:13px;">🔄 Atualizar</button>
+      </div>
+    </div>
+    <div id="logistico-lotes-table"><div class="loading">Carregando...</div></div>
   </div>
 </div>
 
@@ -1712,7 +1736,7 @@ function showPage(name) {
   if (name === 'cadastro') carregarCadastro();
   if (name === 'status-lote') carregarStatusLote();
   if (name === 'clientes') carregarClientes();
-  if (name === 'logistico') carregarLogistico();
+  if (name === 'logistico') { carregarLogistico(); carregarLotesLogistico(); }
   if (name === 'fiscal') carregarFiscal();
   if (name === 'financeiro') carregarFinanceiro();
   if (name === 'seguranca') { carregarSeguranca(); carregarLogs(); }
@@ -4009,6 +4033,61 @@ function renderLogistico(dados) {
         }).join('')}
       </tbody>
     </table>`;
+}
+
+// ---- Lotes no Logístico ----
+let lotesLogisticoData = [];
+
+async function carregarLotesLogistico() {
+  const el = document.getElementById('logistico-lotes-table');
+  if (!el) return;
+  el.innerHTML = '<div class="loading">Carregando lotes...</div>';
+  try {
+    lotesLogisticoData = await supabaseRequest('GET', 'lotes?order=criado_em.desc&limit=300') || [];
+    filtrarLotesLogistico();
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar lotes.</p></div>';
+  }
+}
+
+function filtrarLotesLogistico() {
+  const busca = (document.getElementById('filtro-log-lote-busca')?.value || '').toLowerCase();
+  const status = document.getElementById('filtro-log-lote-status')?.value || '';
+  const filtrados = lotesLogisticoData.filter(l =>
+    (!busca || (l.cliente||'').toLowerCase().includes(busca) || String(l.id).includes(busca)) &&
+    (!status || l.status === status)
+  );
+  renderLotesLogistico(filtrados);
+}
+
+function renderLotesLogistico(dados) {
+  const el = document.getElementById('logistico-lotes-table');
+  if (!el) return;
+  if (!dados.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📦</div><p>Nenhum lote encontrado.</p></div>';
+    return;
+  }
+  el.innerHTML = `<table><thead><tr>
+    <th>Nº Lote</th><th>Agência</th><th>Cliente</th><th>Produto</th><th>Rota</th>
+    <th>Peso</th><th>Data</th><th>Status</th><th></th>
+  </tr></thead><tbody>
+    ${dados.map(l => `<tr>
+      <td><span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--accent)">Lote ${l.id}</span></td>
+      <td style="font-size:12px">${l.agencia || '—'}</td>
+      <td><strong>${l.cliente || '—'}</strong></td>
+      <td style="font-size:12px">${l.produto || '—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${l.origem || '—'} → ${l.destino || '—'}</td>
+      <td style="font-size:12px">${l.peso_ton ? l.peso_ton + ' ton' : '—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${formatDate(l.data_lote)}</td>
+      <td>${badgeLote(l.status)}</td>
+      <td>
+        ${l.status === 'aguardando_informacoes'
+          ? `<button onclick="abrirInserirInformacoes(${l.id})" style="background:rgba(249,115,22,0.15);color:var(--accent);border:1px solid rgba(249,115,22,0.4);border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-weight:600;">📋 Inserir Informações</button>`
+          : `<button onclick="abrirMotoristas(${l.id})" style="background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🚛 Motoristas</button>`
+        }
+      </td>
+    </tr>`).join('')}
+  </tbody></table>`;
 }
 
 // ---- Modal NF ----
