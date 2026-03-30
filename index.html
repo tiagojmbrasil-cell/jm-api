@@ -2002,7 +2002,12 @@ async function editarLote(id) {
   if (!l) return;
   loteEditandoId = id;
   document.getElementById('el-agencia').value = l.agencia || '';
-  document.getElementById('el-cliente').value = l.cliente || '';
+  // Seleciona cliente pelo nome no dropdown
+  const selCliente = document.getElementById('el-cliente');
+  const nomeCliente = l.cliente || '';
+  Array.from(selCliente.options).forEach(opt => {
+    if (opt.textContent.trim().toLowerCase() === nomeCliente.trim().toLowerCase()) selCliente.value = opt.value;
+  });
   document.getElementById('el-produto').value = l.produto || '';
   document.getElementById('el-status').value = l.status || 'liberado';
   document.getElementById('el-coleta').value = l.coleta || '';
@@ -2057,7 +2062,12 @@ async function abrirInserirInformacoes(id) {
   if (!l) return;
   loteEditandoId = id;
   document.getElementById('el-agencia').value = l.agencia || '';
-  document.getElementById('el-cliente').value = l.cliente || '';
+  // Seleciona cliente pelo nome no dropdown
+  const selCliente = document.getElementById('el-cliente');
+  const nomeCliente = l.cliente || '';
+  Array.from(selCliente.options).forEach(opt => {
+    if (opt.textContent.trim().toLowerCase() === nomeCliente.trim().toLowerCase()) selCliente.value = opt.value;
+  });
   document.getElementById('el-produto').value = l.produto || '';
   // Força status para liberado ao completar informações
   document.getElementById('el-status').value = 'liberado';
