@@ -1547,14 +1547,45 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       </div>
     </div>
     <div class="form-actions">
-      <div id="campo-cliente-nome" style="display:none;" class="form-group full" style="grid-column:1/-1">
-        <label>Nome do Cliente (igual ao cadastrado em Lotes)</label>
-        <input type="text" id="nu-cliente-nome" placeholder="Ex: TERA FERTILIZANTES">
+      <div id="campo-cliente-nome" style="display:none;width:100%;margin-bottom:12px;">
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Cliente (selecione o cliente cadastrado)</label>
+          <select id="nu-cliente-id" style="width:100%">
+            <option value="">Carregando clientes...</option>
+          </select>
+          <input type="hidden" id="nu-cliente-nome" value="">
+        </div>
       </div>
       <script>
-        document.getElementById('nu-setor').addEventListener('change', function() {
+        document.getElementById('nu-setor').addEventListener('change', async function() {
           const campo = document.getElementById('campo-cliente-nome');
-          if (campo) campo.style.display = this.value === 'cliente' ? '' : 'none';
+          if (!campo) return;
+          if (this.value === 'cliente') {
+            campo.style.display = '';
+            // Carrega clientes cadastrados no select
+            try {
+              const clientes = await supabaseRequest('GET', 'clientes_cadastro?order=razao_social.asc&select=id,razao_social,nome_fantasia') || [];
+              const sel = document.getElementById('nu-cliente-id');
+              sel.innerHTML = '<option value="">Selecione o cliente...</option>';
+              clientes.forEach(c => {
+                const nome = c.nome_fantasia || c.razao_social;
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.dataset.nome = nome;
+                opt.textContent = nome;
+                sel.appendChild(opt);
+              });
+              // Atualiza hidden com nome ao mudar seleção
+              sel.onchange = function() {
+                const opt = sel.options[sel.selectedIndex];
+                document.getElementById('nu-cliente-nome').value = opt?.dataset?.nome || '';
+              };
+            } catch(e) { console.error('Erro ao carregar clientes:', e); }
+          } else {
+            campo.style.display = 'none';
+            document.getElementById('nu-cliente-id').value = '';
+            document.getElementById('nu-cliente-nome').value = '';
+          }
         });
       </script>
       <button class="btn-primary" onclick="criarUsuario()">+ Criar Usuário</button>
@@ -3668,9 +3699,10 @@ async function criarUsuario() {
   const senha = document.getElementById('nu-senha').value;
   const setor = document.getElementById('nu-setor').value;
   const clienteNome = document.getElementById('nu-cliente-nome')?.value?.trim() || '';
+  const clienteId = document.getElementById('nu-cliente-id')?.value || '';
   if (!email || !senha) { showToast('Email e senha são obrigatórios', 'error'); return; }
   if (senha.length < 6) { showToast('Senha deve ter mínimo 6 caracteres', 'error'); return; }
-  if (setor === 'cliente' && !clienteNome) { showToast('Informe o nome do cliente para o portal', 'error'); return; }
+  if (setor === 'cliente' && (!clienteId || !clienteNome)) { showToast('Selecione o cliente para o portal', 'error'); return; }
   try {
     const resp = await fetch(API_URL + '?acao=criar_usuario', {
       method: 'POST',
@@ -3679,15 +3711,19 @@ async function criarUsuario() {
     });
     const result = await resp.json();
     if (!resp.ok) throw new Error(result.error || 'Erro ao criar usuário');
-    // Se for cliente, salva o cliente_nome no perfil
+    // Se for cliente, salva cliente_nome e cliente_id no perfil
     if (setor === 'cliente' && result.userId) {
-      await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${result.userId}`, { cliente_nome: clienteNome });
+      await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${result.userId}`, {
+        cliente_nome: clienteNome,
+        cliente_id: parseInt(clienteId),
+      });
     }
     registrarLog('usuario', 'Usuário criado', `Email: ${email}, Setor: ${setor}${clienteNome ? ', Cliente: ' + clienteNome : ''}`);
     showToast('✅ Usuário criado com sucesso!', 'success');
     document.getElementById('nu-nome').value = '';
     document.getElementById('nu-email').value = '';
     document.getElementById('nu-senha').value = '';
+    if (document.getElementById('nu-cliente-id')) document.getElementById('nu-cliente-id').value = '';
     if (document.getElementById('nu-cliente-nome')) document.getElementById('nu-cliente-nome').value = '';
     const campo = document.getElementById('campo-cliente-nome');
     if (campo) campo.style.display = 'none';
@@ -4381,27 +4417,47 @@ async function confirmarFinalizar(id) {
 
 // ============ PORTAL DO CLIENTE ============
 let clienteNomeAtual = '';
+let clienteIdAtual = null;
 
 async function carregarDashboardCliente() {
   const el = document.getElementById('dc-lotes-table');
   if (!el) return;
   el.innerHTML = '<div class="loading">Carregando suas cargas...</div>';
   try {
-    // Identifica o nome do cliente pelo perfil do usuário logado
-    if (!clienteNomeAtual) {
+    // Carrega perfil do usuário para obter cliente_id e cliente_nome
+    if (!clienteIdAtual && !clienteNomeAtual) {
       const perfis = await supabaseRequest('GET', `usuarios_perfil?id=eq.${userAtual?.id}`) || [];
-      clienteNomeAtual = perfis[0]?.cliente_nome || perfis[0]?.nome || '';
+      const perfil = perfis[0] || {};
+      clienteIdAtual = perfil.cliente_id || null;
+      clienteNomeAtual = perfil.cliente_nome || perfil.nome || '';
     }
-    document.getElementById('dc-boas-vindas').textContent = `Olá, ${clienteNomeAtual || 'Cliente'}!`;
 
-    if (!clienteNomeAtual) {
+    // Se tem cliente_id, busca nome atualizado do cadastro
+    let nomeExibicao = clienteNomeAtual;
+    if (clienteIdAtual) {
+      const cad = await supabaseRequest('GET', `clientes_cadastro?id=eq.${clienteIdAtual}&select=id,razao_social,nome_fantasia`) || [];
+      if (cad.length) {
+        nomeExibicao = cad[0].nome_fantasia || cad[0].razao_social || clienteNomeAtual;
+        clienteNomeAtual = nomeExibicao;
+      }
+    }
+
+    document.getElementById('dc-boas-vindas').textContent = `Olá, ${nomeExibicao || 'Cliente'}!`;
+
+    if (!clienteIdAtual && !clienteNomeAtual) {
       el.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Perfil de cliente não configurado. Contate o administrador.</p></div>';
       return;
     }
 
-    // Busca lotes do cliente
+    // Busca TODOS os lotes e filtra pelo cliente
     const todos = await supabaseRequest('GET', 'lotes?order=criado_em.desc&limit=200') || [];
-    const meuLotes = todos.filter(l => (l.cliente||'').toLowerCase() === clienteNomeAtual.toLowerCase());
+
+    let meuLotes = [];
+    if (clienteNomeAtual) {
+      // Filtra por nome (case-insensitive, sem espaços extras)
+      const nomeLower = clienteNomeAtual.toLowerCase().trim();
+      meuLotes = todos.filter(l => (l.cliente || '').toLowerCase().trim() === nomeLower);
+    }
 
     if (!meuLotes.length) {
       el.innerHTML = '<div class="empty"><div class="empty-icon">📦</div><p>Nenhuma carga encontrada para sua empresa.</p></div>';
@@ -4418,54 +4474,68 @@ async function carregarDashboardCliente() {
       liberado:'Liberado', aceita:'Aceita', aguardando:'Aguardando',
       aguardando_informacoes:'Aguardando Informações', buscando:'Buscando',
       finalizado:'Finalizado', suspenso:'Suspenso', urgente:'Urgente',
+      finalizando:'Finalizando', fechada:'Fechada', no_show:'No-Show',
+      paralizado:'Paralizado', urgente:'Urgente',
     };
     const statusCor = {
-      liberado:'var(--green)', aceita:'var(--green)', finalizado:'var(--green)',
+      liberado:'var(--green)', aceita:'var(--green)', finalizado:'var(--green)', finalizando:'var(--green)',
       aguardando:'var(--yellow)', aguardando_informacoes:'var(--yellow)', buscando:'var(--blue)',
-      suspenso:'var(--red)', urgente:'var(--red)',
+      suspenso:'var(--red)', urgente:'var(--red)', no_show:'var(--red)', paralizado:'var(--red)',
     };
     const motStatusLabel = {
+      aguardando_gr:'Aguardando GR', aguardando_cadastro:'Aguardando Cadastro',
       aguardando_nf:'Aguardando NF', aguardando_emissao_doc:'Aguardando Emissão Doc',
-      aguardando_fotos:'Aguardando Fotos', fotos_inseridas:'Fotos Inseridas',
+      aguardando_fotos:'Aguardando Fotos do Carregamento', fotos_inseridas:'Fotos Inseridas',
       adiantamento_pago:'Adiantamento Pago', em_transito:'Em Trânsito',
-      aguardando_chegada:'Aguardando Chegada', aguardando_encerramento_mdfe:'Ag. Encerramento MDFe',
+      aguardando_chegada:'Aguardando Chegada no Destino',
+      aguardando_encerramento_mdfe:'Encerrando Manifesto',
       manifesto_encerrado:'Manifesto Encerrado', saldo_agendado:'Saldo Agendado',
-      saldo_pago:'Saldo Pago', em_negociacao:'Em Negociação',
+      saldo_pago:'Saldo Pago — Processo Concluído', em_negociacao:'Em Negociação',
     };
 
     el.innerHTML = lotesComMotoristas.map(l => {
       const cor = statusCor[l.status] || 'var(--muted)';
       const label = statusLabel[l.status] || l.status || '—';
-      const pct = l.peso_ton > 0 ? Math.min(100, ((l.motoristas.reduce((s,m) => s + parseFloat(m.peso_saida||0),0)) / parseFloat(l.peso_ton)) * 100) : 0;
+      const totalCarregado = l.motoristas.reduce((s, m) => s + parseFloat(m.peso_saida || 0), 0);
+      const pct = l.peso_ton > 0 ? Math.min(100, (totalCarregado / parseFloat(l.peso_ton)) * 100) : 0;
+
       const motRows = l.motoristas.length
-        ? l.motoristas.map(m => `
-            <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:8px;padding:10px 14px;margin-top:8px;flex-wrap:wrap;gap:8px;">
-              <div>
-                <div style="font-weight:600;font-size:13px;">🚛 ${m.nome || '—'}</div>
-                <div style="font-size:12px;color:var(--muted);">Placa: ${m.placa||'—'} · Peso: ${m.peso_saida||'—'} ton</div>
-              </div>
-              <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(59,130,246,0.12);color:#3b82f6;">${motStatusLabel[m.status]||m.status||'—'}</span>
-            </div>`).join('')
+        ? l.motoristas.map(m => {
+            const mLabel = motStatusLabel[m.status] || m.status || '—';
+            const mCor = ['saldo_pago','adiantamento_pago'].includes(m.status) ? 'var(--green)'
+              : ['em_transito','aguardando_chegada'].includes(m.status) ? '#3b82f6'
+              : ['fotos_inseridas','aguardando_emissao_doc','aguardando_fotos'].includes(m.status) ? 'var(--yellow)'
+              : 'var(--muted)';
+            return `
+              <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:8px;padding:10px 14px;margin-top:8px;flex-wrap:wrap;gap:8px;">
+                <div>
+                  <div style="font-weight:600;font-size:13px;">🚛 ${m.nome || '—'}</div>
+                  <div style="font-size:12px;color:var(--muted);">Placa: ${m.placa || '—'} · Peso: ${m.peso_saida ? m.peso_saida + ' ton' : '—'}</div>
+                </div>
+                <span style="font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:${mCor}18;color:${mCor};border:1px solid ${mCor}40;">${mLabel}</span>
+              </div>`;
+          }).join('')
         : '<div style="font-size:13px;color:var(--muted);margin-top:8px;padding:10px;">Nenhum motorista vinculado ainda.</div>';
 
       return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
           <div>
-            <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;">Lote #${l.id} — ${l.produto||'—'}</div>
-            <div style="font-size:13px;color:var(--muted);margin-top:4px;">📍 ${l.origem||'—'} → ${l.destino||'—'}</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px;">📅 ${l.data_lote ? l.data_lote.split('-').reverse().join('/') : '—'} · ${l.agencia||'—'}</div>
+            <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;">Lote #${l.id} — ${l.produto || '—'}</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:4px;">📍 ${l.origem || '—'} → ${l.destino || '—'}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">📅 ${l.data_lote ? l.data_lote.split('-').reverse().join('/') : '—'}${l.agencia ? ' · ' + l.agencia : ''}</div>
           </div>
           <span style="font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;background:${cor}18;color:${cor};border:1px solid ${cor}40;">${label}</span>
         </div>
         ${l.peso_ton ? `<div style="margin-bottom:12px;">
           <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px;">
-            <span>Progresso de carregamento</span><span>${pct.toFixed(0)}%</span>
+            <span>Progresso de carregamento</span>
+            <span>${totalCarregado.toFixed(1)} / ${l.peso_ton} ton (${pct.toFixed(0)}%)</span>
           </div>
           <div style="background:var(--border);border-radius:20px;height:8px;overflow:hidden;">
-            <div style="height:100%;background:${pct>=100?'var(--green)':pct>60?'var(--yellow)':'var(--accent)'};border-radius:20px;width:${pct}%;transition:width 0.3s;"></div>
+            <div style="height:100%;background:${pct >= 100 ? 'var(--green)' : pct > 60 ? 'var(--yellow)' : 'var(--accent)'};border-radius:20px;width:${pct.toFixed(1)}%;transition:width 0.4s;"></div>
           </div>
         </div>` : ''}
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:4px;">Motoristas</div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:6px;">Motoristas (${l.motoristas.length})</div>
         ${motRows}
       </div>`;
     }).join('');
