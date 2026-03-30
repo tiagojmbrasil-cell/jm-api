@@ -4691,6 +4691,59 @@ function limparAnexosFormularioEditarMotorista() {
   ].forEach(([inputId, labelId]) => limparAnexo(inputId, labelId));
 }
 
+/** Atualiza o ícone de status de um documento no modal de edição ao selecionar novo arquivo */
+function atualizarStatusDocEdit(tipo, inputId) {
+  const input = document.getElementById(inputId);
+  const jaAnexado = (motoristaEditandoAnexos || []).some(a => a.tipo === tipo);
+  const novoSelecionado = (input?.files?.length || 0) > 0;
+  const ok = jaAnexado || novoSelecionado;
+  const icone = document.getElementById('em-doc-status-' + tipo);
+  const row = document.getElementById('em-doc-row-' + tipo);
+  if (icone) icone.textContent = ok ? '✅' : '⬜';
+  if (row) {
+    row.style.borderColor = ok ? 'rgba(34,197,94,0.4)' : 'var(--border)';
+    row.style.background = ok ? 'rgba(34,197,94,0.04)' : 'var(--surface)';
+  }
+  atualizarResumoDocumentos();
+}
+
+/** Atualiza o badge de resumo (X/8 documentos) */
+function atualizarResumoDocumentos() {
+  const tipos = ['cnh','antt','doc_caminhao','residencia','foto_caminhao','selfie_cnh','selfie_placa','lonas'];
+  const mapeioInput = { cnh:'em-arq-cnh', antt:'em-arq-antt', doc_caminhao:'em-arq-doc-caminhao', residencia:'em-arq-residencia', foto_caminhao:'em-arq-foto-caminhao', selfie_cnh:'em-arq-selfie-cnh', selfie_placa:'em-arq-selfie-placa', lonas:'em-arq-lonas' };
+  const anexosExistentes = motoristaEditandoAnexos || [];
+  let ok = 0;
+  for (const tipo of tipos) {
+    const jaAnexado = anexosExistentes.some(a => a.tipo === tipo);
+    const novoSelecionado = (document.getElementById(mapeioInput[tipo])?.files?.length || 0) > 0;
+    if (jaAnexado || novoSelecionado) ok++;
+  }
+  const resumo = document.getElementById('em-anexos-status-resumo');
+  if (!resumo) return;
+  const total = tipos.length;
+  const tudo = ok === total;
+  resumo.textContent = ok + '/' + total + ' documentos';
+  resumo.style.background = tudo ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)';
+  resumo.style.color = tudo ? '#22c55e' : '#ef4444';
+}
+
+/** Atualiza todos os indicadores de documento ao abrir o modal */
+function atualizarTodosIndicadoresDoc() {
+  const mapa = [
+    { tipo: 'cnh',          inputId: 'em-arq-cnh' },
+    { tipo: 'antt',         inputId: 'em-arq-antt' },
+    { tipo: 'doc_caminhao', inputId: 'em-arq-doc-caminhao' },
+    { tipo: 'residencia',   inputId: 'em-arq-residencia' },
+    { tipo: 'foto_caminhao',inputId: 'em-arq-foto-caminhao' },
+    { tipo: 'selfie_cnh',   inputId: 'em-arq-selfie-cnh' },
+    { tipo: 'selfie_placa', inputId: 'em-arq-selfie-placa' },
+    { tipo: 'lonas',        inputId: 'em-arq-lonas' },
+  ];
+  for (const { tipo, inputId } of mapa) {
+    atualizarStatusDocEdit(tipo, inputId);
+  }
+}
+
 async function renderAnexosEditarMotorista() {
   const box = document.getElementById('em-anexos-atuais');
   if (!box) return;
@@ -4740,6 +4793,7 @@ async function removerAnexoEditarPorIndice(idx) {
   }
   motoristaEditandoAnexos.splice(idx, 1);
   await renderAnexosEditarMotorista();
+  atualizarTodosIndicadoresDoc();
 }
 
 async function abrirEditarMotorista(id) {
@@ -4777,6 +4831,7 @@ async function abrirEditarMotorista(id) {
     limparAnexosFormularioEditarMotorista();
     if (secaoAnexos) secaoAnexos.style.display = '';
     await renderAnexosEditarMotorista();
+    atualizarTodosIndicadoresDoc();
   } else {
     motoristaEditandoAnexos = null;
     limparAnexosFormularioEditarMotorista();
@@ -4810,6 +4865,51 @@ function selecionarTipoPagamentoEditar(tipo) {
 async function salvarEdicaoMotorista() {
   if (!motoristaEditandoId) return;
   const tabela = motoristaEditandoTabela || 'motoristas';
+
+  // Validação de anexos obrigatórios (apenas para tabela motoristas)
+  if (tabela === 'motoristas') {
+    const anexosObrigatorios = [
+      { id: 'em-arq-cnh',          tipo: 'cnh',           label: 'CNH do motorista' },
+      { id: 'em-arq-antt',         tipo: 'antt',          label: 'Registro na ANTT' },
+      { id: 'em-arq-doc-caminhao', tipo: 'doc_caminhao',  label: 'Documento do Caminhão/Carretas' },
+      { id: 'em-arq-residencia',   tipo: 'residencia',    label: 'Comprovante de Residência' },
+      { id: 'em-arq-foto-caminhao',tipo: 'foto_caminhao', label: 'Foto do Caminhão/Carretas' },
+      { id: 'em-arq-selfie-cnh',   tipo: 'selfie_cnh',    label: 'Selfie segurando a CNH' },
+      { id: 'em-arq-selfie-placa', tipo: 'selfie_placa',  label: 'Selfie ao lado do veículo (placa)' },
+      { id: 'em-arq-lonas',        tipo: 'lonas',         label: 'Fotos das Lonas' },
+    ];
+    const anexosExistentes = motoristaEditandoAnexos || [];
+    const faltando = [];
+    for (const doc of anexosObrigatorios) {
+      const jaAnexado = anexosExistentes.some(a => a.tipo === doc.tipo);
+      const novoSelecionado = (document.getElementById(doc.id)?.files?.length || 0) > 0;
+      if (!jaAnexado && !novoSelecionado) {
+        faltando.push(doc.label);
+        // Destaca visualmente o campo faltante
+        const label = document.getElementById('label-' + doc.id);
+        if (label) {
+          label.style.border = '1px solid rgba(239,68,68,0.8)';
+          label.style.background = 'rgba(239,68,68,0.12)';
+          label.style.color = '#ef4444';
+        }
+      } else {
+        // Remove destaque se OK
+        const label = document.getElementById('label-' + doc.id);
+        if (label) {
+          label.style.border = '1px solid rgba(249,115,22,0.3)';
+          label.style.background = 'rgba(249,115,22,0.1)';
+          label.style.color = 'var(--accent)';
+        }
+      }
+    }
+    if (faltando.length > 0) {
+      showToast('⚠️ Documento(s) obrigatório(s) ausente(s): ' + faltando[0], 'error');
+      // Scroll para a seção de anexos
+      document.getElementById('em-secao-anexos')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+  }
+
   try {
     const dados = {
       nome: document.getElementById('em-nome').value || null,
@@ -4969,82 +5069,104 @@ sb.auth.getSession().then(async ({ data: { session } }) => {
       <div class="form-group"><label>Chave PIX</label><input type="text" id="em-pix" placeholder="Chave PIX"></div>
     </div>
     <div id="em-secao-anexos" style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
-      <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">📎 Documentos anexados (GR)</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">📎 Documentos do Motorista</div>
+        <div id="em-anexos-status-resumo" style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;"></div>
+      </div>
       <div id="em-anexos-atuais" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
-      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Substituir ou adicionar arquivos</div>
-      <p style="font-size:12px;color:var(--muted);margin:0 0 12px;line-height:1.45;">Para CNH, ANTT e outros documentos únicos, enviar um arquivo novo substitui o anterior. Em <strong>Foto caminhão</strong> e <strong>Lonas</strong> você pode adicionar várias ou remover itens na lista acima.</p>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-          <span style="font-size:13px;">Habilitação do motorista (CNH)</span>
-          <div style="display:flex;gap:4px;">
-            <label id="label-em-arq-cnh" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-              <span>📎 Anexar</span><input type="file" id="em-arq-cnh" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-cnh','label-em-arq-cnh')">
-            </label>
-            <button type="button" onclick="limparAnexo('em-arq-cnh','label-em-arq-cnh')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+      <div style="background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.2);border-radius:10px;padding:14px;">
+        <div style="font-size:12px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">⚠️ Todos os documentos abaixo são obrigatórios</div>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 12px;line-height:1.5;">Para CNH, ANTT e outros documentos únicos, enviar um novo arquivo substitui o anterior. Em <strong>Foto caminhão</strong> e <strong>Lonas</strong> é possível adicionar várias fotos.</p>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+
+          <div id="em-doc-row-cnh" style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;transition:border-color 0.2s;">
+            <span id="em-doc-status-cnh" style="font-size:16px;flex-shrink:0;">⬜</span>
+            <span style="font-size:13px;">Habilitação do motorista (CNH) <span style="color:#ef4444;font-weight:700;">*</span></span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-em-arq-cnh" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span><input type="file" id="em-arq-cnh" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-cnh','label-em-arq-cnh');atualizarStatusDocEdit('cnh','em-arq-cnh')">
+              </label>
+              <button type="button" onclick="limparAnexo('em-arq-cnh','label-em-arq-cnh')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-          <span style="font-size:13px;">Registro na ANTT</span>
-          <div style="display:flex;gap:4px;">
-            <label id="label-em-arq-antt" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-              <span>📎 Anexar</span><input type="file" id="em-arq-antt" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-antt','label-em-arq-antt')">
-            </label>
-            <button type="button" onclick="limparAnexo('em-arq-antt','label-em-arq-antt')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+
+          <div id="em-doc-row-antt" style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;transition:border-color 0.2s;">
+            <span id="em-doc-status-antt" style="font-size:16px;flex-shrink:0;">⬜</span>
+            <span style="font-size:13px;">Registro na ANTT <span style="color:#ef4444;font-weight:700;">*</span></span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-em-arq-antt" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span><input type="file" id="em-arq-antt" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-antt','label-em-arq-antt');atualizarStatusDocEdit('antt','em-arq-antt')">
+              </label>
+              <button type="button" onclick="limparAnexo('em-arq-antt','label-em-arq-antt')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-          <span style="font-size:13px;">Documentação do caminhão e carretas</span>
-          <div style="display:flex;gap:4px;">
-            <label id="label-em-arq-doc-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-              <span>📎 Anexar</span><input type="file" id="em-arq-doc-caminhao" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-doc-caminhao','label-em-arq-doc-caminhao')">
-            </label>
-            <button type="button" onclick="limparAnexo('em-arq-doc-caminhao','label-em-arq-doc-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+
+          <div id="em-doc-row-doc_caminhao" style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;transition:border-color 0.2s;">
+            <span id="em-doc-status-doc_caminhao" style="font-size:16px;flex-shrink:0;">⬜</span>
+            <span style="font-size:13px;">Documentação do caminhão e carretas <span style="color:#ef4444;font-weight:700;">*</span></span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-em-arq-doc-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span><input type="file" id="em-arq-doc-caminhao" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-doc-caminhao','label-em-arq-doc-caminhao');atualizarStatusDocEdit('doc_caminhao','em-arq-doc-caminhao')">
+              </label>
+              <button type="button" onclick="limparAnexo('em-arq-doc-caminhao','label-em-arq-doc-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-          <span style="font-size:13px;">Comprovante de residência</span>
-          <div style="display:flex;gap:4px;">
-            <label id="label-em-arq-residencia" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-              <span>📎 Anexar</span><input type="file" id="em-arq-residencia" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-residencia','label-em-arq-residencia')">
-            </label>
-            <button type="button" onclick="limparAnexo('em-arq-residencia','label-em-arq-residencia')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+
+          <div id="em-doc-row-residencia" style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;transition:border-color 0.2s;">
+            <span id="em-doc-status-residencia" style="font-size:16px;flex-shrink:0;">⬜</span>
+            <span style="font-size:13px;">Comprovante de residência <span style="color:#ef4444;font-weight:700;">*</span></span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-em-arq-residencia" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span><input type="file" id="em-arq-residencia" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-residencia','label-em-arq-residencia');atualizarStatusDocEdit('residencia','em-arq-residencia')">
+              </label>
+              <button type="button" onclick="limparAnexo('em-arq-residencia','label-em-arq-residencia')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-          <span style="font-size:13px;">Foto do caminhão e carretas com as placas visíveis</span>
-          <div style="display:flex;gap:4px;">
-            <label id="label-em-arq-foto-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-              <span>📎 Anexar</span><input type="file" id="em-arq-foto-caminhao" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('em-arq-foto-caminhao','label-em-arq-foto-caminhao')">
-            </label>
-            <button type="button" onclick="limparAnexo('em-arq-foto-caminhao','label-em-arq-foto-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+
+          <div id="em-doc-row-foto_caminhao" style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;transition:border-color 0.2s;">
+            <span id="em-doc-status-foto_caminhao" style="font-size:16px;flex-shrink:0;">⬜</span>
+            <span style="font-size:13px;">Foto do caminhão e carretas com as placas visíveis <span style="color:#ef4444;font-weight:700;">*</span></span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-em-arq-foto-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span><input type="file" id="em-arq-foto-caminhao" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('em-arq-foto-caminhao','label-em-arq-foto-caminhao');atualizarStatusDocEdit('foto_caminhao','em-arq-foto-caminhao')">
+              </label>
+              <button type="button" onclick="limparAnexo('em-arq-foto-caminhao','label-em-arq-foto-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-          <span style="font-size:13px;">Foto do motorista (selfie segurando a CNH)</span>
-          <div style="display:flex;gap:4px;">
-            <label id="label-em-arq-selfie-cnh" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-              <span>📎 Anexar</span><input type="file" id="em-arq-selfie-cnh" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-selfie-cnh','label-em-arq-selfie-cnh')">
-            </label>
-            <button type="button" onclick="limparAnexo('em-arq-selfie-cnh','label-em-arq-selfie-cnh')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+
+          <div id="em-doc-row-selfie_cnh" style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;transition:border-color 0.2s;">
+            <span id="em-doc-status-selfie_cnh" style="font-size:16px;flex-shrink:0;">⬜</span>
+            <span style="font-size:13px;">Foto do motorista (selfie segurando a CNH) <span style="color:#ef4444;font-weight:700;">*</span></span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-em-arq-selfie-cnh" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span><input type="file" id="em-arq-selfie-cnh" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-selfie-cnh','label-em-arq-selfie-cnh');atualizarStatusDocEdit('selfie_cnh','em-arq-selfie-cnh')">
+              </label>
+              <button type="button" onclick="limparAnexo('em-arq-selfie-cnh','label-em-arq-selfie-cnh')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-          <span style="font-size:13px;">Foto do motorista (selfie ao lado do veículo, mostrando a placa)</span>
-          <div style="display:flex;gap:4px;">
-            <label id="label-em-arq-selfie-placa" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-              <span>📎 Anexar</span><input type="file" id="em-arq-selfie-placa" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-selfie-placa','label-em-arq-selfie-placa')">
-            </label>
-            <button type="button" onclick="limparAnexo('em-arq-selfie-placa','label-em-arq-selfie-placa')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+
+          <div id="em-doc-row-selfie_placa" style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;transition:border-color 0.2s;">
+            <span id="em-doc-status-selfie_placa" style="font-size:16px;flex-shrink:0;">⬜</span>
+            <span style="font-size:13px;">Foto do motorista (selfie ao lado do veículo, mostrando a placa) <span style="color:#ef4444;font-weight:700;">*</span></span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-em-arq-selfie-placa" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span><input type="file" id="em-arq-selfie-placa" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-selfie-placa','label-em-arq-selfie-placa');atualizarStatusDocEdit('selfie_placa','em-arq-selfie-placa')">
+              </label>
+              <button type="button" onclick="limparAnexo('em-arq-selfie-placa','label-em-arq-selfie-placa')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-          <span style="font-size:13px;">Fotos das lonas que serão utilizadas</span>
-          <div style="display:flex;gap:4px;">
-            <label id="label-em-arq-lonas" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-              <span>📎 Anexar</span><input type="file" id="em-arq-lonas" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('em-arq-lonas','label-em-arq-lonas')">
-            </label>
-            <button type="button" onclick="limparAnexo('em-arq-lonas','label-em-arq-lonas')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+
+          <div id="em-doc-row-lonas" style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;transition:border-color 0.2s;">
+            <span id="em-doc-status-lonas" style="font-size:16px;flex-shrink:0;">⬜</span>
+            <span style="font-size:13px;">Fotos das lonas que serão utilizadas <span style="color:#ef4444;font-weight:700;">*</span></span>
+            <div style="display:flex;gap:4px;">
+              <label id="label-em-arq-lonas" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                <span>📎 Anexar</span><input type="file" id="em-arq-lonas" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('em-arq-lonas','label-em-arq-lonas');atualizarStatusDocEdit('lonas','em-arq-lonas')">
+              </label>
+              <button type="button" onclick="limparAnexo('em-arq-lonas','label-em-arq-lonas')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
+
         </div>
       </div>
     </div>
