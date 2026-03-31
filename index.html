@@ -3857,46 +3857,6 @@ async function confirmarEncerramentoMDFe() {
 function fecharModalFiscal(e) { if (e.target === document.getElementById('modal-fiscal-overlay')) fecharModalFiscalBtn(); }
 function fecharModalFiscalBtn() { document.getElementById('modal-fiscal-overlay').classList.remove('open'); motoristFiscalId = null; }
 
-// ============ TIPO PAGAMENTO ============
-function selecionarTipoPagamento(tipo) {
-  document.getElementById('nm-tipo-pagamento').value = tipo;
-  const btnConta = document.getElementById('btn-tipo-conta-bancaria');
-  const btnPix = document.getElementById('btn-tipo-chave-pix');
-  const campoConta = document.getElementById('campos-conta-bancaria');
-  const campoPix = document.getElementById('campos-chave-pix');
-
-  if (tipo === 'conta_bancaria') {
-    btnConta.style.borderColor = 'var(--accent)';
-    btnConta.style.background = 'rgba(249,115,22,0.12)';
-    btnConta.style.color = 'var(--accent)';
-    btnPix.style.borderColor = 'var(--border)';
-    btnPix.style.background = 'var(--surface)';
-    btnPix.style.color = 'var(--muted)';
-    campoConta.style.display = 'grid';
-    campoPix.style.display = 'none';
-  } else {
-    btnPix.style.borderColor = 'var(--green)';
-    btnPix.style.background = 'rgba(34,197,94,0.12)';
-    btnPix.style.color = 'var(--green)';
-    btnConta.style.borderColor = 'var(--border)';
-    btnConta.style.background = 'var(--surface)';
-    btnConta.style.color = 'var(--muted)';
-    campoPix.style.display = 'grid';
-    campoConta.style.display = 'none';
-  }
-}
-
-function atualizarPlaceholderPix() {
-  const tipo = document.getElementById('nm-tipo-pix').value;
-  const placeholders = {
-    telefone: 'Ex: (34) 99999-9999',
-    cpf: 'Ex: 000.000.000-00',
-    cnpj: 'Ex: 00.000.000/0001-00',
-    email: 'Ex: nome@email.com',
-    aleatoria: 'Cole a chave aleatória aqui',
-  };
-  document.getElementById('nm-pix').placeholder = placeholders[tipo] || 'Digite a chave PIX';
-}
 
 function nomeTipoPix(tipo) {
   const nomes = {
@@ -3922,7 +3882,6 @@ async function carregarPerfilUsuario(userId) {
   try {
     const perfis = await supabaseRequest('GET', `usuarios_perfil?id=eq.${userId}`);
     if (perfis && perfis.length) {
-      console.log('Perfil encontrado:', perfis[0].setor);
       aplicarPermissoes(perfis[0].setor || 'comercial', getPermissoesUsuario(perfis[0]));
     } else {
       await supabaseRequest('POST', 'usuarios_perfil', {
