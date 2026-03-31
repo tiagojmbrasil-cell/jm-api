@@ -681,6 +681,19 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
         <label>Observação</label>
         <textarea id="l-obs" placeholder="Informações adicionais..."></textarea>
       </div>
+      <div class="form-group">
+        <label>Pagador (Financeiro) <span style="color:var(--red)">*</span></label>
+        <select id="l-pagador" onchange="togglePagadorOutro('l-pagador-outro')" required>
+          <option value="">Selecione...</option>
+          <option value="destinatario">Destinatário</option>
+          <option value="remetente">Remetente</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+      <div class="form-group" id="l-pagador-outro-group" style="display:none;">
+        <label>Quem é o pagador?</label>
+        <input type="text" id="l-pagador-outro" placeholder="Informe o nome do pagador">
+      </div>
     </div>
     <div class="form-actions">
       <button class="btn-secondary" onclick="resetLote()">Limpar</button>
@@ -1037,6 +1050,19 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
         <label>Observação</label>
         <textarea id="el-obs" placeholder="Informações adicionais..."></textarea>
       </div>
+      <div class="form-group">
+        <label>Pagador (Financeiro)</label>
+        <select id="el-pagador" onchange="togglePagadorOutro('el-pagador-outro')">
+          <option value="">Selecione...</option>
+          <option value="destinatario">Destinatário</option>
+          <option value="remetente">Remetente</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+      <div class="form-group" id="el-pagador-outro-group" style="display:none;">
+        <label>Quem é o pagador?</label>
+        <input type="text" id="el-pagador-outro" placeholder="Informe o nome do pagador">
+      </div>
     </div>
     <div class="form-actions">
       <button class="btn-secondary" onclick="fecharModalLoteBtn()">Cancelar</button>
@@ -1386,6 +1412,20 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     <!-- Decisão GR -->
     <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:14px;">🔍 Decisão GR</div>
+
+      <!-- Checklist da Gerenciadora — OBRIGATÓRIO para aprovar -->
+      <div style="background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.25);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;">📋 Checklist da Gerenciadora <span style="color:var(--red)">*</span> <span style="font-weight:400;color:var(--muted);font-size:11px;">(obrigatório para aprovar)</span></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <label id="label-gr-checklist-ger" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:7px 14px;cursor:pointer;font-size:13px;color:var(--accent);white-space:nowrap;">
+            <span id="label-gr-checklist-ger-txt">📎 Anexar Checklist</span>
+            <input type="file" id="gr-checklist-ger" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexoGRChecklist()">
+          </label>
+          <button type="button" id="btn-limpar-gr-checklist" onclick="limparGRChecklist()" style="display:none;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:7px 10px;font-size:12px;cursor:pointer;">🗑️ Remover</button>
+          <span id="gr-checklist-ger-status" style="font-size:12px;color:var(--muted);"></span>
+        </div>
+      </div>
+
       <div style="display:flex;gap:10px;margin-bottom:14px;">
         <button onclick="definirDecisaoGR('aprovado')" id="btn-gr-aprovar"
           style="flex:1;padding:12px;border-radius:8px;border:2px solid var(--green);background:rgba(34,197,94,0.12);color:var(--green);font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;">
@@ -1555,6 +1595,10 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
           style="padding:12px;border-radius:8px;border:2px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.08);color:#22c55e;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-align:left;">
           ✅ Finalizado — Entrega concluída, enviar ao Fiscal (MDFe)
         </button>
+        <button onclick="registrarSinistro()"
+          style="padding:12px;border-radius:8px;border:2px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.08);color:#ef4444;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-align:left;">
+          ⚠️ Sinistro Ocorrido — Registrar ocorrência
+        </button>
       </div>
     </div>
     <div class="form-actions">
@@ -1634,6 +1678,10 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PRODUTO</div><div style="font-weight:600" id="mf-produto">—</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">AGÊNCIA</div><div style="font-weight:600" id="mf-agencia-lote">—</div></div>
         <div class="full" style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">ROTA</div><div style="font-weight:600" id="mf-rota">—</div></div>
+        <div style="grid-column:1/-1;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:11px;color:var(--accent);margin-bottom:3px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">💰 PAGADOR (FINANCEIRO)</div>
+          <div style="font-weight:700;font-size:14px;" id="mf-pagador-lote">—</div>
+        </div>
       </div>
     </div>
 
@@ -2394,7 +2442,7 @@ async function salvarLote() {
   const obrigatorios = [
     { id:'l-agencia' }, { id:'l-cliente' }, { id:'l-produto' },
     { id:'l-coleta' }, { id:'l-origem' }, { id:'l-entrega' }, { id:'l-destino' },
-    { id:'l-tarifa-emp' }, { id:'l-tarifa-mot' }, { id:'l-peso' }, { id:'l-data' },
+    { id:'l-tarifa-emp' }, { id:'l-tarifa-mot' }, { id:'l-peso' }, { id:'l-data' }, { id:'l-pagador' },
   ];
   const invalidos = obrigatorios.filter(c => !document.getElementById(c.id)?.value?.trim());
   if (invalidos.length) {
@@ -2426,6 +2474,8 @@ async function salvarLote() {
       peso_ton: document.getElementById('l-peso').value || null,
       data_lote: document.getElementById('l-data').value || null,
       observacao: document.getElementById('l-obs').value || null,
+      pagador: document.getElementById('l-pagador').value || null,
+      pagador_outro: document.getElementById('l-pagador').value === 'outro' ? (document.getElementById('l-pagador-outro').value || null) : null,
     });
     registrarLog('lote', 'Lote criado', `Cliente: ${document.getElementById('l-cliente')?.value||'—'}`);
     showToast('✅ Lote salvo!', 'success');
@@ -2440,11 +2490,13 @@ async function salvarLote() {
 }
 
 function resetLote() {
-  ['l-produto','l-coleta','l-origem','l-entrega','l-destino','l-tarifa-emp','l-tarifa-mot','l-peso','l-obs'].forEach(id => {
-    document.getElementById(id).value = '';
+  ['l-produto','l-coleta','l-origem','l-entrega','l-destino','l-tarifa-emp','l-tarifa-mot','l-peso','l-obs','l-pagador-outro'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('l-agencia').value = '';
   document.getElementById('l-status').value = 'liberado';
+  document.getElementById('l-pagador').value = '';
+  document.getElementById('l-pagador-outro-group').style.display = 'none';
   document.getElementById('l-data').value = new Date().toISOString().split('T')[0];
 }
 
@@ -2518,6 +2570,12 @@ function formatDate(d) {
   return `${day}/${m}/${y}`;
 }
 
+function togglePagadorOutro(inputId) {
+  const sel = document.getElementById(inputId === 'l-pagador-outro' ? 'l-pagador' : 'el-pagador');
+  const group = document.getElementById(inputId === 'l-pagador-outro' ? 'l-pagador-outro-group' : 'el-pagador-outro-group');
+  if (group) group.style.display = sel && sel.value === 'outro' ? '' : 'none';
+}
+
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -2552,10 +2610,12 @@ async function editarLote(id) {
   document.getElementById('el-peso').value = l.peso_ton || '';
   document.getElementById('el-data').value = l.data_lote || '';
   document.getElementById('el-obs').value = l.observacao || '';
+  document.getElementById('el-pagador').value = l.pagador || '';
+  const elPagOutroGrp = document.getElementById('el-pagador-outro-group');
+  if (elPagOutroGrp) elPagOutroGrp.style.display = l.pagador === 'outro' ? '' : 'none';
+  document.getElementById('el-pagador-outro').value = l.pagador_outro || '';
   document.getElementById('modal-lote-overlay').classList.add('open');
 }
-
-async function salvarEdicaoLote() {
   try {
     await supabaseRequest('PATCH', `lotes?id=eq.${loteEditandoId}`, {
       agencia: document.getElementById('el-agencia').value || null,
@@ -2571,6 +2631,8 @@ async function salvarEdicaoLote() {
       peso_ton: document.getElementById('el-peso').value || null,
       data_lote: document.getElementById('el-data').value || null,
       observacao: document.getElementById('el-obs').value || null,
+      pagador: document.getElementById('el-pagador').value || null,
+      pagador_outro: document.getElementById('el-pagador').value === 'outro' ? (document.getElementById('el-pagador-outro').value || null) : null,
     });
     showToast('✅ Lote atualizado!', 'success');
     fecharModalLoteBtn();
@@ -2613,6 +2675,10 @@ async function abrirInserirInformacoes(id) {
   document.getElementById('el-peso').value = l.peso_ton || '';
   document.getElementById('el-data').value = l.data_lote || '';
   document.getElementById('el-obs').value = l.observacao || '';
+  document.getElementById('el-pagador').value = l.pagador || '';
+  const elPagOutroGrpInf = document.getElementById('el-pagador-outro-group');
+  if (elPagOutroGrpInf) elPagOutroGrpInf.style.display = l.pagador === 'outro' ? '' : 'none';
+  document.getElementById('el-pagador-outro').value = l.pagador_outro || '';
   // Título diferenciado
   const titulo = document.querySelector('#modal-lote-overlay .modal-title span');
   if (titulo) titulo.textContent = '📋 Inserir Informações do Lote';
@@ -3057,6 +3123,7 @@ function badgeMotorista(s) {
     manifesto_encerrado: 'color:#06b6d4;background:rgba(6,182,212,0.12)',
     saldo_agendado: 'color:#3b82f6;background:rgba(59,130,246,0.12)',
     saldo_pago: 'color:#22c55e;background:rgba(34,197,94,0.12)',
+    sinistro: 'color:#ef4444;background:rgba(239,68,68,0.18)',
   };
   const nomes = {
     aguardando_gr:'Ag. GR', reprovado_gr:'Reprovado GR',
@@ -3071,6 +3138,7 @@ function badgeMotorista(s) {
     aguardando_encerramento_mdfe:'Ag. Encerramento MDFe',
     aguardando_coleta:'Ag. Coleta', aguardando_descarga:'Ag. Descarga',
     manifesto_encerrado:'Manifesto encerrado', saldo_agendado:'Saldo agendado', saldo_pago:'Saldo pago',
+    sinistro:'⚠️ Sinistro',
   };
   const style = cores[s] || 'color:var(--muted);background:var(--surface2)';
   return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;${style}">${nomes[s]||s}</span>`;
@@ -3444,7 +3512,7 @@ async function carregarFiscal() {
     const lotesMap = {};
     await Promise.all(loteIds.map(async lid => {
       if (!lid) return;
-      const l = await supabaseRequest('GET', `lotes?id=eq.${lid}&select=id,cliente,produto,origem,destino,agencia`) || [];
+      const l = await supabaseRequest('GET', `lotes?id=eq.${lid}&select=id,cliente,produto,origem,destino,agencia,pagador,pagador_outro`) || [];
       if (l.length) lotesMap[lid] = l[0];
     }));
     fiscalData = motoristas.map(m => ({ ...m, lote: lotesMap[m.lote_id] || null }));
@@ -3546,6 +3614,14 @@ async function abrirFiscalModal(id) {
   document.getElementById('mf-produto').textContent = m.lote ? (m.lote.produto || '—') : '—';
   document.getElementById('mf-agencia-lote').textContent = m.lote ? (m.lote.agencia || '—') : '—';
   document.getElementById('mf-rota').textContent = m.lote ? ((m.lote.origem||'—') + ' → ' + (m.lote.destino||'—')) : '—';
+  // Pagador do lote
+  const pagadorMap = { destinatario:'Destinatário', remetente:'Remetente', outro:'Outro' };
+  const pagadorVal = m.lote?.pagador || '';
+  const pagadorLabel = pagadorVal === 'outro'
+    ? `Outro — ${m.lote?.pagador_outro || '—'}`
+    : (pagadorMap[pagadorVal] || '—');
+  const mfPagadorEl = document.getElementById('mf-pagador-lote');
+  if (mfPagadorEl) mfPagadorEl.textContent = pagadorLabel;
 
   document.getElementById('mf-nome-titular').textContent = m.nome_titular || '—';
   document.getElementById('mf-cpf-titular').textContent = m.cpf_titular || '—';
@@ -3682,17 +3758,21 @@ async function emitirDocumentoFiscal() {
   if (!confirm('Confirmar emissão do documento?\nO motorista será enviado ao Logístico para fotos do carregamento.')) return;
   try {
     const statusFinal = 'aguardando_fotos';
+    // PATCH principal em lote_motoristas (fonte que o logístico lê)
     await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: statusFinal });
+    // Sincroniza tabela motoristas pelo motorista_id
     const loteMotReg = fiscalData.find(x => x.id === motoristFiscalId);
     if (loteMotReg?.motorista_id) {
       await supabaseRequest('PATCH', `motoristas?id=eq.${loteMotReg.motorista_id}`, { status: statusFinal });
     }
+    // Atualiza memória local
     const m = fiscalData.find(x => x.id === motoristFiscalId);
     if (m) { m.status = statusFinal; }
-    registrarLog('fiscal', 'Documento emitido — enviado ao Logístico para fotos', `ID: ${motoristFiscalId}`);
+    registrarLog('fiscal', 'Documento emitido — enviado ao Logístico para fotos', `LoteMot: #${motoristFiscalId}`);
     showToast('✅ Documento emitido! Motorista enviado ao Logístico para fotos do carregamento.', 'success');
     fecharModalFiscalBtn();
-    renderFiscal(fiscalData);
+    // Recarrega para garantir que a tabela reflita o novo status
+    await carregarFiscal();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 
@@ -4416,7 +4496,10 @@ function renderLogistico(dados) {
           }
           return `<tr>
             <td style="color:var(--muted);font-size:12px">#${m.id}</td>
-            <td><strong>${esc(m.nome || '—')}</strong></td>
+            <td>
+              <strong>${esc(m.nome || '—')}</strong>
+              ${m.financeiro_adiantamento_motivo ? `<div style="font-size:11px;color:var(--red);margin-top:3px;">⚠️ Reprov. Financeiro: ${esc(m.financeiro_adiantamento_motivo)}</div>` : ''}
+            </td>
             <td style="font-size:12px">${esc(m.cpf || '—')}</td>
             <td style="font-size:12px">${esc(m.placa || '—')}</td>
             <td style="font-size:12px;font-weight:600;color:var(--accent)">${etapaLabel}</td>
@@ -4729,7 +4812,11 @@ function renderFinanceiro(dados) {
                </div>`;
           return `<tr>
             <td style="color:var(--muted);font-size:12px">#${m.id}</td>
-            <td><strong>${esc(m.nome || '—')}</strong></td>
+            <td>
+              <strong>${esc(m.nome || '—')}</strong>
+              ${m.financeiro_adiantamento_motivo ? `<div style="font-size:11px;color:var(--red);margin-top:3px;">⚠️ Reprov.: ${esc(m.financeiro_adiantamento_motivo)}</div>` : ''}
+              ${m.financeiro_saldo_motivo ? `<div style="font-size:11px;color:var(--red);margin-top:3px;">⚠️ Reprov.: ${esc(m.financeiro_saldo_motivo)}</div>` : ''}
+            </td>
             <td style="font-size:12px">${esc(m.cpf || '—')}</td>
             <td style="font-size:12px;color:var(--muted)">#${esc(m.lote_id || '—')}</td>
             <td>${badgeMotorista(st)}</td>
@@ -4836,12 +4923,21 @@ async function aprovarAdiantamentoModal() {
 }
 
 async function reprovarFinanceiroModal() {
-  const motivo = prompt('Motivo da reprovação:');
+  const motivo = prompt('Motivo da reprovação (será enviado de volta ao setor anterior):');
   if (!motivo || !motivo.trim()) return;
   try {
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${financeiroModalId}`, { financeiro_adiantamento_motivo: motivo.trim() });
-    registrarLog('financeiro', 'Reprovado', `ID: #${financeiroModalId} · Etapa: adiantamento · Motivo: ${motivo.trim()}`);
-    showToast('❌ Reprovação registrada.', 'success');
+    // Volta ao status aguardando_fotos (logístico) e registra motivo
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${financeiroModalId}`, {
+      status: 'aguardando_fotos',
+      financeiro_adiantamento_motivo: motivo.trim(),
+    });
+    // Sincroniza tabela motoristas
+    const reg = (financeiroData || []).find(x => x.id === financeiroModalId);
+    if (reg?.motorista_id) {
+      await supabaseRequest('PATCH', `motoristas?id=eq.${reg.motorista_id}`, { status: 'aguardando_fotos' });
+    }
+    registrarLog('financeiro', 'Adiantamento reprovado — devolvido ao Logístico', `ID: #${financeiroModalId} · Motivo: ${motivo.trim()}`);
+    showToast('❌ Reprovado! Motorista devolvido ao Logístico para revisão.', 'error');
     fecharModalFinFotos();
     await carregarFinanceiro();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
@@ -4868,16 +4964,25 @@ async function aprovarManifesto(id) {
 }
 
 async function reprovarFinanceiro(id, etapa) {
-  const motivo = prompt('Motivo da reprovação:');
+  const motivo = prompt('Motivo da reprovação (será enviado de volta ao setor anterior):');
   if (!motivo || !motivo.trim()) return;
   try {
-    if (etapa === 'adiantamento') {
-      await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { financeiro_adiantamento_motivo: motivo.trim() });
-    } else {
-      await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { financeiro_saldo_motivo: motivo.trim() });
+    // Adiantamento → volta ao logístico (aguardando_fotos)
+    // Manifesto → volta ao financeiro fase anterior (fotos_inseridas)
+    const statusRetorno = etapa === 'adiantamento' ? 'aguardando_fotos' : 'fotos_inseridas';
+    const campoMotivo = etapa === 'adiantamento' ? 'financeiro_adiantamento_motivo' : 'financeiro_saldo_motivo';
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, {
+      status: statusRetorno,
+      [campoMotivo]: motivo.trim(),
+    });
+    // Sincroniza tabela motoristas
+    const reg = (financeiroData || []).find(x => x.id === id);
+    if (reg?.motorista_id) {
+      await supabaseRequest('PATCH', `motoristas?id=eq.${reg.motorista_id}`, { status: statusRetorno });
     }
-    registrarLog('financeiro', 'Reprovado', `ID: #${id} · Etapa: ${etapa} · Motivo: ${motivo.trim()}`);
-    showToast('❌ Reprovação registrada.', 'success');
+    const setorRetorno = etapa === 'adiantamento' ? 'Logístico' : 'Financeiro (fase anterior)';
+    registrarLog('financeiro', `Reprovado — devolvido ao ${setorRetorno}`, `ID: #${id} · Etapa: ${etapa} · Motivo: ${motivo.trim()}`);
+    showToast(`❌ Reprovado! Devolvido ao ${setorRetorno}.`, 'error');
     await carregarFinanceiro();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
@@ -5454,24 +5559,102 @@ function atualizarBotoesGR(decisao) {
   }
 }
 
+function atualizarBotaoAnexoGRChecklist() {
+  const input = document.getElementById('gr-checklist-ger');
+  const labelTxt = document.getElementById('label-gr-checklist-ger-txt');
+  const status = document.getElementById('gr-checklist-ger-status');
+  const btnLimpar = document.getElementById('btn-limpar-gr-checklist');
+  if (input && input.files.length > 0) {
+    const nome = input.files[0].name;
+    if (labelTxt) labelTxt.textContent = '✅ ' + nome;
+    if (status) status.textContent = '';
+    if (btnLimpar) btnLimpar.style.display = '';
+    // Visual verde: checklist anexado
+    const label = document.getElementById('label-gr-checklist-ger');
+    if (label) {
+      label.style.background = 'rgba(34,197,94,0.12)';
+      label.style.borderColor = 'rgba(34,197,94,0.4)';
+      label.style.color = 'var(--green)';
+    }
+  }
+}
+
+function limparGRChecklist() {
+  const input = document.getElementById('gr-checklist-ger');
+  const labelTxt = document.getElementById('label-gr-checklist-ger-txt');
+  const btnLimpar = document.getElementById('btn-limpar-gr-checklist');
+  const label = document.getElementById('label-gr-checklist-ger');
+  if (input) input.value = '';
+  if (labelTxt) labelTxt.textContent = '📎 Anexar Checklist';
+  if (btnLimpar) btnLimpar.style.display = 'none';
+  if (label) {
+    label.style.background = 'rgba(249,115,22,0.1)';
+    label.style.borderColor = 'rgba(249,115,22,0.3)';
+    label.style.color = 'var(--accent)';
+  }
+}
+
+async function registrarSinistro() {
+  const motivo = prompt('Descreva o sinistro ocorrido:');
+  if (!motivo || !motivo.trim()) return;
+  try {
+    const id = logisticoMotoristaSelecionadoId;
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, {
+      status: 'sinistro',
+      sinistro_descricao: motivo.trim(),
+    });
+    // Sincroniza tabela motoristas
+    const reg = logisticoData.find(x => x.id === id);
+    if (reg?.motorista_id) {
+      await supabaseRequest('PATCH', `motoristas?id=eq.${reg.motorista_id}`, { status: 'sinistro' });
+    }
+    registrarLog('logistico', 'Sinistro registrado', `ID: #${id} · Descrição: ${motivo.trim()}`);
+    showToast('⚠️ Sinistro registrado!', 'error');
+    fecharModalTransito();
+    await carregarLogistico();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
 async function salvarDecisaoGR() {
   const decisao = document.getElementById('mgr-decisao').value;
   if (!decisao) { showToast('Selecione Aprovar ou Reprovar', 'error'); return; }
   if (decisao === 'reprovado' && !document.getElementById('mgr-motivo').value.trim()) {
     showToast('Informe o motivo da reprovação', 'error'); return;
   }
+  // Checklist da gerenciadora é OBRIGATÓRIO para aprovar
+  const checklistInput = document.getElementById('gr-checklist-ger');
+  if (decisao === 'aprovado' && (!checklistInput || !checklistInput.files.length)) {
+    const label = document.getElementById('label-gr-checklist-ger');
+    if (label) { label.style.borderColor = 'var(--red)'; label.style.background = 'rgba(239,68,68,0.1)'; label.style.color = 'var(--red)'; }
+    const status = document.getElementById('gr-checklist-ger-status');
+    if (status) { status.textContent = '⚠️ Obrigatório para aprovar'; status.style.color = 'var(--red)'; }
+    showToast('⚠️ Anexe o checklist da gerenciadora antes de aprovar', 'error');
+    return;
+  }
   try {
-    await supabaseRequest('PATCH', `motoristas?id=eq.${grMotoristaSelecionadoId}`, {
+    let checklistPath = null;
+    // Faz upload do checklist se aprovando
+    if (decisao === 'aprovado' && checklistInput && checklistInput.files.length) {
+      const file = checklistInput.files[0];
+      const ext = file.name.split('.').pop();
+      const path = `motoristas/${grMotoristaSelecionadoId}/checklist_ger_${Date.now()}.${ext}`;
+      const { error: upErr } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
+      if (upErr) throw new Error('Erro no upload do checklist: ' + upErr.message);
+      checklistPath = path;
+    }
+    const patchData = {
       gr_status: decisao,
       status: decisao === 'aprovado' ? 'aguardando_cadastro' : 'reprovado_gr',
       gr_motivo: decisao === 'reprovado' ? document.getElementById('mgr-motivo').value.trim() : null,
       gr_analisado_em: new Date().toISOString(),
-    });
+    };
+    if (checklistPath) patchData.gr_checklist_ger_path = checklistPath;
+    await supabaseRequest('PATCH', `motoristas?id=eq.${grMotoristaSelecionadoId}`, patchData);
     const m = grData.find(x => x.id === grMotoristaSelecionadoId);
     if (m) {
       m.gr_status = decisao;
-      m.status = decisao === 'aprovado' ? 'aguardando_cadastro' : 'reprovado_gr';
-      m.gr_motivo = decisao === 'reprovado' ? document.getElementById('mgr-motivo').value.trim() : null;
+      m.status = patchData.status;
+      m.gr_motivo = patchData.gr_motivo;
     }
     showToast(decisao === 'aprovado' ? '✅ Motorista aprovado!' : '❌ Motorista reprovado!', 'success');
     document.getElementById('mgr-status-bar').innerHTML = badgeGR(decisao);
@@ -5482,6 +5665,7 @@ async function salvarDecisaoGR() {
 
 function fecharModalGR() {
   document.getElementById('modal-gr-overlay').classList.remove('open');
+  limparGRChecklist();
   grMotoristaSelecionadoId = null;
 }
 
