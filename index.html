@@ -339,6 +339,12 @@ td{padding:14px;color:var(--text);}
 .autocomplete-item:hover,.autocomplete-item.active{background:rgba(249,115,22,0.15);}
 .logs-table-wrap{width:100%;}
 
+.rel-aba-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:8px 16px;border-radius:8px;cursor:pointer;transition:all 0.15s;}
+.rel-aba-btn:hover{color:var(--text);border-color:var(--muted2);}
+.rel-aba-btn.active{background:rgba(249,115,22,0.12);border-color:var(--accent);color:var(--accent);font-weight:700;}
+@media print{nav,header,.btn-primary,.btn-secondary,.rel-aba-btn,#rel-filtros-wrap{display:none!important;}.page{display:block!important;padding:0!important;}#page-relatorios .card{border:1px solid #ddd!important;}}
+
+
 .campo-invalido{border-color:var(--red)!important;box-shadow:0 0 0 3px rgba(239,68,68,0.15)!important;}
 .campo-invalido-label{color:var(--red)!important;}
 
@@ -395,6 +401,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
     <button onclick="showPage('logistico')">Logístico</button>
     <button onclick="showPage('fiscal')">Fiscal</button>
     <button onclick="showPage('financeiro')">Financeiro</button>
+    <button onclick="showPage('relatorios')">📊 Relatórios</button>
     <button id="nav-seguranca" onclick="showPage('seguranca')">🔒 Segurança</button>
   </nav>
   <div style="display:flex;align-items:center;gap:8px;">
@@ -427,6 +434,7 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
       <button onclick="showPage('logistico');fecharNavDrawer()">🗂 Logístico</button>
       <button onclick="showPage('fiscal');fecharNavDrawer()">💼 Fiscal</button>
       <button onclick="showPage('financeiro');fecharNavDrawer()">💰 Financeiro</button>
+      <button onclick="showPage('relatorios');fecharNavDrawer()">📊 Relatórios</button>
       <button id="nav-drawer-seguranca" onclick="showPage('seguranca');fecharNavDrawer()">🔒 Segurança</button>
       <button onclick="showPage('dashboard-cliente');fecharNavDrawer()">📦 Minhas Cargas</button>
     </nav>
@@ -1782,6 +1790,103 @@ const SUPABASE_KEY = 'sb_publishable_5wpfR50mJtvR7eL2m5K24w_StV8cGSn';
   </div>
 </div>
 
+
+<!-- RELATÓRIOS -->
+<div class="page" id="page-relatorios">
+  <div style="margin-bottom:20px;">
+    <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px;">📊 Relatórios</div>
+    <div style="font-size:14px;color:var(--muted);">Gere, visualize e exporte relatórios do sistema</div>
+  </div>
+
+  <!-- ABAS DE TIPO DE RELATÓRIO -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;" id="rel-abas">
+    <button class="rel-aba-btn active" onclick="selecionarAbaRel('cotacoes',this)">📋 Cotações</button>
+    <button class="rel-aba-btn" onclick="selecionarAbaRel('lotes',this)">📦 Lotes</button>
+    <button class="rel-aba-btn" onclick="selecionarAbaRel('motoristas',this)">🚛 Motoristas</button>
+    <button class="rel-aba-btn" onclick="selecionarAbaRel('financeiro',this)">💰 Financeiro</button>
+    <button class="rel-aba-btn" onclick="selecionarAbaRel('atividades',this)">📝 Atividades</button>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="card" style="margin-bottom:16px;">
+    <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:16px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">🔍 Filtros</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:16px;">
+      <div class="form-group">
+        <label>Data início</label>
+        <input type="date" id="rel-dt-inicio">
+      </div>
+      <div class="form-group">
+        <label>Data fim</label>
+        <input type="date" id="rel-dt-fim">
+      </div>
+      <div class="form-group" id="rel-filtro-cliente-wrap">
+        <label>Cliente</label>
+        <select id="rel-cliente">
+          <option value="">Todos os clientes</option>
+        </select>
+      </div>
+      <div class="form-group" id="rel-filtro-agencia-wrap">
+        <label>Agência / Unidade</label>
+        <select id="rel-agencia">
+          <option value="">Todas as agências</option>
+          <option>UNIDADE 01 (LUCAS)</option>
+          <option>UNIDADE 03 (PEDRO)</option>
+          <option>UNIDADE 04 (IVO)</option>
+          <option>UNIDADE 05 (GABRIEL)</option>
+          <option>UNIDADE 06 (ITALO)</option>
+          <option>UNIDADE 07 (ADMINISTRATIVO)</option>
+          <option>UNIDADE (LOGISTICA 02)</option>
+        </select>
+      </div>
+      <div class="form-group" id="rel-filtro-status-wrap">
+        <label>Status</label>
+        <select id="rel-status">
+          <option value="">Todos os status</option>
+        </select>
+      </div>
+      <div class="form-group" id="rel-filtro-setor-wrap" style="display:none">
+        <label>Setor do usuário</label>
+        <select id="rel-setor">
+          <option value="">Todos os setores</option>
+          <option value="comercial">Comercial</option>
+          <option value="logistico">Logístico</option>
+          <option value="gr">GR</option>
+          <option value="cadastro">Cadastro</option>
+          <option value="fiscal">Fiscal</option>
+          <option value="financeiro">Financeiro</option>
+          <option value="administrativo">Administrativo</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <button class="btn-primary" onclick="gerarRelatorio()" style="padding:10px 24px;">🔍 Gerar Relatório</button>
+      <button class="btn-secondary" onclick="limparFiltrosRel()" style="padding:10px 16px;">✕ Limpar</button>
+      <div style="flex:1;"></div>
+      <button class="btn-secondary" onclick="exportarExcel()" id="btn-exportar-excel" style="padding:10px 16px;display:none;">📥 Exportar Excel</button>
+      <button class="btn-secondary" onclick="exportarPDF()" id="btn-exportar-pdf" style="padding:10px 16px;display:none;">🖨️ Exportar PDF</button>
+    </div>
+  </div>
+
+  <!-- CARDS RESUMO -->
+  <div id="rel-cards" style="display:none;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:16px;"></div>
+
+  <!-- GRÁFICO -->
+  <div class="card" id="rel-grafico-wrap" style="display:none;margin-bottom:16px;">
+    <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px;" id="rel-grafico-titulo">Distribuição por Status</div>
+    <div id="rel-grafico" style="display:flex;gap:8px;align-items:flex-end;height:160px;padding:0 4px;overflow-x:auto;"></div>
+    <div id="rel-grafico-legenda" style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:12px;"></div>
+  </div>
+
+  <!-- TABELA RESULTADO -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;" id="rel-titulo-tabela">Selecione o tipo e clique em Gerar</div>
+      <div style="font-size:13px;color:var(--muted);" id="rel-contagem"></div>
+    </div>
+    <div id="rel-tabela"><div class="empty"><div class="empty-icon">📊</div><p>Configure os filtros e clique em Gerar Relatório</p></div></div>
+  </div>
+</div>
+
 <!-- SEGURANÇA -->
 <div class="page" id="page-seguranca">
   <div class="stats" style="grid-template-columns:repeat(3,1fr)">
@@ -2009,7 +2114,7 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  const idx = ['dashboard','nova','lista','lotes','motoristas','gr','cadastro','status-lote','clientes','logistico','fiscal','financeiro','seguranca'].indexOf(name);
+  const idx = ['dashboard','nova','lista','lotes','motoristas','gr','cadastro','status-lote','clientes','logistico','fiscal','financeiro','relatorios','seguranca'].indexOf(name);
   if (idx >= 0) document.querySelectorAll('nav button')[idx].classList.add('active');
   if (name === 'dashboard') carregarDashboard();
   if (name === 'lista') carregarLista();
@@ -2022,6 +2127,7 @@ function showPage(name) {
   if (name === 'logistico') { carregarLogistico(); carregarLotesLogistico(); }
   if (name === 'fiscal') carregarFiscal();
   if (name === 'financeiro') carregarFinanceiro();
+  if (name === 'relatorios') inicializarRelatorios();
   if (name === 'seguranca') { carregarSeguranca(); carregarLogs(); }
   if (name === 'dashboard-cliente') carregarDashboardCliente();
   if (name === 'nova') { carregarClientesSelect('f-cliente'); resetForm(); }
@@ -3889,18 +3995,19 @@ const ABAS_SISTEMA = [
   { id: 'fiscal',      label: '💼 Fiscal' },
   { id: 'financeiro',  label: '💰 Financeiro' },
   { id: 'seguranca',   label: '🔒 Segurança' },
+  { id: 'relatorios',      label: '📊 Relatórios' },
   { id: 'dashboard-cliente', label: '📦 Minhas Cargas' },
 ];
 
 // Permissões padrão por setor: 0=oculto, 1=só ver, 2=acesso total
 const PERMISSOES_PADRAO = {
-  administrativo: { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, gr:2, cadastro:2, 'status-lote':2, clientes:2, logistico:2, fiscal:2, financeiro:2, seguranca:2 },
-  comercial:      { dashboard:2, nova:2, lista:2, lotes:1, motoristas:0, gr:0, cadastro:0, 'status-lote':0, clientes:2, logistico:0, fiscal:0, financeiro:0, seguranca:0 },
-  logistico:      { dashboard:2, nova:0, lista:1, lotes:2, motoristas:2, gr:0, cadastro:0, 'status-lote':2, clientes:0, logistico:2, fiscal:0, financeiro:0, seguranca:0 },
+  administrativo: { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, gr:2, cadastro:2, 'status-lote':2, clientes:2, logistico:2, fiscal:2, financeiro:2, relatorios:2, seguranca:2 },
+  comercial:      { dashboard:2, nova:2, lista:2, lotes:1, motoristas:0, gr:0, cadastro:0, 'status-lote':0, clientes:2, logistico:0, fiscal:0, financeiro:0, relatorios:1, seguranca:0 },
+  logistico:      { dashboard:2, nova:0, lista:1, lotes:2, motoristas:2, gr:0, cadastro:0, 'status-lote':2, clientes:0, logistico:2, fiscal:0, financeiro:0, relatorios:1, seguranca:0 },
   gr:             { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:2, cadastro:0, 'status-lote':1, clientes:0, logistico:0, fiscal:0, financeiro:0, seguranca:0 },
   cadastro:       { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:2, 'status-lote':0, clientes:0, logistico:0, fiscal:0, financeiro:0, seguranca:0 },
   fiscal:         { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:0, 'status-lote':1, clientes:0, logistico:0, fiscal:2, financeiro:0, seguranca:0 },
-  financeiro:     { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:0, 'status-lote':0, clientes:0, logistico:0, fiscal:0, financeiro:2, seguranca:0 },
+  financeiro:     { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:0, 'status-lote':0, clientes:0, logistico:0, fiscal:0, financeiro:2, relatorios:1, seguranca:0 },
   cliente:        { 'dashboard-cliente':2, dashboard:0, nova:0, lista:0, lotes:0, motoristas:0, gr:0, cadastro:0, 'status-lote':0, clientes:0, logistico:0, fiscal:0, financeiro:0, seguranca:0 },
 };
 
@@ -4105,7 +4212,7 @@ function aplicarPermissoes(setor, perms) {
   setorAtual = setor;
   permissoesAtual = perms || PERMISSOES_PADRAO[setor] || PERMISSOES_PADRAO['comercial'];
 
-  const paginas = ['dashboard','nova','lista','lotes','motoristas','gr','cadastro','status-lote','clientes','logistico','fiscal','financeiro','seguranca','dashboard-cliente'];
+  const paginas = ['dashboard','nova','lista','lotes','motoristas','gr','cadastro','status-lote','clientes','logistico','fiscal','financeiro','relatorios','seguranca','dashboard-cliente'];
   const botoesNav = document.querySelectorAll('nav button');
 
   paginas.forEach((p, i) => {
@@ -5376,6 +5483,423 @@ async function salvarDecisaoGR() {
 function fecharModalGR() {
   document.getElementById('modal-gr-overlay').classList.remove('open');
   grMotoristaSelecionadoId = null;
+}
+
+
+// ============================================================
+// MÓDULO DE RELATÓRIOS
+// ============================================================
+let relTipoAtual = 'cotacoes';
+let relDadosAtual = [];
+
+function selecionarAbaRel(tipo, btn) {
+  relTipoAtual = tipo;
+  document.querySelectorAll('.rel-aba-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Ajusta filtros de status conforme o tipo
+  const selStatus = document.getElementById('rel-status');
+  const setorWrap = document.getElementById('rel-filtro-setor-wrap');
+  selStatus.innerHTML = '<option value="">Todos os status</option>';
+  if (setorWrap) setorWrap.style.display = tipo === 'atividades' ? '' : 'none';
+  const optsStatus = {
+    cotacoes: ['pendente:Pendente','aprovada:Aprovada','reprovada:Reprovada'],
+    lotes: ['liberado:Liberado','aceita:Aceita','aguardando:Aguardando','buscando:Buscando','finalizado:Finalizado','suspenso:Suspenso','urgente:Urgente','aguardando_informacoes:Ag. Informações'],
+    motoristas: ['aguardando_gr:Ag. GR','aguardando_cadastro:Ag. Cadastro','aguardando_nf:Ag. NF','aguardando_emissao_doc:Ag. Emissão Doc','aguardando_fotos:Ag. Fotos','fotos_inseridas:Fotos Inseridas','adiantamento_pago:Adiantamento Pago','em_transito:Em Trânsito','aguardando_chegada:Ag. Chegada','manifesto_encerrado:Manifesto Encerrado','saldo_agendado:Saldo Agendado','saldo_pago:Saldo Pago','reprovado_gr:Reprovado GR'],
+    financeiro: ['fotos_inseridas:Fotos Inseridas','adiantamento_pago:Adiantamento Pago','manifesto_encerrado:Manifesto Encerrado','saldo_agendado:Saldo Agendado','saldo_pago:Saldo Pago'],
+    atividades: ['cotacao:Cotação','lote:Lote','motorista:Motorista','cliente:Cliente','usuario:Usuário','login:Login/Logout','fiscal:Fiscal','financeiro:Financeiro'],
+  };
+  (optsStatus[tipo] || []).forEach(o => {
+    const [v,l] = o.split(':');
+    selStatus.innerHTML += `<option value="${v}">${l}</option>`;
+  });
+  // Limpa resultado anterior
+  relDadosAtual = [];
+  document.getElementById('rel-tabela').innerHTML = '<div class="empty"><div class="empty-icon">📊</div><p>Configure os filtros e clique em Gerar Relatório</p></div>';
+  document.getElementById('rel-titulo-tabela').textContent = 'Selecione o tipo e clique em Gerar';
+  document.getElementById('rel-contagem').textContent = '';
+  document.getElementById('rel-cards').style.display = 'none';
+  document.getElementById('rel-grafico-wrap').style.display = 'none';
+  document.getElementById('btn-exportar-excel').style.display = 'none';
+  document.getElementById('btn-exportar-pdf').style.display = 'none';
+}
+
+async function inicializarRelatorios() {
+  // Define datas padrão (mês atual)
+  const hoje = new Date();
+  const ini = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  if (!document.getElementById('rel-dt-inicio').value)
+    document.getElementById('rel-dt-inicio').value = ini.toISOString().split('T')[0];
+  if (!document.getElementById('rel-dt-fim').value)
+    document.getElementById('rel-dt-fim').value = hoje.toISOString().split('T')[0];
+  // Carrega clientes no select
+  try {
+    const clientes = await supabaseRequest('GET', 'clientes_cadastro?order=razao_social.asc&select=id,razao_social,nome_fantasia') || [];
+    const sel = document.getElementById('rel-cliente');
+    sel.innerHTML = '<option value="">Todos os clientes</option>';
+    clientes.forEach(c => {
+      sel.innerHTML += `<option value="${c.nome_fantasia || c.razao_social}">${c.nome_fantasia || c.razao_social}</option>`;
+    });
+  } catch(e) {}
+  // Inicia filtros de status para cotacoes
+  selecionarAbaRel('cotacoes', document.querySelector('.rel-aba-btn.active'));
+}
+
+function limparFiltrosRel() {
+  document.getElementById('rel-dt-inicio').value = '';
+  document.getElementById('rel-dt-fim').value = '';
+  document.getElementById('rel-cliente').value = '';
+  document.getElementById('rel-agencia').value = '';
+  document.getElementById('rel-status').value = '';
+  document.getElementById('rel-setor').value = '';
+}
+
+function filtrarPorData(arr, campoData, dtIni, dtFim) {
+  return arr.filter(r => {
+    const d = r[campoData] ? r[campoData].substring(0,10) : '';
+    if (dtIni && d < dtIni) return false;
+    if (dtFim && d > dtFim) return false;
+    return true;
+  });
+}
+
+async function gerarRelatorio() {
+  const dtIni = document.getElementById('rel-dt-inicio').value;
+  const dtFim = document.getElementById('rel-dt-fim').value;
+  const cliente = document.getElementById('rel-cliente').value;
+  const agencia = document.getElementById('rel-agencia').value;
+  const status = document.getElementById('rel-status').value;
+  const setor = document.getElementById('rel-setor').value;
+
+  document.getElementById('rel-tabela').innerHTML = '<div class="loading">Gerando relatório...</div>';
+  document.getElementById('rel-cards').style.display = 'none';
+  document.getElementById('rel-grafico-wrap').style.display = 'none';
+  document.getElementById('btn-exportar-excel').style.display = 'none';
+  document.getElementById('btn-exportar-pdf').style.display = 'none';
+
+  try {
+    let dados = [];
+
+    if (relTipoAtual === 'cotacoes') {
+      dados = await supabaseRequest('GET', 'cotacoes_view?order=criado_em.desc&limit=2000') || [];
+      dados = filtrarPorData(dados, 'criado_em', dtIni, dtFim);
+      if (status) dados = dados.filter(r => r.status === status);
+      if (cliente) dados = dados.filter(r => (r.cliente_nome||'').toLowerCase() === cliente.toLowerCase());
+      renderRelCotacoes(dados);
+    } else if (relTipoAtual === 'lotes') {
+      dados = await supabaseRequest('GET', 'lotes?order=criado_em.desc&limit=2000') || [];
+      dados = filtrarPorData(dados, 'criado_em', dtIni, dtFim);
+      if (status) dados = dados.filter(r => r.status === status);
+      if (agencia) dados = dados.filter(r => r.agencia === agencia);
+      if (cliente) dados = dados.filter(r => (r.cliente||'').toLowerCase() === cliente.toLowerCase());
+      renderRelLotes(dados);
+    } else if (relTipoAtual === 'motoristas') {
+      dados = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=2000') || [];
+      dados = filtrarPorData(dados, 'criado_em', dtIni, dtFim);
+      if (status) dados = dados.filter(r => r.status === status);
+      renderRelMotoristas(dados);
+    } else if (relTipoAtual === 'financeiro') {
+      dados = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=2000') || [];
+      dados = filtrarPorData(dados, 'criado_em', dtIni, dtFim);
+      const statusFin = ['fotos_inseridas','adiantamento_pago','manifesto_encerrado','saldo_agendado','saldo_pago'];
+      dados = dados.filter(r => statusFin.includes(r.status));
+      if (status) dados = dados.filter(r => r.status === status);
+      // Enriquece com dados do lote
+      const loteIds = [...new Set(dados.map(m => m.lote_id))];
+      const lotesMap = {};
+      for (const lid of loteIds) {
+        const l = await supabaseRequest('GET', `lotes?id=eq.${lid}&select=id,cliente,agencia,origem,destino,tarifa_empresa,tarifa_motorista`) || [];
+        if (l.length) lotesMap[lid] = l[0];
+      }
+      dados = dados.map(m => ({ ...m, lote: lotesMap[m.lote_id] || null }));
+      if (agencia) dados = dados.filter(r => r.lote?.agencia === agencia);
+      if (cliente) dados = dados.filter(r => (r.lote?.cliente||'').toLowerCase() === cliente.toLowerCase());
+      renderRelFinanceiro(dados);
+    } else if (relTipoAtual === 'atividades') {
+      dados = await supabaseRequest('GET', 'log_atividades?order=criado_em.desc&limit=2000') || [];
+      dados = filtrarPorData(dados, 'criado_em', dtIni, dtFim);
+      if (status) dados = dados.filter(r => r.tipo === status);
+      if (setor) dados = dados.filter(r => r.setor === setor);
+      renderRelAtividades(dados);
+    }
+
+    relDadosAtual = dados;
+    document.getElementById('btn-exportar-excel').style.display = '';
+    document.getElementById('btn-exportar-pdf').style.display = '';
+  } catch(e) {
+    document.getElementById('rel-tabela').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>Erro: ${e.message}</p></div>`;
+  }
+}
+
+// ---- helpers ----
+function fmtData(d) { if(!d) return '—'; return d.substring(0,10).split('-').reverse().join('/'); }
+function fmtMoeda(v) { return 'R$ ' + Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2}); }
+function badgeRel(txt, cor) { return `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${cor}20;color:${cor};border:1px solid ${cor}40;">${txt}</span>`; }
+
+function renderCards(cards) {
+  const wrap = document.getElementById('rel-cards');
+  wrap.style.display = 'grid';
+  wrap.innerHTML = cards.map(c => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${c.cor}"></div>
+      <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:6px;">${c.label}</div>
+      <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:700;color:${c.cor};">${c.valor}</div>
+      ${c.sub ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">${c.sub}</div>` : ''}
+    </div>`).join('');
+}
+
+function renderGrafico(grupos, titulo) {
+  document.getElementById('rel-grafico-wrap').style.display = '';
+  document.getElementById('rel-grafico-titulo').textContent = titulo;
+  const max = Math.max(...Object.values(grupos), 1);
+  const cores = ['#f97316','#22c55e','#3b82f6','#eab308','#ef4444','#8b5cf6','#06b6d4','#ec4899','#a3e635','#f472b6'];
+  const entries = Object.entries(grupos).slice(0, 12);
+  document.getElementById('rel-grafico').innerHTML = entries.map(([k,v], i) => `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:48px;flex:1;">
+      <div style="font-size:11px;font-weight:700;color:${cores[i%cores.length]};">${v}</div>
+      <div style="width:100%;background:${cores[i%cores.length]};border-radius:4px 4px 0 0;height:${Math.max(8,(v/max)*130)}px;transition:height 0.4s;"></div>
+      <div style="font-size:10px;color:var(--muted);text-align:center;max-width:60px;word-break:break-word;">${k}</div>
+    </div>`).join('');
+  document.getElementById('rel-grafico-legenda').innerHTML = entries.map(([k,v],i) =>
+    `<span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:${cores[i%cores.length]};display:inline-block;"></span>${k}: <strong>${v}</strong></span>`).join('');
+}
+
+function tabelaHTML(cols, rows) {
+  return `<div style="overflow-x:auto;"><table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+}
+
+// ---- Cotações ----
+function renderRelCotacoes(dados) {
+  document.getElementById('rel-titulo-tabela').textContent = 'Relatório de Cotações';
+  document.getElementById('rel-contagem').textContent = `${dados.length} registros`;
+  const total = dados.length;
+  const aprov = dados.filter(r=>r.status==='aprovada').length;
+  const reprov = dados.filter(r=>r.status==='reprovada').length;
+  const pend = dados.filter(r=>r.status==='pendente').length;
+  const txConv = total > 0 ? ((aprov/total)*100).toFixed(1) : '0';
+  renderCards([
+    {label:'Total',valor:total,cor:'var(--accent)'},
+    {label:'Aprovadas',valor:aprov,cor:'var(--green)',sub:`Taxa: ${txConv}%`},
+    {label:'Reprovadas',valor:reprov,cor:'var(--red)'},
+    {label:'Pendentes',valor:pend,cor:'var(--yellow)'},
+  ]);
+  const grupos = {};
+  dados.forEach(r => { grupos[r.status||'—'] = (grupos[r.status||'—']||0)+1; });
+  renderGrafico(grupos, 'Cotações por Status');
+  const corStatus = {aprovada:'var(--green)',reprovada:'var(--red)',pendente:'var(--yellow)'};
+  const rows = dados.map(r => `<tr>
+    <td style="font-size:12px;color:var(--muted)">#${r.id}</td>
+    <td><strong>${r.cliente_nome||'—'}</strong></td>
+    <td style="font-size:12px">${r.origem||'—'} → ${r.destino||'—'}</td>
+    <td style="font-size:12px">${r.quantidade||'—'}</td>
+    <td style="font-size:12px">${r.tipo_produto||'—'}</td>
+    <td class="valor-cell">${fmtMoeda(r.preco||r.valor_cotado)}</td>
+    <td>${badgeRel(r.status||'—', corStatus[r.status]||'var(--muted)')}</td>
+    <td style="font-size:12px;color:var(--muted)">${fmtData(r.criado_em)}</td>
+  </tr>`);
+  document.getElementById('rel-tabela').innerHTML = rows.length
+    ? tabelaHTML(['#','Cliente','Rota','Qtd.','Produto','Preço','Status','Data'], rows)
+    : '<div class="empty"><div class="empty-icon">📋</div><p>Nenhuma cotação encontrada.</p></div>';
+}
+
+// ---- Lotes ----
+function renderRelLotes(dados) {
+  document.getElementById('rel-titulo-tabela').textContent = 'Relatório de Lotes';
+  document.getElementById('rel-contagem').textContent = `${dados.length} registros`;
+  const totPeso = dados.reduce((s,r)=>s+parseFloat(r.peso_ton||0),0);
+  const totTarEmp = dados.reduce((s,r)=>s+parseFloat(r.tarifa_empresa||0),0);
+  renderCards([
+    {label:'Total de Lotes',valor:dados.length,cor:'var(--accent)'},
+    {label:'Peso Total',valor:totPeso.toFixed(1)+' ton',cor:'var(--blue)'},
+    {label:'Tarifa Empresa',valor:fmtMoeda(totTarEmp),cor:'var(--green)'},
+    {label:'Finalizados',valor:dados.filter(r=>r.status==='finalizado').length,cor:'var(--muted)'},
+  ]);
+  const grupos = {};
+  dados.forEach(r => { grupos[r.status||'—'] = (grupos[r.status||'—']||0)+1; });
+  renderGrafico(grupos, 'Lotes por Status');
+  const rows = dados.map(r => `<tr>
+    <td style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent)">#${r.id}</td>
+    <td><strong>${r.cliente||'—'}</strong></td>
+    <td style="font-size:12px">${r.agencia||'—'}</td>
+    <td style="font-size:12px">${r.produto||'—'}</td>
+    <td style="font-size:12px;color:var(--muted)">${r.origem||'—'} → ${r.destino||'—'}</td>
+    <td class="valor-cell">${fmtMoeda(r.tarifa_empresa)}</td>
+    <td style="font-size:12px">${fmtMoeda(r.tarifa_motorista)}</td>
+    <td style="font-size:12px">${r.peso_ton||'—'} ton</td>
+    <td>${badgeRel(r.status||'—','var(--accent)')}</td>
+    <td style="font-size:12px;color:var(--muted)">${fmtData(r.data_lote||r.criado_em)}</td>
+  </tr>`);
+  document.getElementById('rel-tabela').innerHTML = rows.length
+    ? tabelaHTML(['Lote','Cliente','Agência','Produto','Rota','Tarifa Emp.','Tarifa Mot.','Peso','Status','Data'], rows)
+    : '<div class="empty"><div class="empty-icon">📦</div><p>Nenhum lote encontrado.</p></div>';
+}
+
+// ---- Motoristas ----
+function renderRelMotoristas(dados) {
+  document.getElementById('rel-titulo-tabela').textContent = 'Relatório de Motoristas';
+  document.getElementById('rel-contagem').textContent = `${dados.length} registros`;
+  const totPeso = dados.reduce((s,r)=>s+parseFloat(r.peso_saida||0),0);
+  renderCards([
+    {label:'Total',valor:dados.length,cor:'var(--accent)'},
+    {label:'Peso Total',valor:totPeso.toFixed(1)+' ton',cor:'var(--blue)'},
+    {label:'Saldo Pago',valor:dados.filter(r=>r.status==='saldo_pago').length,cor:'var(--green)'},
+    {label:'Em Trânsito',valor:dados.filter(r=>r.status==='em_transito').length,cor:'var(--yellow)'},
+  ]);
+  const grupos = {};
+  dados.forEach(r => { grupos[r.status||'—'] = (grupos[r.status||'—']||0)+1; });
+  renderGrafico(grupos, 'Motoristas por Status');
+  const rows = dados.map(r => `<tr>
+    <td style="font-size:12px;color:var(--muted)">#${r.id}</td>
+    <td><strong>${r.nome||'—'}</strong></td>
+    <td style="font-size:12px">${r.cpf||'—'}</td>
+    <td style="font-size:12px">${r.placa||'—'}</td>
+    <td style="font-size:12px;color:var(--accent);font-weight:600">${r.peso_saida||'—'} ton</td>
+    <td style="font-size:12px">${r.lote_id ? '#'+r.lote_id : '—'}</td>
+    <td>${badgeRel(r.status||'—','var(--blue)')}</td>
+    <td>${badgeRel(r.gr_status||'—', r.gr_status==='aprovado'?'var(--green)':r.gr_status==='reprovado'?'var(--red)':'var(--yellow)')}</td>
+    <td style="font-size:12px;color:var(--muted)">${fmtData(r.criado_em)}</td>
+  </tr>`);
+  document.getElementById('rel-tabela').innerHTML = rows.length
+    ? tabelaHTML(['#','Nome','CPF','Placa','Peso Saída','Lote','Status','GR','Data'], rows)
+    : '<div class="empty"><div class="empty-icon">🚛</div><p>Nenhum motorista encontrado.</p></div>';
+}
+
+// ---- Financeiro ----
+function renderRelFinanceiro(dados) {
+  document.getElementById('rel-titulo-tabela').textContent = 'Relatório Financeiro';
+  document.getElementById('rel-contagem').textContent = `${dados.length} registros`;
+  const totTarEmp = dados.reduce((s,r)=>s+parseFloat(r.lote?.tarifa_empresa||0),0);
+  const totTarMot = dados.reduce((s,r)=>s+parseFloat(r.lote?.tarifa_motorista||0),0);
+  renderCards([
+    {label:'Total Registros',valor:dados.length,cor:'var(--accent)'},
+    {label:'Tarifa Empresa',valor:fmtMoeda(totTarEmp),cor:'var(--green)'},
+    {label:'Tarifa Motorista',valor:fmtMoeda(totTarMot),cor:'var(--blue)'},
+    {label:'Saldo Pago',valor:dados.filter(r=>r.status==='saldo_pago').length,cor:'var(--green)',sub:'finalizados'},
+  ]);
+  const grupos = {};
+  dados.forEach(r => { grupos[r.status||'—'] = (grupos[r.status||'—']||0)+1; });
+  renderGrafico(grupos, 'Distribuição por Status Financeiro');
+  const rows = dados.map(r => `<tr>
+    <td style="font-size:12px;color:var(--muted)">#${r.id}</td>
+    <td><strong>${r.nome||'—'}</strong></td>
+    <td style="font-size:12px">${r.cpf||'—'}</td>
+    <td style="font-size:12px;color:var(--muted)">${r.lote?.cliente||'—'}</td>
+    <td style="font-size:12px">${r.lote?.agencia||'—'}</td>
+    <td class="valor-cell">${fmtMoeda(r.lote?.tarifa_empresa)}</td>
+    <td style="font-size:12px">${fmtMoeda(r.lote?.tarifa_motorista)}</td>
+    <td>${r.financeiro_adiantamento_data ? fmtData(r.financeiro_adiantamento_data) : '—'}</td>
+    <td>${r.financeiro_saldo_data ? fmtData(r.financeiro_saldo_data) : '—'}</td>
+    <td>${badgeRel(r.status||'—',r.status==='saldo_pago'?'var(--green)':'var(--yellow)')}</td>
+  </tr>`);
+  document.getElementById('rel-tabela').innerHTML = rows.length
+    ? tabelaHTML(['#','Motorista','CPF','Cliente','Agência','Tarifa Emp.','Tarifa Mot.','Adiantamento','Saldo','Status'], rows)
+    : '<div class="empty"><div class="empty-icon">💰</div><p>Nenhum registro financeiro encontrado.</p></div>';
+}
+
+// ---- Atividades ----
+function renderRelAtividades(dados) {
+  document.getElementById('rel-titulo-tabela').textContent = 'Relatório de Atividades';
+  document.getElementById('rel-contagem').textContent = `${dados.length} registros`;
+  const usuarios = new Set(dados.map(r=>r.usuario_email)).size;
+  renderCards([
+    {label:'Total Ações',valor:dados.length,cor:'var(--accent)'},
+    {label:'Usuários Ativos',valor:usuarios,cor:'var(--blue)'},
+    {label:'Logins',valor:dados.filter(r=>r.tipo==='login').length,cor:'var(--green)'},
+    {label:'Alterações',valor:dados.filter(r=>!['login'].includes(r.tipo)).length,cor:'var(--yellow)'},
+  ]);
+  const grupos = {};
+  dados.forEach(r => { grupos[r.tipo||'—'] = (grupos[r.tipo||'—']||0)+1; });
+  renderGrafico(grupos, 'Ações por Tipo');
+  const rows = dados.map(r => `<tr>
+    <td style="font-size:12px;color:var(--muted);white-space:nowrap">${r.criado_em ? new Date(r.criado_em).toLocaleString('pt-BR') : '—'}</td>
+    <td style="font-size:12px"><div style="font-weight:600">${r.usuario_nome||'—'}</div><div style="color:var(--muted);font-size:11px">${r.usuario_email||''}</div></td>
+    <td><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--surface2);color:var(--accent)">${(r.setor||'—').toUpperCase()}</span></td>
+    <td style="font-size:12px">${r.acao||'—'}</td>
+    <td style="font-size:12px;color:var(--muted);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.detalhes||''}">${r.detalhes||'—'}</td>
+  </tr>`);
+  document.getElementById('rel-tabela').innerHTML = rows.length
+    ? tabelaHTML(['Data/Hora','Usuário','Setor','Ação','Detalhes'], rows)
+    : '<div class="empty"><div class="empty-icon">📝</div><p>Nenhuma atividade encontrada.</p></div>';
+}
+
+// ============================================================
+// EXPORTAR EXCEL
+// ============================================================
+function exportarExcel() {
+  if (!relDadosAtual.length) { showToast('Gere o relatório primeiro', 'error'); return; }
+  const nomes = {cotacoes:'Cotacoes',lotes:'Lotes',motoristas:'Motoristas',financeiro:'Financeiro',atividades:'Atividades'};
+  const nomeArq = `Relatorio_${nomes[relTipoAtual]||relTipoAtual}_${new Date().toISOString().slice(0,10)}.csv`;
+
+  // Gera CSV (abre no Excel)
+  let cols = [], rows = [];
+  if (relTipoAtual === 'cotacoes') {
+    cols = ['ID','Cliente','Origem','Destino','Quantidade','Produto','Preco','Status','Data'];
+    rows = relDadosAtual.map(r => [r.id, r.cliente_nome||'', r.origem||'', r.destino||'', r.quantidade||'', r.tipo_produto||'', (r.preco||r.valor_cotado||0), r.status||'', fmtData(r.criado_em)]);
+  } else if (relTipoAtual === 'lotes') {
+    cols = ['Lote','Cliente','Agência','Produto','Origem','Destino','Tarifa Empresa','Tarifa Motorista','Peso (ton)','Status','Data'];
+    rows = relDadosAtual.map(r => [r.id, r.cliente||'', r.agencia||'', r.produto||'', r.origem||'', r.destino||'', r.tarifa_empresa||0, r.tarifa_motorista||0, r.peso_ton||'', r.status||'', fmtData(r.data_lote||r.criado_em)]);
+  } else if (relTipoAtual === 'motoristas') {
+    cols = ['ID','Nome','CPF','Placa','Peso Saída','Lote','Status','GR','Data'];
+    rows = relDadosAtual.map(r => [r.id, r.nome||'', r.cpf||'', r.placa||'', r.peso_saida||'', r.lote_id||'', r.status||'', r.gr_status||'', fmtData(r.criado_em)]);
+  } else if (relTipoAtual === 'financeiro') {
+    cols = ['ID','Motorista','CPF','Cliente','Agência','Tarifa Emp.','Tarifa Mot.','Dt Adiantamento','Dt Saldo','Status'];
+    rows = relDadosAtual.map(r => [r.id, r.nome||'', r.cpf||'', r.lote?.cliente||'', r.lote?.agencia||'', r.lote?.tarifa_empresa||0, r.lote?.tarifa_motorista||0, fmtData(r.financeiro_adiantamento_data), fmtData(r.financeiro_saldo_data), r.status||'']);
+  } else if (relTipoAtual === 'atividades') {
+    cols = ['Data/Hora','Usuário','Email','Setor','Ação','Detalhes'];
+    rows = relDadosAtual.map(r => [r.criado_em ? new Date(r.criado_em).toLocaleString('pt-BR') : '', r.usuario_nome||'', r.usuario_email||'', r.setor||'', r.acao||'', r.detalhes||'']);
+  }
+
+  const bom = '\uFEFF'; // BOM para Excel reconhecer UTF-8
+  const csv = bom + [cols, ...rows].map(row =>
+    row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';')
+  ).join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nomeArq; a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ Excel exportado!', 'success');
+}
+
+// ============================================================
+// EXPORTAR PDF (via Print CSS)
+// ============================================================
+function exportarPDF() {
+  if (!relDadosAtual.length) { showToast('Gere o relatório primeiro', 'error'); return; }
+  // Esconde tudo exceto o relatório e imprime
+  const titulo = document.getElementById('rel-titulo-tabela').textContent;
+  const conteudo = document.getElementById('rel-tabela').innerHTML;
+  const cards = document.getElementById('rel-cards').innerHTML;
+  const dt = new Date().toLocaleString('pt-BR');
+
+  const janela = window.open('', '_blank', 'width=900,height=700');
+  janela.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+    <meta charset="UTF-8"><title>${titulo}</title>
+    <style>
+      body{font-family:Arial,sans-serif;font-size:12px;color:#111;background:#fff;margin:24px;}
+      h1{font-size:18px;margin-bottom:4px;}
+      .sub{font-size:12px;color:#666;margin-bottom:16px;}
+      .cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+      .card{border:1px solid #ddd;border-radius:6px;padding:10px 16px;min-width:120px;}
+      .card-label{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.5px;}
+      .card-valor{font-size:20px;font-weight:700;margin-top:2px;}
+      table{width:100%;border-collapse:collapse;font-size:11px;}
+      th{background:#f3f4f6;border:1px solid #ddd;padding:6px 8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;}
+      td{border:1px solid #eee;padding:5px 8px;}
+      tr:nth-child(even){background:#f9fafb;}
+      span[style*="border-radius"]{border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700;}
+      @media print{body{margin:8px;}}
+    </style>
+  </head><body>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div><h1>JM Brasil — ${titulo}</h1><div class="sub">Gerado em ${dt} · ${relDadosAtual.length} registros</div></div>
+      <img src="" alt="JM Brasil" style="height:36px;" onerror="this.style.display='none'">
+    </div>
+    <div class="cards">${cards}</div>
+    ${conteudo}
+    <script>window.onload=()=>{ window.print(); }<\/script>
+  </body></html>`);
+  janela.document.close();
 }
 
 // INIT
