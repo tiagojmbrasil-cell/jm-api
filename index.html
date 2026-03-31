@@ -2616,6 +2616,8 @@ async function editarLote(id) {
   document.getElementById('el-pagador-outro').value = l.pagador_outro || '';
   document.getElementById('modal-lote-overlay').classList.add('open');
 }
+
+async function salvarEdicaoLote() {
   try {
     await supabaseRequest('PATCH', `lotes?id=eq.${loteEditandoId}`, {
       agencia: document.getElementById('el-agencia').value || null,
