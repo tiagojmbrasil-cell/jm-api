@@ -4139,14 +4139,22 @@ const ABAS_SISTEMA = [
 
 // Permissões padrão por setor: 0=oculto, 1=só ver, 2=acesso total
 const PERMISSOES_PADRAO = {
+  // ADMINISTRATIVO: acesso total
   administrativo: { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, gr:2, cadastro:2, 'status-lote':2, clientes:2, logistico:2, fiscal:2, financeiro:2, relatorios:2, seguranca:2 },
-  comercial:      { dashboard:2, nova:2, lista:2, lotes:1, motoristas:0, gr:0, cadastro:0, 'status-lote':0, clientes:2, logistico:0, fiscal:0, financeiro:0, relatorios:1, seguranca:0 },
-  logistico:      { dashboard:2, nova:0, lista:1, lotes:2, motoristas:2, gr:0, cadastro:0, 'status-lote':2, clientes:0, logistico:2, fiscal:0, financeiro:0, relatorios:1, seguranca:0 },
-  gr:             { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:2, cadastro:0, 'status-lote':1, clientes:0, logistico:0, fiscal:0, financeiro:0, seguranca:0 },
-  cadastro:       { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:2, 'status-lote':0, clientes:0, logistico:0, fiscal:0, financeiro:0, seguranca:0 },
-  fiscal:         { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:0, 'status-lote':1, clientes:0, logistico:0, fiscal:2, financeiro:0, seguranca:0 },
-  financeiro:     { dashboard:2, nova:0, lista:0, lotes:0, motoristas:1, gr:0, cadastro:0, 'status-lote':0, clientes:0, logistico:0, fiscal:0, financeiro:2, relatorios:1, seguranca:0 },
-  cliente:        { 'dashboard-cliente':2, dashboard:0, nova:0, lista:0, lotes:0, motoristas:0, gr:0, cadastro:0, 'status-lote':0, clientes:0, logistico:0, fiscal:0, financeiro:0, seguranca:0 },
+  // FINANCEIRO: acesso total
+  financeiro:     { dashboard:2, nova:2, lista:2, lotes:2, motoristas:2, gr:2, cadastro:2, 'status-lote':2, clientes:2, logistico:2, fiscal:2, financeiro:2, relatorios:2, seguranca:2 },
+  // COMERCIAL: Dashboard, Nova Cotação, Todas as Cotações, Lotes, Status do Lote, Clientes
+  comercial:      { dashboard:2, nova:2, lista:2, lotes:2, motoristas:0, gr:0, cadastro:0, 'status-lote':2, clientes:2, logistico:0, fiscal:0, financeiro:0, relatorios:0, seguranca:0 },
+  // LOGISTICO: Dashboard, Motoristas, Status do Lote, Logístico
+  logistico:      { dashboard:2, nova:0, lista:0, lotes:0, motoristas:2, gr:0, cadastro:0, 'status-lote':2, clientes:0, logistico:2, fiscal:0, financeiro:0, relatorios:0, seguranca:0 },
+  // CADASTRO: Dashboard, Cadastro, Status do Lote
+  cadastro:       { dashboard:2, nova:0, lista:0, lotes:0, motoristas:0, gr:0, cadastro:2, 'status-lote':2, clientes:0, logistico:0, fiscal:0, financeiro:0, relatorios:0, seguranca:0 },
+  // FISCAL: Dashboard, Status do Lote, Fiscal
+  fiscal:         { dashboard:2, nova:0, lista:0, lotes:0, motoristas:0, gr:0, cadastro:0, 'status-lote':2, clientes:0, logistico:0, fiscal:2, financeiro:0, relatorios:0, seguranca:0 },
+  // GR: Dashboard, GR, Status do Lote
+  gr:             { dashboard:2, nova:0, lista:0, lotes:0, motoristas:0, gr:2, cadastro:0, 'status-lote':2, clientes:0, logistico:0, fiscal:0, financeiro:0, relatorios:0, seguranca:0 },
+  // CLIENTE: só portal
+  cliente:        { 'dashboard-cliente':2, dashboard:0, nova:0, lista:0, lotes:0, motoristas:0, gr:0, cadastro:0, 'status-lote':0, clientes:0, logistico:0, fiscal:0, financeiro:0, relatorios:0, seguranca:0 },
 };
 
 function getPermissoesUsuario(u) {
