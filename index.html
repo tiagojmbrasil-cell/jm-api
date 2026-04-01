@@ -4359,7 +4359,7 @@ function aplicarPermissoes(setor, perms) {
   permissoesAtual = perms || PERMISSOES_PADRAO[setor] || PERMISSOES_PADRAO['comercial'];
 
   const paginas = ['dashboard','nova','lista','lotes','motoristas','gr','cadastro','status-lote','clientes','logistico','fiscal','financeiro','relatorios','seguranca','dashboard-cliente'];
-  const botoesNav = document.querySelectorAll('nav button');
+  const botoesNav = document.querySelectorAll('header > nav button');
 
   paginas.forEach((p, i) => {
     const btn = botoesNav[i];
@@ -6192,13 +6192,14 @@ if (window.MutationObserver) {
 
 // Esconde botões da gaveta que não são visíveis para o setor atual
 function sincronizarNavDrawerPermissoes() {
-  const navDesktop = document.querySelectorAll('header > nav button');
+  if (!permissoesAtual) return;
+  const paginas = ['dashboard','nova','lista','lotes','motoristas','gr','cadastro','status-lote','clientes','logistico','fiscal','financeiro','relatorios','seguranca','dashboard-cliente'];
   const navDrawerBtns = document.querySelectorAll('.nav-drawer-panel nav button');
-  // Mapeia por índice: os 13 primeiros botões da gaveta correspondem aos do desktop
-  navDesktop.forEach((btn, i) => {
-    if (navDrawerBtns[i]) {
-      navDrawerBtns[i].style.display = btn.style.display;
-    }
+  navDrawerBtns.forEach((btn, i) => {
+    const pagina = paginas[i];
+    if (!pagina) return;
+    const nivel = permissoesAtual[pagina] ?? 0;
+    btn.style.display = nivel > 0 ? '' : 'none';
   });
 }
 
