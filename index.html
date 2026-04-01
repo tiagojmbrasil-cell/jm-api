@@ -2121,9 +2121,16 @@ async function supabaseRequest(method, path, body = null) {
     url += '&filtros=' + encodeURIComponent(JSON.stringify(filtros));
   }
 
+  // SEGURANÇA: enviar token JWT para o RLS do Supabase identificar o usuário
+  const { data: { session } } = await sb.auth.getSession();
+  const token = session?.access_token || '';
+
   const res = await fetch(url, {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+    },
     body: body ? JSON.stringify(body) : null
   });
 
