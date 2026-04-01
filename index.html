@@ -4493,7 +4493,7 @@ async function carregarLogistico() {
 
     const statusNF = ['aguardando_nf'];
     const statusFotos = ['aguardando_fotos'];
-    const statusTransito = ['adiantamento_pago', 'em_transito', 'aguardando_chegada'];
+    const statusTransito = ['adiantamento_pago', 'em_transito', 'aguardando_chegada', 'sinistro'];
 
     const motoristasNF = motoristas.filter(m => statusNF.includes(m.status || ''));
     const motoristasFotos = loteMotoristas.filter(m => statusFotos.includes(m.status || ''));
@@ -4550,12 +4550,18 @@ function renderLogistico(dados) {
             acao = `<button class="btn-primary" style="padding:6px 12px;font-size:12px;background:var(--green);" onclick="abrirModalLogisticoFotos(${m.id}, '${(m.nome||'').replace(/'/g,"\\'")}', '${m.placa||''}', '${m.cpf||''}', ${m.lote_id||'null'}, '${m._origem}')">📸 Inserir Fotos</button>`;
           } else if (m._etapa === 'transito') {
             etapaLabel = '🚛 Controle de Trânsito';
-            acao = `<button class="btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="abrirModalTransito(${m.id}, '${(m.nome||'').replace(/'/g,"\\'")}', '${st}', '${m._origem}')">🚛 Gerenciar Trânsito</button>`;
+            if (st === 'sinistro') {
+              etapaLabel = '⚠️ Sinistro';
+              acao = `<button class="btn-secondary" style="padding:6px 12px;font-size:12px;border-color:rgba(239,68,68,0.5);color:#ef4444;" onclick="abrirModalTransito(${m.id}, '${(m.nome||'').replace(/'/g,"\\'")}', '${st}', '${m._origem}')">⚠️ Ver Sinistro</button>`;
+            } else {
+              acao = `<button class="btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="abrirModalTransito(${m.id}, '${(m.nome||'').replace(/'/g,"\\'")}', '${st}', '${m._origem}')">🚛 Gerenciar Trânsito</button>`;
+            }
           }
-          return `<tr>
+          return `<tr style="${st === 'sinistro' ? 'background:rgba(239,68,68,0.07);border-left:3px solid #ef4444;' : ''}">
             <td style="color:var(--muted);font-size:12px">#${m.id}</td>
             <td>
               <strong>${esc(m.nome || '—')}</strong>
+              ${m.sinistro_descricao ? `<div style="font-size:11px;color:#ef4444;margin-top:3px;font-weight:600;">⚠️ Sinistro: ${esc(m.sinistro_descricao)}</div>` : ''}
               ${m.financeiro_adiantamento_motivo ? `<div style="font-size:11px;color:var(--red);margin-top:3px;">⚠️ Reprov. Financeiro: ${esc(m.financeiro_adiantamento_motivo)}</div>` : ''}
             </td>
             <td style="font-size:12px">${esc(m.cpf || '—')}</td>
@@ -4817,7 +4823,7 @@ async function carregarFinanceiro() {
 function filtrarFinanceiro() {
   const busca = (document.getElementById('filtro-fin-busca')?.value || '').toLowerCase();
   const status = (document.getElementById('filtro-fin-status')?.value || '');
-  const elegiveis = ['fotos_inseridas','adiantamento_pago','manifesto_encerrado','saldo_agendado'];
+  const elegiveis = ['fotos_inseridas','adiantamento_pago','manifesto_encerrado','saldo_agendado','sinistro'];
   const filtrados = (financeiroData || []).filter(m => {
     const st = m.status || '';
     if (!elegiveis.includes(st)) return false;
@@ -4863,15 +4869,20 @@ function renderFinanceiro(dados) {
                  <button class="btn-primary" style="padding:6px 10px;font-size:12px;background:var(--green);" onclick="aprovarManifesto(${m.id})">✅ Aprovar</button>
                  <button class="btn-secondary" style="padding:6px 10px;font-size:12px;border-color:rgba(239,68,68,0.4);color:#ef4444;" onclick="reprovarFinanceiro(${m.id}, 'manifesto')">❌ Reprovar</button>
                </div>`
+            : st === 'sinistro'
+            ? `<div style="display:flex;align-items:center;gap:8px;">
+                 <span style="font-size:12px;color:#ef4444;font-weight:600;">⚠️ Aguardando resolução do sinistro</span>
+               </div>`
             : `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                  <input type="date" id="fin-saldo-data-${m.id}" style="width:auto;font-size:12px;padding:6px 10px;" />
                  <button class="btn-primary" style="padding:6px 10px;font-size:12px;background:var(--blue);" onclick="salvarDataSaldo(${m.id})">📅 Agendar saldo</button>
                  <button class="btn-primary" style="padding:6px 10px;font-size:12px;background:var(--green);" onclick="marcarSaldoPago(${m.id})">✅ Saldo pago</button>
                </div>`;
-          return `<tr>
+          return `<tr style="${st === 'sinistro' ? 'background:rgba(239,68,68,0.07);border-left:3px solid #ef4444;' : ''}">
             <td style="color:var(--muted);font-size:12px">#${m.id}</td>
             <td>
               <strong>${esc(m.nome || '—')}</strong>
+              ${m.sinistro_descricao ? `<div style="font-size:11px;color:#ef4444;margin-top:3px;font-weight:600;">⚠️ Sinistro: ${esc(m.sinistro_descricao)}</div>` : ''}
               ${m.financeiro_adiantamento_motivo ? `<div style="font-size:11px;color:var(--red);margin-top:3px;">⚠️ Reprov.: ${esc(m.financeiro_adiantamento_motivo)}</div>` : ''}
               ${m.financeiro_saldo_motivo ? `<div style="font-size:11px;color:var(--red);margin-top:3px;">⚠️ Reprov.: ${esc(m.financeiro_saldo_motivo)}</div>` : ''}
             </td>
