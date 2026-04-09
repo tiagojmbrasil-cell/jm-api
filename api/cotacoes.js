@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // Cliente SERVICE KEY — usado apenas para validar tokens e operações admin
 const supabaseAdmin = createClient(
-  process.env.URL_SUPABASE,
+  process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
 
@@ -102,7 +102,7 @@ export default async function handler(req, res) {
 
   // Usa cliente com o TOKEN DO USUÁRIO — o RLS do Supabase entra em ação automaticamente
   const supabaseUser = createClient(
-    process.env.URL_SUPABASE,
+    process.env.SUPABASE_URL,
     process.env.SUPABASE_ANON_KEY,
     { global: { headers: { Authorization: req.headers['authorization'] } } }
   );
