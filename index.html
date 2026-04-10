@@ -2160,7 +2160,17 @@ async function supabaseRequest(method, path, body = null) {
   }
 
   // SEGURANÇA: enviar token JWT para o RLS do Supabase identificar o usuário
-  const { data: { session } } = await sb.auth.getSession();
+  // Tenta renovar o token se estiver expirado ou próximo do vencimento
+  let session = (await sb.auth.getSession()).data.session;
+  if (session) {
+    const exp = session.expires_at || 0;
+    const agora = Math.floor(Date.now() / 1000);
+    // Renova se expirar nos próximos 60 segundos
+    if (exp - agora < 60) {
+      const { data: refreshed } = await sb.auth.refreshSession();
+      if (refreshed?.session) session = refreshed.session;
+    }
+  }
   const token = session?.access_token || '';
 
   const res = await fetch(url, {
@@ -2174,6 +2184,34 @@ async function supabaseRequest(method, path, body = null) {
 
   const text = await res.text();
   if (!res.ok) {
+    // Se ainda der 401, tenta renovar o token e refaz a requisição uma vez
+    if (res.status === 401) {
+      const { data: refreshed } = await sb.auth.refreshSession();
+      if (refreshed?.session) {
+        const retryRes = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + refreshed.session.access_token
+          },
+          body: body ? JSON.stringify(body) : null
+        });
+        const retryText = await retryRes.text();
+        if (!retryRes.ok) {
+          let msg = 'Token inválido ou expirado';
+          try { const j = JSON.parse(retryText); msg = j.error || j.message || msg; } catch(e) {}
+          console.error('[API 401]', method, path, msg);
+          // Se ainda 401 após refresh, força novo login
+          if (retryRes.status === 401) {
+            showToast('Sessão expirada. Faça login novamente.', 'error');
+            setTimeout(() => { sb.auth.signOut(); location.reload(); }, 2000);
+          }
+          throw new Error(msg);
+        }
+        if (!retryText) return null;
+        try { return JSON.parse(retryText); } catch(e) { return null; }
+      }
+    }
     let msg = 'Erro na requisição (' + res.status + ')';
     try { const j = JSON.parse(text); msg = j.error || j.message || msg; } catch(e) {}
     console.error('[API]', method, path, '→', res.status, msg);
@@ -3494,7 +3532,7 @@ async function carregarCidadesIBGE() {
   try {
     const res = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome');
     const data = await res.json();
-    cidadesCache = data.map(c => ({ nome: c.nome, uf: c.microrregiao.mesorregiao.UF.sigla }));
+    cidadesCache = data.filter(c => c.microrregiao?.mesorregiao?.UF?.sigla).map(c => ({ nome: c.nome, uf: c.microrregiao.mesorregiao.UF.sigla }));
     cidadesCarregadas = true;
   } catch(e) { console.error('Erro IBGE:', e); }
   buscandoCidades = false;
@@ -6649,6 +6687,17 @@ sb.auth.getSession().then(async ({ data: { session } }) => {
     userAtual = session.user;
     await carregarPerfilUsuario(session.user.id);
     document.getElementById('login-screen').style.display = 'none';
+  }
+});
+
+// Mantém sessão atualizada automaticamente
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'TOKEN_REFRESHED' && session) {
+    userAtual = session.user;
+    console.log('[Auth] Token renovado automaticamente');
+  }
+  if (event === 'SIGNED_OUT') {
+    location.reload();
   }
 });
 </script>
