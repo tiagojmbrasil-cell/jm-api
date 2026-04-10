@@ -1682,6 +1682,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CONTATO</div><div style="font-weight:600" id="mf-contato">—</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PESO SAÍDA</div><div style="font-weight:600;color:var(--accent)" id="mf-peso">—</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">STATUS</div><div id="mf-status">—</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">TIPO MOTORISTA</div><div style="font-weight:700;font-size:15px;" id="mf-tipo-motorista">—</div></div>
       </div>
     </div>
 
@@ -1716,6 +1717,16 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <div id="mf-secao-pix" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">TIPO DE CHAVE PIX</div><div style="font-weight:600" id="mf-tipo-pix">—</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CHAVE PIX</div><div style="font-weight:600;color:var(--green)" id="mf-pix">—</div></div>
+      </div>
+    </div>
+
+    <!-- Seção Pedágio / TAG -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;" id="mf-secao-pedagio">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">🛣️ Pedágio / TAG</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">VALOR DO PEDÁGIO</div><div style="font-weight:700;color:var(--accent)" id="mf-valor-pedagio">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">ADMINISTRADORA DA TAG</div><div style="font-weight:600" id="mf-tag-administradora">—</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">NÚMERO DA TAG</div><div style="font-weight:600" id="mf-tag-numero">—</div></div>
       </div>
     </div>
 
@@ -1763,6 +1774,16 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <!-- Recolhimento -->
       <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Recolhimento</div>
       <div id="mf-ck-recolhimento" style="font-size:13px;font-weight:500;">—</div>
+    </div>
+
+    <!-- Seção Referências -->
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📞 Referências</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">REFERÊNCIA PROFISSIONAL</div><div style="font-weight:500;font-size:13px" id="mf-ref-prof">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">REFERÊNCIA PESSOAL</div><div style="font-weight:500;font-size:13px" id="mf-ref-pessoal">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PROPRIETÁRIO DO VEÍCULO</div><div style="font-weight:500;font-size:13px" id="mf-ref-proprietario">—</div></div>
+      </div>
     </div>
 
     <!-- Status GR -->
@@ -3678,6 +3699,14 @@ async function abrirFiscalModal(id) {
   document.getElementById('mf-peso').textContent = m.peso_saida ? m.peso_saida + ' ton' : '—';
   document.getElementById('mf-status').innerHTML = badgeMotorista(m.status);
   document.getElementById('mf-status-select').value = m.status || 'em_negociacao';
+  // Tipo motorista TAC/ETC
+  const tipoMotEl = document.getElementById('mf-tipo-motorista');
+  if (tipoMotEl) {
+    const tm = m.tipo_motorista;
+    tipoMotEl.innerHTML = tm
+      ? `<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.4);border-radius:6px;padding:3px 12px;font-size:13px;font-weight:700;color:var(--accent);">${tm}</span>`
+      : '—';
+  }
 
   // Mostra seção MDFe só se status for aguardando_encerramento_mdfe
   const secaoMdfe = document.getElementById('mf-secao-mdfe');
@@ -3706,6 +3735,17 @@ async function abrirFiscalModal(id) {
   document.getElementById('mf-tipo-pix').textContent = nomeTipoPix(m.tipo_chave_pix);
   document.getElementById('mf-pix').textContent = m.chave_pix || '—';
   document.getElementById('mf-badge-pagamento').innerHTML = badgeTipoPagamento(m.tipo_pagamento);
+
+  // Pedágio / TAG
+  const pedagioEl = document.getElementById('mf-valor-pedagio');
+  if (pedagioEl) pedagioEl.textContent = m.valor_pedagio ? 'R$ ' + Number(m.valor_pedagio).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '—';
+  const tagAdmEl = document.getElementById('mf-tag-administradora');
+  if (tagAdmEl) tagAdmEl.textContent = m.tag_administradora || '—';
+  const tagNumEl = document.getElementById('mf-tag-numero');
+  if (tagNumEl) tagNumEl.textContent = m.tag_numero || '—';
+  // Oculta seção se não há nenhum dado de pedágio
+  const secPedagio = document.getElementById('mf-secao-pedagio');
+  if (secPedagio) secPedagio.style.display = (m.valor_pedagio || m.tag_administradora || m.tag_numero) ? '' : 'none';
 
   // Status GR no modal fiscal
   const grStatusEl = document.getElementById('mf-gr-status');
@@ -3778,6 +3818,14 @@ async function abrirFiscalModal(id) {
   if (ck.recolhimento_pf) rec.push('Pessoa Física (INSS + SEST SENAT)');
   if (ck.recolhimento_pj) rec.push('Pessoa Jurídica (Taxa R$ 88,00)');
   document.getElementById('mf-ck-recolhimento').textContent = rec.length ? rec.join(' | ') : '—';
+
+  // Referências
+  const refProfEl = document.getElementById('mf-ref-prof');
+  if (refProfEl) refProfEl.textContent = ck.ref_profissional || '—';
+  const refPessoalEl = document.getElementById('mf-ref-pessoal');
+  if (refPessoalEl) refPessoalEl.textContent = ck.ref_pessoal || '—';
+  const refPropEl = document.getElementById('mf-ref-proprietario');
+  if (refPropEl) refPropEl.textContent = ck.contato_proprietario || '—';
 
   // Anexos — arquivos para download
   const nomeAnexo = {
