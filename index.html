@@ -4379,9 +4379,12 @@ async function toggleAtivo(userId, ativo) {
 async function excluirUsuario(userId, nomeUsuario) {
   if (!confirm(`Tem certeza que deseja excluir "${nomeUsuario}"?\nEssa ação não pode ser desfeita!`)) return;
   try {
+    let session = (await sb.auth.getSession()).data.session;
+    if (!session) throw new Error('Sessão expirada. Faça login novamente.');
+    const token = session.access_token;
     const resp = await fetch(API_URL + '?acao=deletar_usuario', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ userId })
     });
     const result = await resp.json();
@@ -4403,9 +4406,12 @@ async function criarUsuario() {
   if (senha.length < 6) { showToast('Senha deve ter mínimo 6 caracteres', 'error'); return; }
   if (setor === 'cliente' && (!clienteId || !clienteNome)) { showToast('Selecione o cliente para o portal', 'error'); return; }
   try {
+    let session = (await sb.auth.getSession()).data.session;
+    if (!session) throw new Error('Sessão expirada. Faça login novamente.');
+    const token = session.access_token;
     const resp = await fetch(API_URL + '?acao=criar_usuario', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ email, senha, nome: nome || clienteNome, setor })
     });
     const result = await resp.json();
