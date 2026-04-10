@@ -2141,10 +2141,7 @@ async function supabaseRequest(method, path, body = null) {
   const params = new URLSearchParams(queryString);
   params.forEach((val, key) => {
     // Repassa order, limit e select direto na URL para a API
-    if (key === 'order' || key === 'limit' || key === 'select') {
-      url += '&' + key + '=' + encodeURIComponent(val);
-      return;
-    }
+    if (key === 'order' || key === 'limit' || key === 'select') return;
 
     // id principal (sem underscore) vai como &id=X
     if (key === 'id' && val.startsWith('eq.')) {
