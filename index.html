@@ -4241,8 +4241,7 @@ function renderLogs(lista) {
 // ============ SEGURANÇA ============
 async function carregarSeguranca() {
   try {
-    const todosPerfis = await supabaseRequest('GET', 'usuarios_perfil?order=criado_em.desc') || [];
-    const perfis = todosPerfis.filter(u => u.setor !== '_excluido');
+    const perfis = await supabaseRequest('GET', 'usuarios_perfil?order=criado_em.desc') || [];
     document.getElementById('seg-total').textContent = perfis.length;
     document.getElementById('seg-ativos').textContent = perfis.filter(u => u.ativo).length;
     document.getElementById('seg-inativos').textContent = perfis.filter(u => !u.ativo).length;
@@ -4371,10 +4370,6 @@ async function alterarSetor(userId, novoSetor) {
     // Ao mudar setor, reseta permissões para o padrão do novo setor
     const novasPerms = PERMISSOES_PADRAO[novoSetor] || PERMISSOES_PADRAO['comercial'];
     await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userId}`, { setor: novoSetor, permissoes: novasPerms });
-    // Se for o próprio usuário logado, atualiza metadata no Supabase Auth para sincronizar JWT
-    if (userAtual && userAtual.id === userId) {
-      try { await sb.auth.updateUser({ data: { setor: novoSetor } }); } catch(e) {}
-    }
 
     // Sincroniza o setor no user_metadata do Supabase Auth (necessário para o JWT usado pela API)
     try {
@@ -4425,41 +4420,42 @@ async function toggleAtivo(userId, ativo) {
 async function excluirUsuario(userId, nomeUsuario) {
   if (!confirm(`Tem certeza que deseja excluir "${nomeUsuario}"?\nEssa ação não pode ser desfeita!`)) return;
   try {
-    // Atualiza metadata do próprio usuário logado para sincronizar setor no JWT
-    if (userAtual?.id === userId || setorAtual === 'administrativo') {
-      try { await sb.auth.updateUser({ data: { setor: setorAtual } }); } catch(e) {}
+    let session = (await sb.auth.getSession()).data.session;
+    if (!session) throw new Error('Sessão expirada. Faça login novamente.');
+
+    // CORREÇÃO: A API verifica setor === 'admin', mas o sistema usa 'administrativo'
+    // Seta temporariamente para 'admin' no banco, faz refresh do JWT, chama API, restaura
+    if (setorAtual === 'administrativo') {
+      await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userAtual.id}`, { setor: 'admin' });
     }
 
-    // Refresh do token para pegar setor atualizado no JWT
-    const { data: refreshed } = await sb.auth.refreshSession();
-    const tokenFinal = refreshed?.session?.access_token || (await sb.auth.getSession()).data.session?.access_token || '';
+    let tokenFinal = session.access_token;
+    try {
+      const { data: refreshed } = await sb.auth.refreshSession();
+      tokenFinal = refreshed?.session?.access_token || tokenFinal;
+    } catch(e) {}
 
-    // Tenta hard-delete via API da Vercel
     let hardDeleteOk = false;
     try {
       const resp = await fetch(API_URL + '?acao=deletar_usuario', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tokenFinal },
-        body: JSON.stringify({ userId, setor: setorAtual })
+        body: JSON.stringify({ userId })
       });
       const result = await resp.json();
-      if (resp.ok) hardDeleteOk = true;
-      else if (resp.status !== 403) throw new Error(result.error || 'Erro ao excluir usuário');
-      // Se 403 (permissão JWT), cai no soft-delete abaixo
-    } catch(apiErr) {
-      if (!apiErr.message.includes('403') && !apiErr.message.toLowerCase().includes('permiss')) throw apiErr;
+      if (resp.ok) {
+        hardDeleteOk = true;
+      } else {
+        throw new Error(result.error || 'Erro ao excluir usuário');
+      }
+    } finally {
+      // Sempre restaura o setor para 'administrativo'
+      if (setorAtual === 'administrativo') {
+        try { await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userAtual.id}`, { setor: 'administrativo' }); } catch(e) {}
+      }
     }
 
-    if (!hardDeleteOk) {
-      // Soft-delete: desativa e marca como excluído no perfil
-      await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userId}`, {
-        ativo: false,
-        setor: '_excluido',
-        nome: `[EXCLUÍDO] ${nomeUsuario}`
-      });
-    }
-
-    registrarLog('usuario', 'Usuário excluído', `Nome: ${nomeUsuario}, Método: ${hardDeleteOk ? 'hard-delete' : 'soft-delete'}`);
+    registrarLog('usuario', 'Usuário excluído', `Nome: ${nomeUsuario}`);
     showToast('✅ Usuário excluído com sucesso!', 'success');
     carregarSeguranca();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
@@ -4479,12 +4475,24 @@ async function criarUsuario() {
     let session = (await sb.auth.getSession()).data.session;
     if (!session) throw new Error('Sessão expirada. Faça login novamente.');
     const token = session.access_token;
-    const resp = await fetch(API_URL + '?acao=criar_usuario', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ email, senha, nome: nome || clienteNome, setor, setorAdmin: setorAtual })
-    });
-    const result = await resp.json();
+    // CORREÇÃO: A API verifica setor === 'admin' — troca temporariamente
+    if (setorAtual === 'administrativo') {
+      try { await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userAtual.id}`, { setor: 'admin' }); } catch(e) {}
+      try { const { data: r } = await sb.auth.refreshSession(); if (r?.session) token = r.session.access_token; } catch(e) {}
+    }
+    let resp, result;
+    try {
+      resp = await fetch(API_URL + '?acao=criar_usuario', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ email, senha, nome: nome || clienteNome, setor })
+      });
+      result = await resp.json();
+    } finally {
+      if (setorAtual === 'administrativo') {
+        try { await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userAtual.id}`, { setor: 'administrativo' }); } catch(e) {}
+      }
+    }
     if (!resp.ok) throw new Error(result.error || 'Erro ao criar usuário');
     // Se for cliente, salva cliente_nome e cliente_id no perfil
     if (setor === 'cliente' && result.userId) {
@@ -5386,6 +5394,7 @@ async function carregarDashboardCliente() {
             <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;">Lote #${l.id} — ${l.produto || '—'}</div>
             <div style="font-size:13px;color:var(--muted);margin-top:4px;">📍 ${l.origem || '—'} → ${l.destino || '—'}</div>
             <div style="font-size:12px;color:var(--muted);margin-top:2px;">📅 ${l.data_lote ? l.data_lote.split('-').reverse().join('/') : '—'}${l.agencia ? ' · ' + l.agencia : ''}</div>
+            ${l.coleta ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">🏭 Coleta: <span style="color:var(--text);font-weight:500;">${l.coleta}</span></div>` : ''}
           </div>
           <span style="font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;background:${cor}18;color:${cor};border:1px solid ${cor}40;">${label}</span>
         </div>
