@@ -4370,6 +4370,19 @@ async function alterarSetor(userId, novoSetor) {
     // Ao mudar setor, reseta permissões para o padrão do novo setor
     const novasPerms = PERMISSOES_PADRAO[novoSetor] || PERMISSOES_PADRAO['comercial'];
     await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userId}`, { setor: novoSetor, permissoes: novasPerms });
+
+    // Sincroniza o setor no user_metadata do Supabase Auth (necessário para o JWT usado pela API)
+    try {
+      let session = (await sb.auth.getSession()).data.session;
+      if (session) {
+        await fetch(API_URL + '?acao=atualizar_setor_usuario', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+          body: JSON.stringify({ userId, setor: novoSetor })
+        });
+      }
+    } catch(e2) { console.warn('Aviso: metadata não sincronizado:', e2.message); }
+
     showToast('Setor atualizado! Permissões resetadas para o padrão.', 'success');
     carregarSeguranca();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
@@ -4410,13 +4423,21 @@ async function excluirUsuario(userId, nomeUsuario) {
     let session = (await sb.auth.getSession()).data.session;
     if (!session) throw new Error('Sessão expirada. Faça login novamente.');
     const token = session.access_token;
+    // Tenta refresh do token para garantir que o JWT tem o setor atualizado
+    const { data: refreshed } = await sb.auth.refreshSession();
+    const tokenFinal = refreshed?.session?.access_token || token;
+
     const resp = await fetch(API_URL + '?acao=deletar_usuario', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ userId })
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tokenFinal },
+      body: JSON.stringify({ userId, setor: setorAtual })
     });
     const result = await resp.json();
-    if (!resp.ok) throw new Error(result.error || 'Erro ao excluir usuário');
+    if (!resp.ok) {
+      const msg = result.error || 'Erro ao excluir usuário';
+      if (resp.status === 403) throw new Error(msg + ' — Verifique se seu usuário tem setor Administrativo no banco de dados.');
+      throw new Error(msg);
+    }
     registrarLog('usuario', 'Usuário excluído', `Nome: ${nomeUsuario}`);
     showToast('✅ Usuário excluído com sucesso!', 'success');
     carregarSeguranca();
@@ -4440,7 +4461,7 @@ async function criarUsuario() {
     const resp = await fetch(API_URL + '?acao=criar_usuario', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ email, senha, nome: nome || clienteNome, setor })
+      body: JSON.stringify({ email, senha, nome: nome || clienteNome, setor, setorAdmin: setorAtual })
     });
     const result = await resp.json();
     if (!resp.ok) throw new Error(result.error || 'Erro ao criar usuário');
