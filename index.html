@@ -694,6 +694,17 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <label>Quem é o pagador?</label>
         <input type="text" id="l-pagador-outro" placeholder="Informe o nome do pagador">
       </div>
+      <div class="form-group full" style="grid-column:1/-1;margin-top:8px;border-top:1px solid var(--border);padding-top:16px;">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📬 Cliente Recebedor da Mercadoria</div>
+      </div>
+      <div class="form-group">
+        <label>Nome do Recebedor</label>
+        <input type="text" id="l-recebedor-nome" placeholder="Ex: João Silva / Depósito Central">
+      </div>
+      <div class="form-group">
+        <label>Contato do Recebedor</label>
+        <input type="text" id="l-recebedor-contato" placeholder="Ex: (11) 99999-9999">
+      </div>
     </div>
     <div class="form-actions">
       <button class="btn-secondary" onclick="resetLote()">Limpar</button>
@@ -1062,6 +1073,17 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <div class="form-group" id="el-pagador-outro-group" style="display:none;">
         <label>Quem é o pagador?</label>
         <input type="text" id="el-pagador-outro" placeholder="Informe o nome do pagador">
+      </div>
+      <div class="form-group full" style="grid-column:1/-1;margin-top:8px;border-top:1px solid var(--border);padding-top:16px;">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📬 Cliente Recebedor da Mercadoria</div>
+      </div>
+      <div class="form-group">
+        <label>Nome do Recebedor</label>
+        <input type="text" id="el-recebedor-nome" placeholder="Ex: João Silva / Depósito Central">
+      </div>
+      <div class="form-group">
+        <label>Contato do Recebedor</label>
+        <input type="text" id="el-recebedor-contato" placeholder="Ex: (11) 99999-9999">
       </div>
     </div>
     <div class="form-actions">
@@ -2609,6 +2631,8 @@ async function salvarLote() {
       observacao: document.getElementById('l-obs').value || null,
       pagador: document.getElementById('l-pagador').value || null,
       pagador_outro: document.getElementById('l-pagador').value === 'outro' ? (document.getElementById('l-pagador-outro').value || null) : null,
+      recebedor_nome: document.getElementById('l-recebedor-nome').value || null,
+      recebedor_contato: document.getElementById('l-recebedor-contato').value || null,
     });
     registrarLog('lote', 'Lote criado', `Cliente: ${document.getElementById('l-cliente')?.value||'—'}`);
     showToast('✅ Lote salvo!', 'success');
@@ -2623,7 +2647,7 @@ async function salvarLote() {
 }
 
 function resetLote() {
-  ['l-produto','l-coleta','l-origem','l-entrega','l-destino','l-tarifa-emp','l-tarifa-mot','l-peso','l-obs','l-pagador-outro'].forEach(id => {
+  ['l-produto','l-coleta','l-origem','l-entrega','l-destino','l-tarifa-emp','l-tarifa-mot','l-peso','l-obs','l-pagador-outro','l-recebedor-nome','l-recebedor-contato'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('l-agencia').value = '';
@@ -2747,6 +2771,8 @@ async function editarLote(id) {
   const elPagOutroGrp = document.getElementById('el-pagador-outro-group');
   if (elPagOutroGrp) elPagOutroGrp.style.display = l.pagador === 'outro' ? '' : 'none';
   document.getElementById('el-pagador-outro').value = l.pagador_outro || '';
+  document.getElementById('el-recebedor-nome').value = l.recebedor_nome || '';
+  document.getElementById('el-recebedor-contato').value = l.recebedor_contato || '';
   document.getElementById('modal-lote-overlay').classList.add('open');
 }
 
@@ -2768,6 +2794,8 @@ async function salvarEdicaoLote() {
       observacao: document.getElementById('el-obs').value || null,
       pagador: document.getElementById('el-pagador').value || null,
       pagador_outro: document.getElementById('el-pagador').value === 'outro' ? (document.getElementById('el-pagador-outro').value || null) : null,
+      recebedor_nome: document.getElementById('el-recebedor-nome').value || null,
+      recebedor_contato: document.getElementById('el-recebedor-contato').value || null,
     });
     showToast('✅ Lote atualizado!', 'success');
     fecharModalLoteBtn();
@@ -5326,6 +5354,15 @@ async function carregarDashboardCliente() {
           </div>
           <div style="background:var(--border);border-radius:20px;height:8px;overflow:hidden;">
             <div style="height:100%;background:${pct >= 100 ? 'var(--green)' : pct > 60 ? 'var(--yellow)' : 'var(--accent)'};border-radius:20px;width:${pct.toFixed(1)}%;transition:width 0.4s;"></div>
+          </div>
+        </div>` : ''}
+        ${(l.recebedor_nome || l.recebedor_contato) ? `
+        <div style="background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.2);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span style="font-size:16px;">📬</span>
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--accent);margin-bottom:2px;">Recebedor da Mercadoria</div>
+            <div style="font-size:13px;font-weight:600;">${l.recebedor_nome || '—'}</div>
+            ${l.recebedor_contato ? `<div style="font-size:12px;color:var(--muted);">📞 ${l.recebedor_contato}</div>` : ''}
           </div>
         </div>` : ''}
         <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:6px;">Motoristas (${l.motoristas.length})</div>
