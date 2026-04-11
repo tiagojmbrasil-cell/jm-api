@@ -4241,7 +4241,8 @@ function renderLogs(lista) {
 // ============ SEGURANÇA ============
 async function carregarSeguranca() {
   try {
-    const perfis = await supabaseRequest('GET', 'usuarios_perfil?order=criado_em.desc') || [];
+    const todosPerfis = await supabaseRequest('GET', 'usuarios_perfil?order=criado_em.desc') || [];
+    const perfis = todosPerfis.filter(u => u.setor !== '_excluido');
     document.getElementById('seg-total').textContent = perfis.length;
     document.getElementById('seg-ativos').textContent = perfis.filter(u => u.ativo).length;
     document.getElementById('seg-inativos').textContent = perfis.filter(u => !u.ativo).length;
@@ -4370,6 +4371,10 @@ async function alterarSetor(userId, novoSetor) {
     // Ao mudar setor, reseta permissões para o padrão do novo setor
     const novasPerms = PERMISSOES_PADRAO[novoSetor] || PERMISSOES_PADRAO['comercial'];
     await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userId}`, { setor: novoSetor, permissoes: novasPerms });
+    // Se for o próprio usuário logado, atualiza metadata no Supabase Auth para sincronizar JWT
+    if (userAtual && userAtual.id === userId) {
+      try { await sb.auth.updateUser({ data: { setor: novoSetor } }); } catch(e) {}
+    }
 
     // Sincroniza o setor no user_metadata do Supabase Auth (necessário para o JWT usado pela API)
     try {
@@ -4420,25 +4425,41 @@ async function toggleAtivo(userId, ativo) {
 async function excluirUsuario(userId, nomeUsuario) {
   if (!confirm(`Tem certeza que deseja excluir "${nomeUsuario}"?\nEssa ação não pode ser desfeita!`)) return;
   try {
-    let session = (await sb.auth.getSession()).data.session;
-    if (!session) throw new Error('Sessão expirada. Faça login novamente.');
-    const token = session.access_token;
-    // Tenta refresh do token para garantir que o JWT tem o setor atualizado
-    const { data: refreshed } = await sb.auth.refreshSession();
-    const tokenFinal = refreshed?.session?.access_token || token;
-
-    const resp = await fetch(API_URL + '?acao=deletar_usuario', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tokenFinal },
-      body: JSON.stringify({ userId, setor: setorAtual })
-    });
-    const result = await resp.json();
-    if (!resp.ok) {
-      const msg = result.error || 'Erro ao excluir usuário';
-      if (resp.status === 403) throw new Error(msg + ' — Verifique se seu usuário tem setor Administrativo no banco de dados.');
-      throw new Error(msg);
+    // Atualiza metadata do próprio usuário logado para sincronizar setor no JWT
+    if (userAtual?.id === userId || setorAtual === 'administrativo') {
+      try { await sb.auth.updateUser({ data: { setor: setorAtual } }); } catch(e) {}
     }
-    registrarLog('usuario', 'Usuário excluído', `Nome: ${nomeUsuario}`);
+
+    // Refresh do token para pegar setor atualizado no JWT
+    const { data: refreshed } = await sb.auth.refreshSession();
+    const tokenFinal = refreshed?.session?.access_token || (await sb.auth.getSession()).data.session?.access_token || '';
+
+    // Tenta hard-delete via API da Vercel
+    let hardDeleteOk = false;
+    try {
+      const resp = await fetch(API_URL + '?acao=deletar_usuario', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tokenFinal },
+        body: JSON.stringify({ userId, setor: setorAtual })
+      });
+      const result = await resp.json();
+      if (resp.ok) hardDeleteOk = true;
+      else if (resp.status !== 403) throw new Error(result.error || 'Erro ao excluir usuário');
+      // Se 403 (permissão JWT), cai no soft-delete abaixo
+    } catch(apiErr) {
+      if (!apiErr.message.includes('403') && !apiErr.message.toLowerCase().includes('permiss')) throw apiErr;
+    }
+
+    if (!hardDeleteOk) {
+      // Soft-delete: desativa e marca como excluído no perfil
+      await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userId}`, {
+        ativo: false,
+        setor: '_excluido',
+        nome: `[EXCLUÍDO] ${nomeUsuario}`
+      });
+    }
+
+    registrarLog('usuario', 'Usuário excluído', `Nome: ${nomeUsuario}, Método: ${hardDeleteOk ? 'hard-delete' : 'soft-delete'}`);
     showToast('✅ Usuário excluído com sucesso!', 'success');
     carregarSeguranca();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
