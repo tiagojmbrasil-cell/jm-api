@@ -3232,7 +3232,16 @@ let statusLoteData = [];
 
 async function abrirMotoristas(id) {
   loteAtualId = parseInt(id);
-  loteAtualDados = lotes.find(l => parseInt(l.id) === parseInt(id));
+  // Busca em lotes (aba Lotes) OU em lotesLogisticoData (aba Logístico)
+  loteAtualDados = lotes.find(l => parseInt(l.id) === parseInt(id))
+    || (typeof lotesLogisticoData !== 'undefined' ? lotesLogisticoData.find(l => parseInt(l.id) === parseInt(id)) : null);
+  // Se ainda não encontrou, busca direto no banco
+  if (!loteAtualDados) {
+    try {
+      const res = await supabaseRequest('GET', `lotes?id=eq.${id}`) || [];
+      if (res.length) loteAtualDados = res[0];
+    } catch(e) {}
+  }
   if (!loteAtualDados) return;
   document.getElementById('modal-motoristas-titulo').textContent = 'Motoristas — Lote #' + id;
   document.getElementById('ml-cliente').textContent = loteAtualDados.cliente || '—';
