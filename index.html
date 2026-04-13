@@ -448,6 +448,48 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 <!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
 
+  <!-- Barra de Filtros -->
+  <div class="card" style="padding:16px 20px;margin-bottom:20px;">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted);white-space:nowrap;">🔍 Filtrar por</span>
+      <input type="text" id="df-motorista" placeholder="Motorista / CPF / Placa..." oninput="aplicarFiltrosDash()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;width:200px;">
+      <input type="text" id="df-lote" placeholder="Lote # ou Produto..." oninput="aplicarFiltrosDash()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;width:180px;">
+      <input type="text" id="df-cliente" placeholder="Cliente..." oninput="aplicarFiltrosDash()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;width:160px;">
+      <select id="df-status-mot" onchange="aplicarFiltrosDash()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;">
+        <option value="">Todos os status motorista</option>
+        <option value="cadastro">Cadastro</option>
+        <option value="aguardando_gr_interna">Ag. GR Interna</option>
+        <option value="aguardando_gr_externa">Ag. GR Externa</option>
+        <option value="liberado_carregar">Liberado Carregar</option>
+        <option value="aguardando_emissao_doc">Ag. Emissão Doc</option>
+        <option value="aguardando_fotos">Ag. Fotos</option>
+        <option value="adiantamento_pago">Adiantamento Pago</option>
+        <option value="em_transito">Em Trânsito</option>
+        <option value="aguardando_chegada">Ag. Chegada</option>
+        <option value="manifesto_encerrado">Manifesto Encerrado</option>
+        <option value="saldo_agendado">Saldo Agendado</option>
+        <option value="saldo_pago">Saldo Pago</option>
+      </select>
+      <select id="df-status-lote" onchange="aplicarFiltrosDash()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;">
+        <option value="">Todos os status lote</option>
+        <option value="liberado">Liberado</option>
+        <option value="aguardando_informacoes">Ag. Informações</option>
+        <option value="buscando">Buscando</option>
+        <option value="finalizado">Finalizado</option>
+        <option value="suspenso">Suspenso</option>
+        <option value="urgente">Urgente</option>
+      </select>
+      <select id="df-status-cot" onchange="aplicarFiltrosDash()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;">
+        <option value="">Todas as cotações</option>
+        <option value="pendente">Pendente</option>
+        <option value="aprovada">Aprovada</option>
+        <option value="reprovada">Reprovada</option>
+      </select>
+      <button onclick="limparFiltrosDash()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 14px;cursor:pointer;white-space:nowrap;">✕ Limpar</button>
+      <span id="df-total-label" style="font-size:12px;color:var(--muted);margin-left:auto;white-space:nowrap;"></span>
+    </div>
+  </div>
+
   <!-- KPIs Topo -->
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;" id="dash-kpis">
     <div class="stat total"><div class="stat-label">Cotações Total</div><div class="stat-value" id="stat-total">—</div></div>
@@ -504,7 +546,13 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     </div>
   </div>
 
-  <!-- Linha 3: Cotações recentes -->
+  <!-- Linha 3: Tabela motoristas filtrados -->
+  <div class="card" id="dash-card-motoristas" style="margin-bottom:16px;display:none;">
+    <div class="table-header"><h2 id="dash-mot-titulo">Motoristas</h2></div>
+    <div id="dash-motoristas-table"></div>
+  </div>
+
+  <!-- Linha 4: Cotações recentes -->
   <div class="card">
     <div class="table-header">
       <h2>Cotações Recentes</h2>
@@ -2406,13 +2454,57 @@ function showPage(name) {
 }
 
 // DASHBOARD
-// Armazena instâncias dos gráficos para destruir antes de recriar
+// ── DASHBOARD — dados brutos e filtros ─────────────────────────────────────
 const _dashCharts = {};
+let _dashRaw = { cotacoes: [], lotes: [], motoristas: [] }; // dados brutos sem filtro
+
 function _criarChart(id, config) {
   if (_dashCharts[id]) { _dashCharts[id].destroy(); }
   const ctx = document.getElementById(id);
   if (!ctx) return;
   _dashCharts[id] = new Chart(ctx, config);
+}
+
+function limparFiltrosDash() {
+  ['df-motorista','df-lote','df-cliente','df-status-mot','df-status-lote','df-status-cot'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  aplicarFiltrosDash();
+}
+
+function aplicarFiltrosDash() {
+  const fMot    = (document.getElementById('df-motorista')?.value || '').toLowerCase().trim();
+  const fLote   = (document.getElementById('df-lote')?.value || '').toLowerCase().trim();
+  const fCliente= (document.getElementById('df-cliente')?.value || '').toLowerCase().trim();
+  const fStMot  = document.getElementById('df-status-mot')?.value || '';
+  const fStLote = document.getElementById('df-status-lote')?.value || '';
+  const fStCot  = document.getElementById('df-status-cot')?.value || '';
+
+  // Filtra motoristas
+  let motoristas = _dashRaw.motoristas;
+  if (fMot)   motoristas = motoristas.filter(m => (m.nome||'').toLowerCase().includes(fMot) || (m.cpf||'').includes(fMot) || (m.placa||'').toLowerCase().includes(fMot));
+  if (fLote)  motoristas = motoristas.filter(m => String(m.lote_id||'').includes(fLote));
+  if (fStMot) motoristas = motoristas.filter(m => (m.status||'') === fStMot);
+
+  // Filtra lotes
+  let lotesFilt = _dashRaw.lotes;
+  if (fLote)   lotesFilt = lotesFilt.filter(l => String(l.id||'').includes(fLote) || (l.produto||'').toLowerCase().includes(fLote));
+  if (fCliente)lotesFilt = lotesFilt.filter(l => (l.cliente||'').toLowerCase().includes(fCliente));
+  if (fStLote) lotesFilt = lotesFilt.filter(l => (l.status||'') === fStLote);
+
+  // Filtra cotações
+  let cotFilt = _dashRaw.cotacoes;
+  if (fCliente)cotFilt = cotFilt.filter(c => (c.cliente_nome||'').toLowerCase().includes(fCliente));
+  if (fStCot)  cotFilt = cotFilt.filter(c => (c.status||'') === fStCot);
+
+  // Conta total filtrado para label
+  const totalFiltrado = motoristas.length + lotesFilt.length + cotFilt.length;
+  const hayFiltro = fMot || fLote || fCliente || fStMot || fStLote || fStCot;
+  const labelEl = document.getElementById('df-total-label');
+  if (labelEl) labelEl.textContent = hayFiltro ? `${motoristas.length} motoristas · ${lotesFilt.length} lotes · ${cotFilt.length} cotações` : '';
+
+  _renderDashboard(cotFilt, lotesFilt, motoristas);
 }
 
 async function carregarDashboard() {
@@ -2423,15 +2515,39 @@ async function carregarDashboard() {
       supabaseRequest('GET', 'lotes?order=criado_em.desc&limit=500'),
       supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=1000'),
     ]);
-    cotacoes = cotData || [];
-    const todosLotes = lotesData || [];
-    const todosMotoristas = lotMotData || [];
+    _dashRaw.cotacoes  = cotData || [];
+    _dashRaw.lotes     = lotesData || [];
+    _dashRaw.motoristas= lotMotData || [];
+    cotacoes = _dashRaw.cotacoes;
+
+    // Popula datalists de autocomplete nos filtros
+    const nomes = [...new Set(_dashRaw.motoristas.map(m => m.nome).filter(Boolean))].sort();
+    const clientes = [...new Set(_dashRaw.lotes.map(l => l.cliente).filter(Boolean))].sort();
+    let dlMot = document.getElementById('dl-dash-motoristas');
+    if (!dlMot) { dlMot = document.createElement('datalist'); dlMot.id='dl-dash-motoristas'; document.body.appendChild(dlMot); }
+    dlMot.innerHTML = nomes.map(n => `<option value="${n}">`).join('');
+    document.getElementById('df-motorista')?.setAttribute('list','dl-dash-motoristas');
+    let dlCli = document.getElementById('dl-dash-clientes');
+    if (!dlCli) { dlCli = document.createElement('datalist'); dlCli.id='dl-dash-clientes'; document.body.appendChild(dlCli); }
+    dlCli.innerHTML = clientes.map(c => `<option value="${c}">`).join('');
+    document.getElementById('df-cliente')?.setAttribute('list','dl-dash-clientes');
+
+    aplicarFiltrosDash();
+  } catch(e) {
+    console.error('[Dashboard]', e);
+    document.getElementById('dashboard-table').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar: ${e.message}</p></div>`;
+  }
+}
+
+function _renderDashboard(cotacoesFilt, lotesFilt, motoristsFilt) {
+  const todosLotes = lotesFilt;
+  const todosMotoristas = motoristsFilt;
 
     // ── KPIs Cotações ──────────────────────────────────────────────────────
-    document.getElementById('stat-total').textContent = cotacoes.length;
-    document.getElementById('stat-aprovadas').textContent = cotacoes.filter(c => c.status === 'aprovada').length;
-    document.getElementById('stat-reprovadas').textContent = cotacoes.filter(c => c.status === 'reprovada').length;
-    document.getElementById('stat-pendentes').textContent = cotacoes.filter(c => c.status === 'pendente').length;
+    document.getElementById('stat-total').textContent = cotacoesFilt.length;
+    document.getElementById('stat-aprovadas').textContent = cotacoesFilt.filter(c => c.status === 'aprovada').length;
+    document.getElementById('stat-reprovadas').textContent = cotacoesFilt.filter(c => c.status === 'reprovada').length;
+    document.getElementById('stat-pendentes').textContent = cotacoesFilt.filter(c => c.status === 'pendente').length;
 
     // ── KPIs Operação ──────────────────────────────────────────────────────
     const lotesAtivos = todosLotes.filter(l => !['finalizado','suspenso'].includes(l.status || ''));
@@ -2532,8 +2648,8 @@ async function carregarDashboard() {
 
     // ── GRÁFICO 4: Funil do processo (Bar vertical) ────────────────────────
     const funil = [
-      { label: 'Cotações', valor: cotacoes.length, cor: '#5a6070' },
-      { label: 'Aprovadas', valor: cotacoes.filter(c => c.status === 'aprovada').length, cor: '#3b82f6' },
+      { label: 'Cotações', valor: cotacoesFilt.length, cor: '#5a6070' },
+      { label: 'Aprovadas', valor: cotacoesFilt.filter(c => c.status === 'aprovada').length, cor: '#3b82f6' },
       { label: 'Em GR', valor: todosMotoristas.filter(m => ['cadastro','aguardando_gr_interna','aguardando_gr_externa','validando_gr_interna','validando_gr_externa'].includes(m.status||'')).length, cor: '#f97316' },
       { label: 'Liberados', valor: todosMotoristas.filter(m => m.status === 'liberado_carregar').length, cor: '#eab308' },
       { label: 'Carregando', valor: todosMotoristas.filter(m => ['aguardando_fotos','fotos_inseridas'].includes(m.status||'')).length, cor: '#8b5cf6' },
@@ -2556,13 +2672,44 @@ async function carregarDashboard() {
       }
     });
 
-    // ── Tabela cotações recentes ────────────────────────────────────────────
-    document.getElementById('dashboard-table').innerHTML = renderTabela(cotacoes.slice(0, 8));
+    // ── Tabela motoristas filtrados ────────────────────────────────────────
+    const cardMot = document.getElementById('dash-card-motoristas');
+    const tableMot = document.getElementById('dash-motoristas-table');
+    const hayFiltroMot = (document.getElementById('df-motorista')?.value||'').trim() ||
+                         (document.getElementById('df-lote')?.value||'').trim() ||
+                         (document.getElementById('df-status-mot')?.value||'');
+    if (cardMot && tableMot) {
+      if (hayFiltroMot && todosMotoristas.length > 0) {
+        cardMot.style.display = '';
+        const tituloMot = document.getElementById('dash-mot-titulo');
+        if (tituloMot) tituloMot.textContent = `Motoristas encontrados (${todosMotoristas.length})`;
+        const statusMotLabel = { cadastro:'Cadastro', aguardando_gr_interna:'Ag. GR Int.', aguardando_gr_externa:'Ag. GR Ext.', validando_gr_interna:'Valid. GR', liberado_carregar:'Liberado', aguardando_nf:'Ag. NF', aguardando_emissao_doc:'Ag. Doc', aguardando_fotos:'Ag. Fotos', fotos_inseridas:'Fotos OK', adiantamento_pago:'Adiant. Pago', em_transito:'Em Trânsito', aguardando_chegada:'Ag. Chegada', aguardando_encerramento_mdfe:'Ag. MDFe', manifesto_encerrado:'Manifesto Enc.', saldo_agendado:'Saldo Ag.', saldo_pago:'Saldo Pago' };
+        const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+        tableMot.innerHTML = `<table><thead><tr><th>Lote</th><th>Motorista</th><th>CPF</th><th>Placa</th><th>Peso</th><th>Status</th><th>GR</th></tr></thead><tbody>
+          ${todosMotoristas.slice(0,50).map(m => {
+            const st = m.status||''; const gr = m.gr_status||'';
+            const stLabel = statusMotLabel[st]||st;
+            const grCor = gr==='aprovado'?'var(--green)':gr==='reprovado'?'var(--red)':'var(--yellow)';
+            return `<tr>
+              <td style="color:var(--muted);font-size:12px">#${m.lote_id||'—'}</td>
+              <td><strong>${esc(m.nome||'—')}</strong></td>
+              <td style="font-size:12px">${esc(m.cpf||'—')}</td>
+              <td style="font-size:12px">${esc(m.placa||'—')}</td>
+              <td style="font-size:12px">${m.peso_saida ? m.peso_saida+' ton' : '—'}</td>
+              <td><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:12px;background:rgba(249,115,22,0.1);color:var(--accent)">${stLabel}</span></td>
+              <td><span style="font-size:11px;font-weight:600;color:${grCor}">${gr||'—'}</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody></table>`;
+      } else {
+        cardMot.style.display = 'none';
+      }
+    }
 
-  } catch(e) {
-    console.error('[Dashboard]', e);
-    document.getElementById('dashboard-table').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar: ${e.message}</p></div>`;
-  }
+    // ── Tabela cotações recentes ────────────────────────────────────────────
+    const tabelaLabel = document.querySelector('#page-dashboard .table-header h2');
+    if (tabelaLabel) tabelaLabel.textContent = cotacoesFilt.length < _dashRaw.cotacoes.length ? `Cotações Filtradas (${cotacoesFilt.length})` : 'Cotações Recentes';
+    document.getElementById('dashboard-table').innerHTML = cotacoesFilt.length ? renderTabela(cotacoesFilt.slice(0, 10)) : '<div class="empty"><div class="empty-icon">🔍</div><p>Nenhuma cotação encontrada com esse filtro.</p></div>';
 }
 
 // LISTA
