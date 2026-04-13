@@ -4947,6 +4947,12 @@ function aplicarPermissoes(setor, perms) {
     if (document.getElementById('page-dashboard-cliente')) {
       showPage('dashboard-cliente');
     }
+    // Mostra banner PWA no mobile para o portal do cliente
+    setTimeout(function() {
+      if (typeof window.mostrarBannerPWACliente === 'function') {
+        window.mostrarBannerPWACliente();
+      }
+    }, 1200);
     return;
   }
   const primeiraVisivel = paginas.find(p => (permissoesAtual[p] ?? 0) > 0) || 'dashboard';
@@ -7292,5 +7298,154 @@ sb.auth.onAuthStateChange(async (event, session) => {
   </div>
 </div>
 
+
+<!-- =====================================================
+     BANNER PWA — "Adicionar à Tela de Início"
+     Aparece APENAS no mobile e APENAS no portal do cliente
+     ===================================================== -->
+<div id="pwa-banner" style="
+  display:none;
+  position:fixed;
+  bottom:0; left:0; right:0;
+  z-index:9999;
+  padding:12px 14px 28px;
+  background:transparent;
+  pointer-events:none;
+">
+  <div style="
+    background:#fff;
+    border-radius:20px;
+    padding:22px 20px 20px;
+    box-shadow:0 8px 40px rgba(0,0,0,0.22);
+    pointer-events:all;
+    position:relative;
+    max-width:480px;
+    margin:0 auto;
+  ">
+    <!-- Botão fechar -->
+    <button onclick="fecharBannerPWA()" style="
+      position:absolute; top:14px; right:14px;
+      width:32px; height:32px; border-radius:50%;
+      background:#f0f0f0; border:none; cursor:pointer;
+      font-size:16px; color:#555;
+      display:flex; align-items:center; justify-content:center;
+      line-height:1;
+    ">✕</button>
+
+    <!-- Título -->
+    <p style="font-size:17px;color:#111;margin:0 0 18px;max-width:80%;line-height:1.4;font-family:'DM Sans',sans-serif;">
+      Adicione o sistema à sua<br><strong>Tela de Início</strong> para acesso rápido.
+    </p>
+
+    <!-- Card do app -->
+    <div style="
+      background:#f5f5f5; border-radius:14px;
+      padding:12px 14px; display:flex; align-items:center;
+      gap:14px; margin-bottom:16px;
+    ">
+      <div style="
+        width:52px; height:52px; border-radius:12px;
+        background:linear-gradient(135deg,#22c55e,#eab308);
+        display:flex; align-items:center; justify-content:center;
+        font-size:24px; flex-shrink:0;
+      ">🚛</div>
+      <div>
+        <div style="font-size:15px;font-weight:700;color:#111;font-family:'Syne',sans-serif;">JM Brasil</div>
+        <div style="font-size:12px;color:#888;margin-top:2px;font-family:'DM Sans',sans-serif;">Portal do Cliente</div>
+      </div>
+    </div>
+
+    <!-- Instruções iOS -->
+    <div id="pwa-instrucoes-ios" style="display:none;flex-direction:column;gap:10px;">
+      <div style="
+        background:#f9f9f9; border:1px solid #e8e8e8; border-radius:12px;
+        padding:13px 16px; display:flex; align-items:center; gap:12px;
+      ">
+        <span style="font-size:13px;color:#222;font-family:'DM Sans',sans-serif;">
+          1. Toque no botão <strong>"Compartilhar"</strong>
+        </span>
+        <span style="font-size:18px;margin-left:auto;">⬆️</span>
+      </div>
+      <div style="
+        background:#f9f9f9; border:1px solid #e8e8e8; border-radius:12px;
+        padding:13px 16px; display:flex; align-items:center; gap:12px;
+      ">
+        <span style="font-size:13px;color:#222;font-family:'DM Sans',sans-serif;">
+          2. Selecione <strong>"Adicionar à Tela de Início"</strong>
+        </span>
+        <span style="font-size:18px;margin-left:auto;">➕</span>
+      </div>
+    </div>
+
+    <!-- Instruções Android -->
+    <div id="pwa-instrucoes-android" style="display:none;flex-direction:column;gap:10px;">
+      <div style="
+        background:#f9f9f9; border:1px solid #e8e8e8; border-radius:12px;
+        padding:13px 16px; display:flex; align-items:center; gap:12px;
+      ">
+        <span style="font-size:13px;color:#222;font-family:'DM Sans',sans-serif;">
+          1. Toque no menu <strong>⋮</strong> do navegador
+        </span>
+        <span style="font-size:18px;margin-left:auto;">⋮</span>
+      </div>
+      <div style="
+        background:#f9f9f9; border:1px solid #e8e8e8; border-radius:12px;
+        padding:13px 16px; display:flex; align-items:center; gap:12px;
+      ">
+        <span style="font-size:13px;color:#222;font-family:'DM Sans',sans-serif;">
+          2. Selecione <strong>"Adicionar à tela inicial"</strong>
+        </span>
+        <span style="font-size:18px;margin-left:auto;">➕</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  // Só roda em mobile
+  var isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (!isMobile) return;
+
+  // Não mostrar se já está instalado como PWA (standalone)
+  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) return;
+
+  // Detecta iOS ou Android
+  var isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  var isAndroid = /Android/i.test(navigator.userAgent);
+  if (!isIOS && !isAndroid) return;
+
+  // Verifica se o usuário já fechou o banner antes (não incomodar mais)
+  if (sessionStorage.getItem('pwa_banner_fechado')) return;
+
+  // Função chamada quando o setor cliente loga — exposta globalmente
+  window.mostrarBannerPWACliente = function() {
+    if (sessionStorage.getItem('pwa_banner_fechado')) return;
+    var banner = document.getElementById('pwa-banner');
+    if (!banner) return;
+
+    // Mostra instrução correta para o SO
+    if (isIOS) {
+      var el = document.getElementById('pwa-instrucoes-ios');
+      if (el) el.style.display = 'flex';
+    } else {
+      var el2 = document.getElementById('pwa-instrucoes-android');
+      if (el2) el2.style.display = 'flex';
+    }
+
+    banner.style.display = 'block';
+
+    // Fecha automaticamente após 30 segundos
+    setTimeout(function() { fecharBannerPWA(); }, 30000);
+  };
+
+  window.fecharBannerPWA = function() {
+    var banner = document.getElementById('pwa-banner');
+    if (banner) banner.style.display = 'none';
+    sessionStorage.setItem('pwa_banner_fechado', '1');
+  };
+})();
+</script>
 </body>
 </html>
