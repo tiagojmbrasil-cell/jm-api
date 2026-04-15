@@ -1309,7 +1309,17 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
     <div class="form-grid" style="grid-template-columns:1fr 1fr;">
       <div class="form-group"><label>Nome</label><input type="text" id="gr-nome" placeholder="Nome do motorista" required></div>
-      <div class="form-group"><label>Placa do Veículo</label><input type="text" id="gr-placa" placeholder="Ex: ABC-1234" required></div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Placa do Veículo <span style="color:var(--red)">*</span> <span style="font-size:11px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">(adicione as placas das carretas se houver)</span></label>
+        <div id="gr-placas-lista" style="display:flex;flex-direction:column;gap:8px;">
+          <!-- Placa principal — obrigatória -->
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" id="gr-placa" placeholder="Placa principal — Ex: ABC-1234" required style="flex:1;text-transform:uppercase;">
+            <span style="font-size:11px;color:var(--muted);white-space:nowrap;padding:0 4px;">Principal</span>
+          </div>
+        </div>
+        <button type="button" onclick="adicionarPlacaExtra()" style="margin-top:8px;background:rgba(249,115,22,0.08);border:1px dashed rgba(249,115,22,0.4);color:var(--accent);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;width:100%;">+ Adicionar placa de carreta (opcional)</button>
+      </div>
       <div class="form-group"><label>Contato / Telefone</label><input type="text" id="gr-contato" placeholder="Ex: (34) 99999-9999" required></div>
       <div class="form-group"><label>CPF</label><input type="text" id="gr-cpf" placeholder="Ex: 000.000.000-00" required></div>
     </div>
@@ -5851,8 +5861,34 @@ function abrirCadastroMotoristaGR() {
   const btnEtc = document.getElementById('gr-btn-etc');
   if (btnTac) btnTac.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
   if (btnEtc) btnEtc.style.cssText = 'flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
+  // Remove placas extras adicionadas anteriormente
+  const lista = document.getElementById('gr-placas-lista');
+  if (lista) {
+    Array.from(lista.querySelectorAll('.gr-placa-extra')).forEach(el => el.remove());
+  }
   limparAnexosFormularioCadastroMotoristaGR();
   document.getElementById('modal-cadastro-motorista-overlay').classList.add('open');
+}
+
+function adicionarPlacaExtra() {
+  const lista = document.getElementById('gr-placas-lista');
+  const idx = lista.querySelectorAll('.gr-placa-extra').length + 2; // começa em "Carreta 1"
+  const nomeLabel = idx === 2 ? 'Carreta 1' : idx === 3 ? 'Carreta 2' : `Carreta ${idx - 1}`;
+  const div = document.createElement('div');
+  div.className = 'gr-placa-extra';
+  div.style.cssText = 'display:flex;gap:8px;align-items:center;';
+  div.innerHTML = `
+    <input type="text" class="gr-placa-extra-input" placeholder="Placa ${nomeLabel} — Ex: XYZ-5678" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 14px;outline:none;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+    <span style="font-size:11px;color:var(--muted);white-space:nowrap;padding:0 4px;">${nomeLabel}</span>
+    <button type="button" onclick="this.parentElement.remove()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 9px;font-size:13px;cursor:pointer;white-space:nowrap;">🗑️</button>
+  `;
+  lista.appendChild(div);
+}
+
+function coletarPlacasExtras() {
+  return Array.from(document.querySelectorAll('.gr-placa-extra-input'))
+    .map(el => el.value.trim())
+    .filter(v => v.length > 0);
 }
 
 function fecharCadastroMotoristaGR() {
@@ -5997,6 +6033,7 @@ async function salvarMotoristaGR() {
     const resultado = await supabaseRequest('POST', 'motoristas', {
       nome,
       placa: document.getElementById('gr-placa').value || null,
+      placas_extras: coletarPlacasExtras(),
       contato: document.getElementById('gr-contato').value || null,
       cpf: document.getElementById('gr-cpf').value || null,
       tipo_motorista: document.getElementById('gr-tipo-motorista').value || null,
@@ -6111,7 +6148,7 @@ function renderGR(dados) {
           <td style="color:var(--muted);font-size:12px">#${m.id}</td>
           <td><strong>${m.nome || '—'}</strong></td>
           <td style="font-size:12px">${m.cpf || '—'}</td>
-          <td style="font-size:12px">${m.placa || '—'}</td>
+          <td style="font-size:12px">${m.placa || '—'}${m.placas_extras && m.placas_extras.length ? '<br><span style="color:var(--muted);font-size:11px;">' + m.placas_extras.join(' · ') + '</span>' : ''}</td>
           <td style="font-size:12px">${m.contato || '—'}</td>
           <td>${badgeGR(m.gr_status || 'pendente')}</td>
           <td style="font-size:12px;color:var(--muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.gr_motivo || '—'}</td>
@@ -6132,7 +6169,10 @@ async function abrirModalGR(id) {
   document.getElementById('mgr-status-bar').innerHTML = badgeGR(m.gr_status || 'pendente');
   document.getElementById('mgr-nome').textContent = m.nome || '—';
   document.getElementById('mgr-cpf').textContent = m.cpf || '—';
-  document.getElementById('mgr-placa').textContent = m.placa || '—';
+  document.getElementById('mgr-placa').innerHTML = (m.placa || '—') +
+    (m.placas_extras && m.placas_extras.length
+      ? '<br><span style="font-size:11px;color:var(--muted);">Carretas: ' + m.placas_extras.join(' · ') + '</span>'
+      : '');
   document.getElementById('mgr-contato').textContent = m.contato || '—';
   document.getElementById('mgr-peso').textContent = '—';
   document.getElementById('mgr-pagamento').innerHTML = badgeTipoPagamento(m.tipo_pagamento);
