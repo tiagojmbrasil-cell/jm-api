@@ -848,6 +848,9 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <h2>Lotes Registrados</h2>
       <div class="filters">
         <input type="text" id="filtro-lote-busca" placeholder="🔍 Buscar cliente ou nº do lote..." oninput="filtrarLotes()">
+        <select id="filtro-lote-agencia" onchange="filtrarLotes()">
+          <option value="">Todas as agências</option>
+        </select>
         <select id="filtro-lote-status" onchange="filtrarLotes()">
           <option value="">Todos os status</option>
           <option value="liberado">Liberado</option>
@@ -1658,6 +1661,9 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <h2>Lotes Registrados</h2>
       <div class="filters">
         <input type="text" id="filtro-log-lote-busca" placeholder="🔍 Buscar cliente ou nº do lote..." oninput="filtrarLotesLogistico()">
+        <select id="filtro-log-lote-agencia" onchange="filtrarLotesLogistico()">
+          <option value="">Todas as agências</option>
+        </select>
         <select id="filtro-log-lote-status" onchange="filtrarLotesLogistico()">
           <option value="">Todos os status</option>
           <option value="liberado">Liberado</option>
@@ -3046,16 +3052,31 @@ function resetLote() {
 async function carregarLotes() {
   try {
     lotes = await supabaseRequest('GET', 'lotes?order=criado_em.desc&limit=200') || [];
+    popularAgenciasLotes();
     renderLotes(lotes);
   } catch(e) {
     document.getElementById('lotes-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar lotes.</p></div>';
   }
 }
 
+function popularAgenciasLotes() {
+  const sel = document.getElementById('filtro-lote-agencia');
+  if (!sel) return;
+  const atual = sel.value;
+  const agencias = [...new Set(lotes.map(l => l.agencia).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">Todas as agências</option>' +
+    agencias.map(a => `<option value="${a}"${a===atual?' selected':''}>${a}</option>`).join('');
+}
+
 function filtrarLotes() {
   const busca = document.getElementById('filtro-lote-busca').value.toLowerCase();
   const status = document.getElementById('filtro-lote-status').value;
-  renderLotes(lotes.filter(l => (!busca || (l.cliente||'').toLowerCase().includes(busca) || String(l.id).includes(busca)) && (!status || l.status === status)));
+  const agencia = document.getElementById('filtro-lote-agencia').value;
+  renderLotes(lotes.filter(l =>
+    (!busca || (l.cliente||'').toLowerCase().includes(busca) || String(l.id).includes(busca)) &&
+    (!status || l.status === status) &&
+    (!agencia || l.agencia === agencia)
+  ));
 }
 
 function renderLotes(dados) {
@@ -5183,6 +5204,7 @@ async function carregarLotesLogistico() {
   el.innerHTML = '<div class="loading">Carregando lotes...</div>';
   try {
     lotesLogisticoData = await supabaseRequest('GET', 'lotes?order=criado_em.desc&limit=300') || [];
+    popularAgenciasLotesLogistico();
     filtrarLotesLogistico();
   } catch(e) {
     console.error('[LotesLogístico]', e);
@@ -5190,12 +5212,23 @@ async function carregarLotesLogistico() {
   }
 }
 
+function popularAgenciasLotesLogistico() {
+  const sel = document.getElementById('filtro-log-lote-agencia');
+  if (!sel) return;
+  const atual = sel.value;
+  const agencias = [...new Set(lotesLogisticoData.map(l => l.agencia).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">Todas as agências</option>' +
+    agencias.map(a => `<option value="${a}"${a===atual?' selected':''}>${a}</option>`).join('');
+}
+
 function filtrarLotesLogistico() {
   const busca = (document.getElementById('filtro-log-lote-busca')?.value || '').toLowerCase();
   const status = document.getElementById('filtro-log-lote-status')?.value || '';
+  const agencia = document.getElementById('filtro-log-lote-agencia')?.value || '';
   const filtrados = lotesLogisticoData.filter(l =>
     (!busca || (l.cliente||'').toLowerCase().includes(busca) || String(l.id).includes(busca)) &&
-    (!status || l.status === status)
+    (!status || l.status === status) &&
+    (!agencia || l.agencia === agencia)
   );
   renderLotesLogistico(filtrados);
 }
