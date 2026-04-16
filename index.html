@@ -55,7 +55,7 @@
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
 .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;display:flex;align-items:center;gap:10px;}
-nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}nav::-webkit-scrollbar{display:none;}
+nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;flex:1;min-width:0;}nav::-webkit-scrollbar{display:none;}
 nav button{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:6px 9px;border-radius:6px;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
 nav button:hover{color:var(--text);background:var(--surface2);}
 nav button.active{color:var(--accent);background:rgba(249,115,22,0.1);}
@@ -443,7 +443,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     <button onclick="showPage('relatorios')">📊 Relatórios</button>
     <button id="nav-seguranca" onclick="showPage('seguranca')">🔒 Segurança</button>
   </nav>
-  <div style="display:flex;align-items:center;gap:8px;">
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
     <button class="btn-tema" id="btn-tema" onclick="alternarTema()" title="Alternar tema">🌙</button>
     <button class="btn-logout" onclick="fazerLogout()">Sair</button>
     <button class="nav-hamburger" onclick="abrirNavDrawer()" aria-label="Menu">☰</button>
