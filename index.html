@@ -6102,7 +6102,7 @@ async function salvarMotoristaGR() {
       const arquivos = [
         { id: 'gr-arq-cnh', tipo: 'cnh' }, { id: 'gr-arq-antt', tipo: 'antt' },
         { id: 'gr-arq-doc-caminhao', tipo: 'doc_caminhao' }, { id: 'gr-arq-residencia', tipo: 'residencia' },
-        { id: 'gr-arq-foto-caminhao', tipo: 'foto_caminhao' }, { id: 'gr-arq-selfie-cnh', tipo: 'selfie_cnh' },
+        { id: 'gr-arq-selfie-cnh', tipo: 'selfie_cnh' },
         { id: 'gr-arq-selfie-placa', tipo: 'selfie_placa' }, { id: 'gr-arq-lonas', tipo: 'lonas' },
       ];
       const anexos = [];
@@ -6114,6 +6114,12 @@ async function salvarMotoristaGR() {
             if (anexo) anexos.push(anexo);
           }
         }
+      }
+      // Upload das fotos extras do caminhão (principal + adicionais)
+      const fotosCaminhao = grColetarTodasFotosCaminhao();
+      for (const file of fotosCaminhao) {
+        const anexo = await uploadAnexoGR(file, motoristaId, 'foto_caminhao');
+        if (anexo) anexos.push(anexo);
       }
       if (anexos.length > 0) {
         await supabaseRequest('PATCH', `motoristas?id=eq.${motoristaId}`, { anexos });
@@ -7168,7 +7174,7 @@ async function salvarEdicaoMotorista() {
       const arquivosCfg = [
         { id: 'em-arq-cnh', tipo: 'cnh' }, { id: 'em-arq-antt', tipo: 'antt' },
         { id: 'em-arq-doc-caminhao', tipo: 'doc_caminhao' }, { id: 'em-arq-residencia', tipo: 'residencia' },
-        { id: 'em-arq-foto-caminhao', tipo: 'foto_caminhao' }, { id: 'em-arq-selfie-cnh', tipo: 'selfie_cnh' },
+        { id: 'em-arq-selfie-cnh', tipo: 'selfie_cnh' },
         { id: 'em-arq-selfie-placa', tipo: 'selfie_placa' }, { id: 'em-arq-lonas', tipo: 'lonas' },
       ];
       const removerPathsStorage = async (paths) => {
@@ -7188,6 +7194,20 @@ async function salvarEdicaoMotorista() {
         }
         for (const file of input.files) {
           const anexo = await uploadAnexoGR(file, motoristaEditandoId, tipo);
+          if (anexo) anexos.push(anexo);
+        }
+      }
+      // Upload das fotos extras do caminhão (principal + adicionais)
+      const fotosCaminhaoEm = emColetarTodasFotosCaminhao();
+      if (fotosCaminhaoEm.length > 0) {
+        // Remove fotos antigas do caminhão antes de adicionar novas
+        const antigasFoto = anexos.filter(a => a.tipo === 'foto_caminhao');
+        await removerPathsStorage(antigasFoto.map(a => a.path || a.url));
+        const semFoto = anexos.filter(a => a.tipo !== 'foto_caminhao');
+        anexos.length = 0;
+        anexos.push(...semFoto);
+        for (const file of fotosCaminhaoEm) {
+          const anexo = await uploadAnexoGR(file, motoristaEditandoId, 'foto_caminhao');
           if (anexo) anexos.push(anexo);
         }
       }
