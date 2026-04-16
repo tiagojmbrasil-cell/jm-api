@@ -55,8 +55,8 @@
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
 .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;display:flex;align-items:center;gap:10px;}
-nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;flex:1;min-width:0;}nav::-webkit-scrollbar{display:none;}
-nav button{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:6px 9px;border-radius:6px;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+nav{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;flex:1;min-width:0;}nav::-webkit-scrollbar{display:none;}
+nav button{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;padding:6px 11px;border-radius:6px;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
 nav button:hover{color:var(--text);background:var(--surface2);}
 nav button.active{color:var(--accent);background:rgba(249,115,22,0.1);}
 .btn-logout{background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 14px;border-radius:6px;cursor:pointer;transition:all 0.15s;}
@@ -3762,23 +3762,31 @@ async function buscarCNPJ() {
   const status = document.getElementById('cl-cnpj-status');
   if (cnpj.length !== 14) { status.textContent = '⚠️ CNPJ deve ter 14 dígitos'; status.style.color='var(--red)'; return; }
   status.textContent = '🔍 Buscando...'; status.style.color='var(--muted)';
+
+  // Helper: fetch com timeout
+  async function fetchTimeout(url, ms = 8000) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), ms);
+    try { return await fetch(url, { signal: ctrl.signal }); }
+    finally { clearTimeout(timer); }
+  }
+
   try {
     let d = null;
 
-    // Tenta BrasilAPI primeiro
+    // 1ª tentativa: BrasilAPI
     try {
-      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
+      const res = await fetchTimeout(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
       if (res.ok) d = await res.json();
-    } catch(e) { /* falhou, tenta fallback */ }
+    } catch(e) { /* tenta próxima */ }
 
-    // Fallback: ReceitaWS
+    // 2ª tentativa: ReceitaWS
     if (!d) {
       try {
-        const res2 = await fetch(`https://receitaws.com.br/v1/cnpj/${cnpj}`);
+        const res2 = await fetchTimeout(`https://receitaws.com.br/v1/cnpj/${cnpj}`);
         if (res2.ok) {
           const d2 = await res2.json();
           if (d2.status !== 'ERROR') {
-            // Normaliza campos para o mesmo formato da BrasilAPI
             d = {
               razao_social: d2.nome,
               nome_fantasia: d2.fantasia,
@@ -3795,7 +3803,33 @@ async function buscarCNPJ() {
             };
           }
         }
-      } catch(e2) { /* fallback também falhou */ }
+      } catch(e2) { /* tenta próxima */ }
+    }
+
+    // 3ª tentativa: publica.cnpj.ws
+    if (!d) {
+      try {
+        const res3 = await fetchTimeout(`https://publica.cnpj.ws/cnpj/${cnpj}`);
+        if (res3.ok) {
+          const d3 = await res3.json();
+          const end = d3.estabelecimento || {};
+          const tel = end.ddd1 && end.telefone1 ? end.ddd1 + end.telefone1 : '';
+          d = {
+            razao_social: d3.razao_social,
+            nome_fantasia: end.nome_fantasia || d3.razao_social,
+            cep: end.cep?.replace(/\D/g,''),
+            logradouro: [end.tipo_logradouro, end.logradouro].filter(Boolean).join(' '),
+            numero: end.numero,
+            bairro: end.bairro,
+            complemento: end.complemento,
+            municipio: end.cidade?.ibge_id ? end.cidade?.nome : end.cidade,
+            uf: end.estado?.sigla,
+            email: end.email,
+            ddd_telefone_1: tel,
+            data_inicio_atividade: end.data_inicio_atividade || '',
+          };
+        }
+      } catch(e3) { /* todas falharam */ }
     }
 
     if (!d) throw new Error('CNPJ não encontrado em nenhuma base');
