@@ -44,6 +44,13 @@
   --accent:#f97316;--accent2:#fb923c;--text:#e8eaf0;--muted:#5a6070;--muted2:#3a4050;
   --green:#22c55e;--red:#ef4444;--yellow:#eab308;--blue:#3b82f6;--radius:10px;
 }
+[data-tema="claro"] {
+  --bg:#f0f2f5;--surface:#ffffff;--surface2:#e8eaed;--border:#d1d5db;
+  --accent:#f97316;--accent2:#fb923c;--text:#111827;--muted:#6b7280;--muted2:#9ca3af;
+  --green:#16a34a;--red:#dc2626;--yellow:#ca8a04;--blue:#2563eb;--radius:10px;
+}
+.btn-tema{background:none;border:1px solid var(--border);color:var(--muted);font-size:16px;width:34px;height:34px;border-radius:6px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.btn-tema:hover{color:var(--accent);border-color:rgba(249,115,22,0.5);}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
@@ -437,6 +444,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     <button id="nav-seguranca" onclick="showPage('seguranca')">🔒 Segurança</button>
   </nav>
   <div style="display:flex;align-items:center;gap:8px;">
+    <button class="btn-tema" id="btn-tema" onclick="alternarTema()" title="Alternar tema">🌙</button>
     <button class="btn-logout" onclick="fazerLogout()">Sair</button>
     <button class="nav-hamburger" onclick="abrirNavDrawer()" aria-label="Menu">☰</button>
   </div>
@@ -6863,6 +6871,33 @@ function exportarPDF() {
   </body></html>`);
   janela.document.close();
 }
+
+// TEMA CLARO / ESCURO
+function alternarTema() {
+  const html = document.documentElement;
+  const btn = document.getElementById('btn-tema');
+  const temaAtual = html.getAttribute('data-tema');
+  if (temaAtual === 'claro') {
+    html.removeAttribute('data-tema');
+    btn.textContent = '🌙';
+    btn.title = 'Modo claro';
+    localStorage.setItem('jm-tema', 'escuro');
+  } else {
+    html.setAttribute('data-tema', 'claro');
+    btn.textContent = '☀️';
+    btn.title = 'Modo escuro';
+    localStorage.setItem('jm-tema', 'claro');
+  }
+}
+// Aplica tema salvo ao carregar
+(function() {
+  const temaSalvo = localStorage.getItem('jm-tema');
+  const btn = document.getElementById('btn-tema');
+  if (temaSalvo === 'claro') {
+    document.documentElement.setAttribute('data-tema', 'claro');
+    if (btn) { btn.textContent = '☀️'; btn.title = 'Modo escuro'; }
+  }
+})();
 
 // INIT
 sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
