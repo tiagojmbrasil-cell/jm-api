@@ -1430,15 +1430,21 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
               <button type="button" onclick="limparAnexo('gr-arq-residencia','label-gr-arq-residencia')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
             </div>
           </div>
-          <!-- Foto Caminhão -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;">Foto do caminhão e carretas com as placas visíveis</span>
-            <div style="display:flex;gap:4px;">
-              <label id="label-gr-arq-foto-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-                <span>📎 Anexar</span><input type="file" id="gr-arq-foto-caminhao" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-foto-caminhao','label-gr-arq-foto-caminhao')">
-              </label>
-              <button type="button" onclick="limparAnexo('gr-arq-foto-caminhao','label-gr-arq-foto-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          <!-- Foto Caminhão — múltiplas imagens -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;">
+              <span style="font-size:13px;">Foto do caminhão e carretas com as placas visíveis</span>
+              <div style="display:flex;gap:4px;">
+                <label id="label-gr-arq-foto-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                  <span>📎 Anexar</span><input type="file" id="gr-arq-foto-caminhao" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-foto-caminhao','label-gr-arq-foto-caminhao');grFotoCaminhaoPreview(this)">
+                </label>
+                <button type="button" onclick="limparAnexo('gr-arq-foto-caminhao','label-gr-arq-foto-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+              </div>
             </div>
+            <!-- Lista de fotos adicionais -->
+            <div id="gr-fotos-caminhao-extras" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
+            <!-- Botão adicionar mais -->
+            <button type="button" onclick="grAdicionarFotoCaminhao()" style="margin-top:8px;background:rgba(59,130,246,0.08);color:#3b82f6;border:1px dashed rgba(59,130,246,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outra foto (opcional)</button>
           </div>
           <!-- Selfie CNH -->
           <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
@@ -5877,6 +5883,7 @@ function limparAnexosFormularioCadastroMotoristaGR() {
     ['gr-arq-lonas', 'label-gr-arq-lonas'],
   ];
   pares.forEach(([inputId, labelId]) => limparAnexo(inputId, labelId));
+  if (typeof grResetarFotosCaminhao === 'function') grResetarFotosCaminhao();
 }
 
 function abrirCadastroMotoristaGR() {
@@ -6913,6 +6920,7 @@ function limparAnexosFormularioEditarMotorista() {
     ['em-arq-selfie-placa', 'label-em-arq-selfie-placa'],
     ['em-arq-lonas', 'label-em-arq-lonas'],
   ].forEach(([inputId, labelId]) => limparAnexo(inputId, labelId));
+  if (typeof emResetarFotosCaminhao === 'function') emResetarFotosCaminhao();
 }
 
 /** Atualiza o ícone de status de um documento no modal de edição ao selecionar novo arquivo */
@@ -7240,6 +7248,96 @@ function limparAnexo(inputId, labelId) {
   label.style.color = 'var(--accent)';
 }
 
+// ── Fotos múltiplas: Foto do caminhão e carretas (Cadastro GR) ──
+let _grFotosExtras = [];
+function grFotoCaminhaoPreview(input) {
+  // Primeira foto selecionada — apenas atualiza o label (já feito pelo atualizarBotaoAnexo)
+}
+function grAdicionarFotoCaminhao() {
+  const container = document.getElementById('gr-fotos-caminhao-extras');
+  if (!container) return;
+  const idx = _grFotosExtras.length;
+  const uid = 'gr-foto-extra-' + idx;
+  const div = document.createElement('div');
+  div.id = 'gr-foto-extra-row-' + idx;
+  div.style.cssText = 'display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px;';
+  div.innerHTML = `
+    <label id="label-${uid}" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;width:100%;">
+      <span>📎 Foto adicional ${idx + 2}</span>
+      <input type="file" id="${uid}" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('${uid}','label-${uid}')">
+    </label>
+    <button type="button" onclick="grRemoverFotoExtra(${idx})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;flex-shrink:0;">🗑️</button>
+  `;
+  container.appendChild(div);
+  _grFotosExtras.push(uid);
+}
+function grRemoverFotoExtra(idx) {
+  const row = document.getElementById('gr-foto-extra-row-' + idx);
+  if (row) row.remove();
+  _grFotosExtras[idx] = null;
+}
+function grColetarTodasFotosCaminhao() {
+  const files = [];
+  const inp = document.getElementById('gr-arq-foto-caminhao');
+  if (inp && inp.files[0]) files.push(inp.files[0]);
+  _grFotosExtras.forEach(uid => {
+    if (!uid) return;
+    const el = document.getElementById(uid);
+    if (el && el.files[0]) files.push(el.files[0]);
+  });
+  return files;
+}
+function grResetarFotosCaminhao() {
+  _grFotosExtras = [];
+  const container = document.getElementById('gr-fotos-caminhao-extras');
+  if (container) container.innerHTML = '';
+}
+
+// ── Fotos múltiplas: Foto do caminhão e carretas (Edição motorista) ──
+let _emFotosExtras = [];
+function emFotoCaminhaoPreview(input) {
+  // Primeira foto — label já atualizado
+}
+function emAdicionarFotoCaminhao() {
+  const container = document.getElementById('em-fotos-caminhao-extras');
+  if (!container) return;
+  const idx = _emFotosExtras.length;
+  const uid = 'em-foto-extra-' + idx;
+  const div = document.createElement('div');
+  div.id = 'em-foto-extra-row-' + idx;
+  div.style.cssText = 'display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px;';
+  div.innerHTML = `
+    <label id="label-${uid}" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;width:100%;">
+      <span>📎 Foto adicional ${idx + 2}</span>
+      <input type="file" id="${uid}" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('${uid}','label-${uid}')">
+    </label>
+    <button type="button" onclick="emRemoverFotoExtra(${idx})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;flex-shrink:0;">🗑️</button>
+  `;
+  container.appendChild(div);
+  _emFotosExtras.push(uid);
+}
+function emRemoverFotoExtra(idx) {
+  const row = document.getElementById('em-foto-extra-row-' + idx);
+  if (row) row.remove();
+  _emFotosExtras[idx] = null;
+}
+function emColetarTodasFotosCaminhao() {
+  const files = [];
+  const inp = document.getElementById('em-arq-foto-caminhao');
+  if (inp && inp.files[0]) files.push(inp.files[0]);
+  _emFotosExtras.forEach(uid => {
+    if (!uid) return;
+    const el = document.getElementById(uid);
+    if (el && el.files[0]) files.push(el.files[0]);
+  });
+  return files;
+}
+function emResetarFotosCaminhao() {
+  _emFotosExtras = [];
+  const container = document.getElementById('em-fotos-caminhao-extras');
+  if (container) container.innerHTML = '';
+}
+
 
 sb.auth.getSession().then(async ({ data: { session } }) => {
   if (session) {
@@ -7358,15 +7456,21 @@ sb.auth.onAuthStateChange(async (event, session) => {
             </div>
           </div>
 
-          <div id="em-doc-row-foto_caminhao" style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;transition:border-color 0.2s;">
-            <span id="em-doc-status-foto_caminhao" style="font-size:16px;flex-shrink:0;">⬜</span>
-            <span style="font-size:13px;">Foto do caminhão e carretas com as placas visíveis <span style="color:#ef4444;font-weight:700;">*</span></span>
-            <div style="display:flex;gap:4px;">
-              <label id="label-em-arq-foto-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-                <span>📎 Anexar</span><input type="file" id="em-arq-foto-caminhao" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('em-arq-foto-caminhao','label-em-arq-foto-caminhao');atualizarStatusDocEdit('foto_caminhao','em-arq-foto-caminhao')">
-              </label>
-              <button type="button" onclick="limparAnexo('em-arq-foto-caminhao','label-em-arq-foto-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          <div id="em-doc-row-foto_caminhao" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;transition:border-color 0.2s;">
+            <div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;">
+              <span id="em-doc-status-foto_caminhao" style="font-size:16px;flex-shrink:0;">⬜</span>
+              <span style="font-size:13px;">Foto do caminhão e carretas com as placas visíveis <span style="color:#ef4444;font-weight:700;">*</span></span>
+              <div style="display:flex;gap:4px;">
+                <label id="label-em-arq-foto-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                  <span>📎 Anexar</span><input type="file" id="em-arq-foto-caminhao" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-foto-caminhao','label-em-arq-foto-caminhao');atualizarStatusDocEdit('foto_caminhao','em-arq-foto-caminhao');emFotoCaminhaoPreview(this)">
+                </label>
+                <button type="button" onclick="limparAnexo('em-arq-foto-caminhao','label-em-arq-foto-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+              </div>
             </div>
+            <!-- Lista de fotos adicionais -->
+            <div id="em-fotos-caminhao-extras" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
+            <!-- Botão adicionar mais -->
+            <button type="button" onclick="emAdicionarFotoCaminhao()" style="margin-top:8px;background:rgba(59,130,246,0.08);color:#3b82f6;border:1px dashed rgba(59,130,246,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outra foto (opcional)</button>
           </div>
 
           <div id="em-doc-row-selfie_cnh" style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;transition:border-color 0.2s;">
