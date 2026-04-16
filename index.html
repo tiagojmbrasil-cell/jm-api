@@ -54,9 +54,9 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;display:flex;align-items:center;gap:10px;}
-nav{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;flex:1;min-width:0;}nav::-webkit-scrollbar{display:none;}
-nav button{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;padding:6px 11px;border-radius:6px;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+nav{display:flex;gap:0px;overflow-x:visible;flex:1;min-width:0;flex-wrap:nowrap;}
+nav button{background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:5px 7px;border-radius:6px;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
 nav button:hover{color:var(--text);background:var(--surface2);}
 nav button.active{color:var(--accent);background:rgba(249,115,22,0.1);}
 .btn-logout{background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 14px;border-radius:6px;cursor:pointer;transition:all 0.15s;}
@@ -423,9 +423,9 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 </script>
 
 <header>
-  <div class="logo" style="gap:12px;">
+  <div class="logo" style="gap:8px;">
     <span><span style="color:#22c55e">JM</span><span style="color:#eab308"> BRASIL</span></span>
-    <span id="setor-badge" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;color:#fff;letter-spacing:0.8px;"></span>
+    <span id="setor-badge" style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;color:#fff;letter-spacing:0.5px;flex-shrink:0;"></span>
   </div>
   <nav>
     <button class="active" onclick="showPage('dashboard')">Dashboard</button>
@@ -440,8 +440,8 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     <button onclick="showPage('logistico')">Logístico</button>
     <button onclick="showPage('fiscal')">Fiscal</button>
     <button onclick="showPage('financeiro')">Financeiro</button>
-    <button onclick="showPage('relatorios')">📊 Relatórios</button>
-    <button id="nav-seguranca" onclick="showPage('seguranca')">🔒 Segurança</button>
+    <button onclick="showPage('relatorios')">Relatórios</button>
+    <button id="nav-seguranca" onclick="showPage('seguranca')">Segurança</button>
   </nav>
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
     <button class="btn-tema" id="btn-tema" onclick="alternarTema()" title="Alternar tema">🌙</button>
@@ -474,8 +474,8 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <button onclick="showPage('logistico');fecharNavDrawer()">🗂 Logístico</button>
       <button onclick="showPage('fiscal');fecharNavDrawer()">💼 Fiscal</button>
       <button onclick="showPage('financeiro');fecharNavDrawer()">💰 Financeiro</button>
-      <button onclick="showPage('relatorios');fecharNavDrawer()">📊 Relatórios</button>
-      <button id="nav-drawer-seguranca" onclick="showPage('seguranca');fecharNavDrawer()">🔒 Segurança</button>
+      <button onclick="showPage('relatorios');fecharNavDrawer()">Relatórios</button>
+      <button id="nav-drawer-seguranca" onclick="showPage('seguranca');fecharNavDrawer()">Segurança</button>
       <button onclick="showPage('dashboard-cliente');fecharNavDrawer()">📦 Minhas Cargas</button>
     </nav>
     <div class="nav-drawer-footer">
@@ -2063,7 +2063,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 <!-- RELATÓRIOS -->
 <div class="page" id="page-relatorios">
   <div style="margin-bottom:20px;">
-    <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px;">📊 Relatórios</div>
+    <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px;">Relatórios</div>
     <div style="font-size:14px;color:var(--muted);">Gere, visualize e exporte relatórios do sistema</div>
   </div>
 
