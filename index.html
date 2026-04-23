@@ -2483,7 +2483,7 @@ function showPage(name) {
   if (idx >= 0) document.querySelectorAll('nav button')[idx].classList.add('active');
   if (name === 'dashboard') carregarDashboard();
   if (name === 'lista') carregarLista();
-  if (name === 'lotes') { carregarLotes(); carregarClientesSelect('l-cliente'); document.getElementById('l-data').value = new Date().toISOString().split('T')[0]; }
+  if (name === 'lotes') { _clientesSelectCache = null; carregarLotes(); carregarClientesSelect('l-cliente'); document.getElementById('l-data').value = new Date().toISOString().split('T')[0]; }
   if (name === 'motoristas') carregarMotoristasPagina();
   if (name === 'gr') carregarGR();
   if (name === 'cadastro') carregarCadastro();
@@ -3067,7 +3067,7 @@ async function carregarLotes() {
   try {
     lotes = await supabaseRequest('GET', 'lotes?order=criado_em.desc&limit=200') || [];
     popularAgenciasLotes();
-    renderLotes(lotes);
+    filtrarLotes(); // mantém os filtros ativos após reload
   } catch(e) {
     document.getElementById('lotes-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar lotes.</p></div>';
   }
@@ -3994,9 +3994,13 @@ async function excluirCliente(id) {
 }
 
 
+let _clientesSelectCache = null;
 async function carregarClientesSelect(selectId) {
   try {
-    const clientes = await supabaseRequest('GET', 'clientes_cadastro?order=razao_social.asc&select=id,razao_social,nome_fantasia') || [];
+    if (!_clientesSelectCache) {
+      _clientesSelectCache = await supabaseRequest('GET', 'clientes_cadastro?order=razao_social.asc&select=id,razao_social,nome_fantasia') || [];
+    }
+    const clientes = _clientesSelectCache;
     const sel = document.getElementById(selectId);
     const valorAtual = sel.value;
     sel.innerHTML = '<option value="">Selecione um cliente...</option>';
