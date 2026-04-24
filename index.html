@@ -5803,32 +5803,6 @@ async function abrirModalFinFotos(id) {
   document.getElementById('mfin-cpf').textContent = m.cpf || '—';
   document.getElementById('mfin-lote').textContent = 'Lote #' + (m.lote_id || '—');
 
-  // Documentos recebidos (checklist de tipos de anexo)
-  const nomeDocLabelFin = {
-    cnh: 'Habilitação (CNH)',
-    antt: 'Registro na ANTT',
-    doc_caminhao: 'Doc. Caminhão/Carretas',
-    residencia: 'Comprovante de Residência',
-    foto_caminhao: 'Foto Caminhão/Carretas',
-    selfie_cnh: 'Selfie segurando CNH',
-    selfie_placa: 'Selfie ao lado do veículo',
-    lonas: 'Fotos das Lonas',
-  };
-  const anexosDocsCheck = m.anexos || [];
-  const ckDocsEl = document.getElementById('mfin-ck-docs');
-  if (ckDocsEl) {
-    ckDocsEl.innerHTML = Object.keys(nomeDocLabelFin).map(tipo => {
-      const docsDoTipo = anexosDocsCheck.filter(a => a.tipo === tipo);
-      const temAnexo = docsDoTipo.length > 0;
-      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surface);border-radius:6px;border:1px solid ${temAnexo ? 'rgba(34,197,94,0.3)' : 'var(--border)'};">
-        <span style="font-size:13px;color:var(--text);">${nomeDocLabelFin[tipo]}</span>
-        <span style="font-size:12px;font-weight:600;color:${temAnexo ? 'var(--green)' : 'var(--muted)'};">
-          ${temAnexo ? '✅ ' + docsDoTipo.map(a => a.nome || 'Anexado').join(', ') : '— Não anexado'}
-        </span>
-      </div>`;
-    }).join('');
-  }
-
   const container = document.getElementById('mfin-fotos-container');
   container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">⏳ Carregando arquivos...</div>';
 
@@ -5841,6 +5815,31 @@ async function abrirModalFinFotos(id) {
       // Mescla: primeiro os docs do motorista, depois os do lote
       anexos = [...motAnexos, ...anexos];
     } catch(e) { console.warn('Erro ao buscar anexos do motorista:', e); }
+  }
+
+  // Documentos recebidos (checklist de tipos de anexo) — usa anexos já mesclados
+  const nomeDocLabelFin = {
+    cnh: 'Habilitação (CNH)',
+    antt: 'Registro na ANTT',
+    doc_caminhao: 'Doc. Caminhão/Carretas',
+    residencia: 'Comprovante de Residência',
+    foto_caminhao: 'Foto Caminhão/Carretas',
+    selfie_cnh: 'Selfie segurando CNH',
+    selfie_placa: 'Selfie ao lado do veículo',
+    lonas: 'Fotos das Lonas',
+  };
+  const ckDocsEl = document.getElementById('mfin-ck-docs');
+  if (ckDocsEl) {
+    ckDocsEl.innerHTML = Object.keys(nomeDocLabelFin).map(tipo => {
+      const docsDoTipo = anexos.filter(a => a.tipo === tipo);
+      const temAnexo = docsDoTipo.length > 0;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surface);border-radius:6px;border:1px solid ${temAnexo ? 'rgba(34,197,94,0.3)' : 'var(--border)'};">
+        <span style="font-size:13px;color:var(--text);">${nomeDocLabelFin[tipo]}</span>
+        <span style="font-size:12px;font-weight:600;color:${temAnexo ? 'var(--green)' : 'var(--muted)'};">
+          ${temAnexo ? '✅ ' + docsDoTipo.map(a => a.nome || 'Anexado').join(', ') : '— Não anexado'}
+        </span>
+      </div>`;
+    }).join('');
   }
 
   // Gera URLs assinadas para os anexos
