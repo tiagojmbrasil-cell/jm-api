@@ -2095,7 +2095,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
     <!-- Galeria de fotos -->
     <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:10px;">📎 Arquivos Anexados</div>
-    <div id="mfin-fotos-container" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;max-height:40vh;overflow-y:auto;padding-right:6px;">
+    <div id="mfin-fotos-container" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;max-height:55vh;overflow-y:auto;padding-right:6px;">
       <div style="text-align:center;padding:24px;color:var(--muted);">Carregando fotos...</div>
     </div>
 
@@ -2133,6 +2133,55 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <button onclick="aprovarManifestoModal()" style="background:var(--green);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding:10px 22px;cursor:pointer;display:flex;align-items:center;gap:6px;">✅ Aprovar Manifesto</button>
         <button onclick="reprovarManifestoModal()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:10px 18px;cursor:pointer;">❌ Reprovar</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CADASTRO — Ver Motorista -->
+<div class="modal-overlay" id="modal-cadastro-ver-overlay" onclick="if(event.target===this)fecharCadastroVerMotorista()">
+  <div class="modal" style="max-width:720px;">
+    <div class="modal-title">
+      <span id="mcad-titulo">👁️ Dados do Motorista</span>
+      <button class="modal-close" onclick="fecharCadastroVerMotorista()">✕</button>
+    </div>
+
+    <!-- Info básica -->
+    <div style="background:var(--surface2);border-radius:10px;padding:14px 16px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">MOTORISTA</div><div style="font-weight:600;font-size:13px" id="mcad-nome">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CPF</div><div style="font-weight:600;font-size:13px" id="mcad-cpf">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PLACA</div><div style="font-weight:600;font-size:13px" id="mcad-placa">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CONTATO</div><div style="font-weight:600;font-size:13px" id="mcad-contato">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">TIPO</div><div style="font-weight:600;font-size:13px" id="mcad-tipo">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">STATUS</div><div id="mcad-status">—</div></div>
+    </div>
+
+    <!-- Dados bancários -->
+    <div style="background:var(--surface2);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:10px;">💳 Dados Bancários / PIX</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px;">TITULAR</div><div style="font-size:13px;font-weight:500" id="mcad-titular">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px;">CPF TITULAR</div><div style="font-size:13px;font-weight:500" id="mcad-cpf-titular">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px;">BANCO</div><div style="font-size:13px;font-weight:500" id="mcad-banco">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px;">AGÊNCIA / CONTA</div><div style="font-size:13px;font-weight:500" id="mcad-agencia-conta">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px;">TIPO PIX</div><div style="font-size:13px;font-weight:500" id="mcad-tipo-pix">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px;">CHAVE PIX</div><div style="font-size:13px;font-weight:500" id="mcad-pix">—</div></div>
+      </div>
+    </div>
+
+    <!-- Checklist de documentos -->
+    <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📋 Documentos Recebidos</div>
+    <div id="mcad-ck-docs" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
+
+    <!-- Arquivos anexados -->
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:10px;">📎 Arquivos Anexados</div>
+    <div id="mcad-anexos-container" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;max-height:45vh;overflow-y:auto;padding-right:6px;">
+      <div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">⏳ Carregando arquivos...</div>
+    </div>
+
+    <!-- Ação -->
+    <div style="border-top:1px solid var(--border);padding-top:14px;display:flex;justify-content:flex-end;gap:10px;">
+      <button onclick="fecharCadastroVerMotorista()" class="btn-secondary">Fechar</button>
+      <button id="mcad-btn-confirmar" onclick="marcarCadastroRealizadoModal()" style="background:var(--green);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding:10px 22px;cursor:pointer;">✅ Cadastro Realizado</button>
     </div>
   </div>
 </div>
@@ -5249,7 +5298,9 @@ function aplicarPermissoes(setor, perms) {
 let cadastroData = [];
 
 async function carregarCadastro() {
+  if (window._carregandoCadastro) return;
   try {
+    window._carregandoCadastro = true;
     const el = document.getElementById('cadastro-table');
     if (!el) return;
     el.innerHTML = '<div class="loading">Carregando...</div>';
@@ -5257,6 +5308,8 @@ async function carregarCadastro() {
     filtrarCadastro();
   } catch (e) {
     document.getElementById('cadastro-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
+  } finally {
+    window._carregandoCadastro = false;
   }
 }
 
@@ -5291,21 +5344,135 @@ function renderCadastro(dados) {
           <td style="font-size:12px">${m.placa || '—'}</td>
           <td style="font-size:12px">${m.contato || '—'}</td>
           <td>${badgeMotorista(m.status || 'aguardando_cadastro')}</td>
-          <td><button class="btn-primary" style="padding:6px 10px;font-size:12px;" onclick="marcarCadastroRealizado(${m.id})">✅ Cadastro realizado</button></td>
+          <td style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="abrirCadastroVerMotorista(${m.id})">👁️ Ver</button>
+            <button class="btn-primary" style="padding:6px 10px;font-size:12px;" onclick="marcarCadastroRealizado(${m.id})">✅ Cadastro realizado</button>
+          </td>
         </tr>`).join('')}
       </tbody>
     </table>`;
 }
 
 async function marcarCadastroRealizado(id) {
-  if (!confirm('Confirmar: cadastro realizado no sistema externo?\nO motorista será enviado ao setor Logístico para anexar a Nota Fiscal.')) return;
+  if (window._marcandoCadastro) return;
+  const btn = document.querySelector(`button[onclick="marcarCadastroRealizado(${id})"]`);
   try {
+    window._marcandoCadastro = true;
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; }
     await supabaseRequest('PATCH', `motoristas?id=eq.${id}`, { status: 'aguardando_nf' });
     registrarLog('motorista', 'Cadastro realizado — enviado ao Logístico para NF', `Motorista: #${id}`);
     showToast('✅ Cadastro realizado! Motorista enviado ao Logístico para NF.', 'success');
     await carregarCadastro();
   } catch (e) {
     showToast('Erro: ' + e.message, 'error');
+  } finally {
+    window._marcandoCadastro = false;
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Cadastro realizado'; }
+  }
+}
+
+// ============ MODAL CADASTRO — VER MOTORISTA ============
+let cadastroVerMotoristaId = null;
+
+async function abrirCadastroVerMotorista(id) {
+  const m = (cadastroData || []).find(x => x.id === id);
+  if (!m) return;
+  cadastroVerMotoristaId = id;
+
+  document.getElementById('mcad-titulo').textContent = '👁️ Dados — ' + (m.nome || '#' + id);
+  document.getElementById('mcad-nome').textContent = m.nome || '—';
+  document.getElementById('mcad-cpf').textContent = m.cpf || '—';
+  document.getElementById('mcad-placa').textContent = m.placa || '—';
+  document.getElementById('mcad-contato').textContent = m.contato || '—';
+  document.getElementById('mcad-tipo').textContent = m.tipo_motorista || '—';
+  document.getElementById('mcad-status').innerHTML = badgeMotorista(m.status || 'aguardando_cadastro');
+  document.getElementById('mcad-titular').textContent = m.nome_titular || '—';
+  document.getElementById('mcad-cpf-titular').textContent = m.cpf_titular || '—';
+  document.getElementById('mcad-banco').textContent = m.banco || '—';
+  document.getElementById('mcad-agencia-conta').textContent = [m.agencia, m.numero_conta, m.tipo_conta ? '('+m.tipo_conta+')' : ''].filter(Boolean).join(' / ') || '—';
+  document.getElementById('mcad-tipo-pix').textContent = nomeTipoPix(m.tipo_chave_pix);
+  document.getElementById('mcad-pix').textContent = m.chave_pix || '—';
+
+  const nomeDocLabel = {
+    cnh:'Habilitação (CNH)', antt:'Registro na ANTT', doc_caminhao:'Doc. Caminhão/Carretas',
+    residencia:'Comprovante de Residência', foto_caminhao:'Foto Caminhão/Carretas',
+    selfie_cnh:'Selfie segurando CNH', selfie_placa:'Selfie ao lado do veículo', lonas:'Fotos das Lonas',
+  };
+  const anexos = m.anexos || [];
+  document.getElementById('mcad-ck-docs').innerHTML = Object.keys(nomeDocLabel).map(tipo => {
+    const docs = anexos.filter(a => a.tipo === tipo);
+    const tem = docs.length > 0;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surface);border-radius:6px;border:1px solid ${tem ? 'rgba(34,197,94,0.3)' : 'var(--border)'};">
+      <span style="font-size:13px;">${nomeDocLabel[tipo]}</span>
+      <span style="font-size:12px;font-weight:600;color:${tem ? 'var(--green)' : 'var(--muted)'};">${tem ? '✅ '+docs.map(a=>a.nome||'Anexado').join(', ') : '— Não anexado'}</span>
+    </div>`;
+  }).join('');
+
+  const container = document.getElementById('mcad-anexos-container');
+  const nomeAnexo = {
+    cnh:'CNH', antt:'ANTT', doc_caminhao:'Doc. Caminhão/Carretas', residencia:'Comp. Residência',
+    foto_caminhao:'Foto Caminhão/Carretas', selfie_cnh:'Selfie com CNH',
+    selfie_placa:'Selfie ao lado do veículo', lonas:'Fotos das Lonas'
+  };
+  if (!anexos.length) {
+    container.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:8px 0;">Nenhum arquivo anexado.</div>';
+  } else {
+    container.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:4px 0;">⏳ Carregando arquivos...</div>';
+    try {
+      const paths = anexos.map(a => a.path || a.url).filter(Boolean);
+      let urlMap = {};
+      if (paths.length > 0) {
+        const { data: signedUrls, error } = await sb.storage.from('motoristas-docs').createSignedUrls(paths, 3600);
+        if (error) throw error;
+        (signedUrls || []).forEach(s => { urlMap[s.path] = s.signedUrl; });
+      }
+      container.innerHTML = anexos.map(a => {
+        const caminho = a.path || a.url;
+        const url = urlMap[caminho] || caminho;
+        const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome || '');
+        const label = nomeAnexo[a.tipo] || a.tipo || 'Arquivo';
+        const nomeArquivo = (a.nome || '').length > 40 ? (a.nome||'').substring(0,40)+'...' : (a.nome||'');
+        return `<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+            <span style="font-size:20px;flex-shrink:0;">${isImg ? '🖼️' : '📄'}</span>
+            <div style="min-width:0;">
+              <div style="font-size:13px;font-weight:600;color:var(--text);">${label}</div>
+              <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nomeArquivo}</div>
+            </div>
+          </div>
+          <a href="${url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:rgba(59,130,246,0.12);color:#3b82f6;border:1px solid rgba(59,130,246,0.35);border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0;">
+            ${isImg ? '🔍 Ver' : '⬇️ Abrir'}
+          </a>
+        </div>
+        ${isImg ? `<div style="margin-top:-4px;padding:10px 14px;background:rgba(0,0,0,0.15);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;"><a href="${url}" target="_blank"><img src="${url}" alt="${label}" style="width:100%;max-height:260px;object-fit:contain;border-radius:6px;cursor:zoom-in;display:block;" loading="lazy" onerror="this.closest('div').style.display='none'"></a></div>` : ''}`;
+      }).join('');
+    } catch(e) {
+      container.innerHTML = `<div style="font-size:13px;color:var(--red);">Erro ao carregar arquivos: ${e.message}</div>`;
+    }
+  }
+
+  document.getElementById('modal-cadastro-ver-overlay').classList.add('open');
+}
+
+function fecharCadastroVerMotorista() {
+  document.getElementById('modal-cadastro-ver-overlay').classList.remove('open');
+  cadastroVerMotoristaId = null;
+}
+
+async function marcarCadastroRealizadoModal() {
+  if (!cadastroVerMotoristaId) return;
+  const id = cadastroVerMotoristaId;
+  const btn = document.getElementById('mcad-btn-confirmar');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; }
+  try {
+    await supabaseRequest('PATCH', `motoristas?id=eq.${id}`, { status: 'aguardando_nf' });
+    registrarLog('motorista', 'Cadastro realizado — enviado ao Logístico para NF', `Motorista: #${id}`);
+    showToast('✅ Cadastro realizado! Motorista enviado ao Logístico para NF.', 'success');
+    fecharCadastroVerMotorista();
+    await carregarCadastro();
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Cadastro Realizado'; }
   }
 }
 
@@ -5315,7 +5482,9 @@ let logisticoMotoristaSelecionadoId = null;
 let logisticoMotoristaLoteId = null;
 
 async function carregarLogistico() {
+  if (window._carregandoLogistico) return;
   try {
+    window._carregandoLogistico = true;
     const el = document.getElementById('logistico-table');
     if (!el) return;
     el.innerHTML = '<div class="loading">Carregando...</div>';
@@ -5341,6 +5510,8 @@ async function carregarLogistico() {
   } catch(e) {
     console.error('[Logístico]', e);
     document.getElementById('logistico-table').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar: ${e.message}</p></div>`;
+  } finally {
+    window._carregandoLogistico = false;
   }
 }
 
@@ -5580,11 +5751,15 @@ function fecharModalLogisticoFotos() {
 }
 
 async function confirmarFotosCarregamento() {
+  if (window._confirmandoFotos) return;
   const input = document.getElementById('log-fotos-arquivo');
   if (!input || !input.files.length) {
     showToast('Insira ao menos uma foto do carregamento', 'error'); return;
   }
+  const btnConfirmar = document.querySelector('#modal-logistico-fotos-overlay .btn-primary[onclick*="confirmarFotos"]') || document.querySelector('button[onclick="confirmarFotosCarregamento()"]');
   try {
+    window._confirmandoFotos = true;
+    if (btnConfirmar) { btnConfirmar.disabled = true; btnConfirmar.textContent = '⏳ Enviando...'; }
     const loteMotId = logisticoMotoristaSelecionadoId;
 
     // Coleta foto principal + extras
@@ -5618,6 +5793,10 @@ async function confirmarFotosCarregamento() {
     fecharModalLogisticoFotos();
     await carregarLogistico();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+  finally {
+    window._confirmandoFotos = false;
+    if (btnConfirmar) { btnConfirmar.disabled = false; btnConfirmar.textContent = '✅ Confirmar e Enviar ao Financeiro'; }
+  }
 }
 
 // ---- Modal Trânsito ----
@@ -5668,7 +5847,9 @@ async function confirmarFinalizarTransito() {
 let financeiroData = [];
 
 async function carregarFinanceiro() {
+  if (window._carregandoFinanceiro) return;
   try {
+    window._carregandoFinanceiro = true;
     const el = document.getElementById('financeiro-table');
     if (!el) return;
     el.innerHTML = '<div class="loading">Carregando...</div>';
@@ -5676,6 +5857,8 @@ async function carregarFinanceiro() {
     filtrarFinanceiro();
   } catch (e) {
     document.getElementById('financeiro-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
+  } finally {
+    window._carregandoFinanceiro = false;
   }
 }
 
@@ -5800,31 +5983,27 @@ async function abrirModalFinFotos(id) {
   const container = document.getElementById('mfin-fotos-container');
   container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">⏳ Carregando arquivos...</div>';
 
-  // Busca os anexos do lote_motoristas E do motorista (documentos cadastrais)
-  let anexos = m.anexos || [];
+  // Busca os anexos do lote_motoristas (fotos + docs) e do motorista (documentos cadastrais)
+  let anexosLote = m.anexos || [];
+  let anexosMot = [];
   if (m.motorista_id) {
     try {
       const motData = await supabaseRequest('GET', `motoristas?id=eq.${m.motorista_id}&select=anexos`);
-      const motAnexos = motData?.[0]?.anexos || [];
-      // Mescla: primeiro os docs do motorista, depois os do lote
-      anexos = [...motAnexos, ...anexos];
+      anexosMot = motData?.[0]?.anexos || [];
     } catch(e) { console.warn('Erro ao buscar anexos do motorista:', e); }
   }
+  // Mescla: docs do motorista primeiro, depois fotos/docs do lote
+  const anexos = [...anexosMot, ...anexosLote];
 
-  // Documentos recebidos (checklist de tipos de anexo) — usa anexos já mesclados
+  // Checklist de documentos cadastrais — só mostra os que existem
   const nomeDocLabelFin = {
-    cnh: 'Habilitação (CNH)',
-    antt: 'Registro na ANTT',
-    doc_caminhao: 'Doc. Caminhão/Carretas',
-    residencia: 'Comprovante de Residência',
-    foto_caminhao: 'Foto Caminhão/Carretas',
-    selfie_cnh: 'Selfie segurando CNH',
-    selfie_placa: 'Selfie ao lado do veículo',
-    lonas: 'Fotos das Lonas',
+    cnh: 'Habilitação (CNH)', antt: 'Registro na ANTT', doc_caminhao: 'Doc. Caminhão/Carretas',
+    residencia: 'Comprovante de Residência', foto_caminhao: 'Foto Caminhão/Carretas',
+    selfie_cnh: 'Selfie segurando CNH', selfie_placa: 'Selfie ao lado do veículo', lonas: 'Fotos das Lonas',
   };
   const ckDocsEl = document.getElementById('mfin-ck-docs');
   if (ckDocsEl) {
-    ckDocsEl.innerHTML = Object.keys(nomeDocLabelFin).map(tipo => {
+    const linhas = Object.keys(nomeDocLabelFin).map(tipo => {
       const docsDoTipo = anexos.filter(a => a.tipo === tipo);
       const temAnexo = docsDoTipo.length > 0;
       return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surface);border-radius:6px;border:1px solid ${temAnexo ? 'rgba(34,197,94,0.3)' : 'var(--border)'};">
@@ -5834,24 +6013,27 @@ async function abrirModalFinFotos(id) {
         </span>
       </div>`;
     }).join('');
+    ckDocsEl.innerHTML = linhas || '<div style="font-size:13px;color:var(--muted);">Nenhum documento cadastral encontrado.</div>';
   }
 
-  // Gera URLs assinadas para os anexos
+  // Gera URLs assinadas para todos os anexos
   if (!anexos.length) {
     container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Nenhum arquivo anexado neste registro.</div>';
   } else {
     try {
       const paths = anexos.map(a => a.path || a.url).filter(Boolean);
-      const { data: signedUrls, error } = await sb.storage.from('motoristas-docs').createSignedUrls(paths, 3600);
-      if (error) throw error;
-      const urlMap = {};
-      (signedUrls || []).forEach(s => { urlMap[s.path] = s.signedUrl; });
+      let urlMap = {};
+      if (paths.length > 0) {
+        const { data: signedUrls, error } = await sb.storage.from('motoristas-docs').createSignedUrls(paths, 3600);
+        if (error) throw error;
+        (signedUrls || []).forEach(s => { urlMap[s.path] = s.signedUrl; });
+      }
 
       const nomeAnexo = {
         nf: 'Nota Fiscal', foto_carregamento: 'Foto Carregamento',
-        cnh: 'CNH', antt: 'ANTT', antt_extra: 'ANTT (extra)', doc_caminhao: 'Doc. Caminhão',
-        residencia: 'Comp. Residência', foto_caminhao: 'Foto Caminhão',
-        selfie_cnh: 'Selfie CNH', selfie_placa: 'Selfie Placa', lonas: 'Lonas',
+        cnh: 'CNH', antt: 'ANTT', antt_extra: 'ANTT (extra)', doc_caminhao: 'Doc. Caminhão/Carretas',
+        residencia: 'Comp. Residência', foto_caminhao: 'Foto Caminhão/Carretas',
+        selfie_cnh: 'Selfie com CNH', selfie_placa: 'Selfie ao lado do veículo', lonas: 'Fotos das Lonas',
         canhoto: 'Canhoto', checklist_gerenciadora: 'Checklist Gerenciadora',
         comprovante_adiantamento: 'Comprovante Adiantamento'
       };
@@ -5859,6 +6041,7 @@ async function abrirModalFinFotos(id) {
       container.innerHTML = anexos.map(a => {
         const caminho = a.path || a.url;
         const url = urlMap[caminho] || caminho;
+        if (!url) return '';
         const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome || '');
         const label = nomeAnexo[a.tipo] || a.tipo || 'Arquivo';
         const isFoto = a.tipo === 'foto_carregamento';
@@ -5866,23 +6049,28 @@ async function abrirModalFinFotos(id) {
         const borderColor = isFoto ? 'rgba(249,115,22,0.4)' : isCanhoto ? 'rgba(34,197,94,0.4)' : 'var(--border)';
         const labelColor = isFoto ? 'var(--accent)' : isCanhoto ? 'var(--green)' : 'var(--text)';
         const icon = isFoto ? '📸' : isCanhoto ? '✅' : isImg ? '🖼️' : '📄';
+        const nomeArq = (a.nome || 'arquivo').length > 45 ? (a.nome||'arquivo').substring(0,45)+'...' : (a.nome||'arquivo');
         return `
-        <div style="background:var(--surface2);border:1px solid ${borderColor};border-radius:12px;overflow:hidden;margin-bottom:4px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;gap:10px;border-bottom:${isImg ? '1px solid var(--border)' : 'none'};">
+        <div style="background:var(--surface2);border:1px solid ${borderColor};border-radius:10px;overflow:hidden;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;gap:10px;">
             <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
               <span style="font-size:22px;flex-shrink:0;">${icon}</span>
-              <div>
+              <div style="min-width:0;">
                 <div style="font-size:13px;font-weight:700;color:${labelColor};margin-bottom:2px;">${label}</div>
-                <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;">${a.nome || 'arquivo'}</div>
+                <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nomeArq}</div>
               </div>
             </div>
-            <a href="${url}" target="_blank" style="display:flex;align-items:center;gap:5px;background:rgba(59,130,246,0.15);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0;">
+            <a href="${url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:rgba(59,130,246,0.15);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0;">
               ${isImg ? '🔍 Visualizar' : '⬇️ Abrir'}
             </a>
           </div>
-          ${isImg ? `<div style="padding:14px 16px;background:rgba(0,0,0,0.2);"><a href="${url}" target="_blank"><img src="${url}" alt="${label}" style="width:100%;max-height:300px;object-fit:contain;border-radius:8px;cursor:zoom-in;display:block;" loading="lazy" onerror="this.parentElement.style.display='none'"></a></div>` : ''}
+          ${isImg ? `<div style="padding:0 16px 14px;background:rgba(0,0,0,0.18);"><a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${label}" style="width:100%;max-height:280px;object-fit:contain;border-radius:6px;cursor:zoom-in;display:block;" loading="lazy" onerror="this.closest('div').style.display='none'"></a></div>` : ''}
         </div>`;
-      }).join('');
+      }).filter(Boolean).join('');
+
+      if (!container.innerHTML.trim()) {
+        container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Nenhum arquivo com URL válida encontrado.</div>';
+      }
     } catch(e) {
       container.innerHTML = `<div style="text-align:center;padding:24px;color:var(--red);font-size:13px;">Erro ao carregar arquivos: ${e.message}</div>`;
     }
@@ -5913,9 +6101,13 @@ async function abrirModalFinFotos(id) {
 }
 
 async function aprovarAdiantamentoModal() {
+  if (window._aprovandoAdiantamento) return;
   const dt = document.getElementById('mfin-adiantamento-data')?.value;
   if (!dt) { showToast('Informe a data de pagamento do adiantamento', 'error'); return; }
+  const btnAprovar = document.querySelector('button[onclick="aprovarAdiantamentoModal()"]');
   try {
+    window._aprovandoAdiantamento = true;
+    if (btnAprovar) { btnAprovar.disabled = true; btnAprovar.textContent = '⏳ Aprovando...'; }
     // Upload dos PDFs opcionais de comprovante
     const pdfContainer = document.getElementById('mfin-pdfs-container');
     const pdfRows = pdfContainer ? pdfContainer.querySelectorAll('[id^="mfin-pdf-row-"]') : [];
@@ -5948,6 +6140,10 @@ async function aprovarAdiantamentoModal() {
     fecharModalFinFotos();
     await carregarFinanceiro();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+  finally {
+    window._aprovandoAdiantamento = false;
+    if (btnAprovar) { btnAprovar.disabled = false; btnAprovar.textContent = '✅ Aprovar Adiantamento'; }
+  }
 }
 
 async function reprovarFinanceiroModal() {
