@@ -2031,7 +2031,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <summary style="font-size:12px;color:var(--muted);cursor:pointer;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">⚙️ Ajuste manual de status</summary>
         <div class="status-select-row" style="margin-top:12px;">
           <label>Status:</label>
-          <select id="mf-status-select" onchange="atualizarStatusFiscal()">
+          <select id="mf-status-select" onchange="_fiscalStatusChangeHandler()">
             <option value="em_negociacao">Em Negociação</option>
             <option value="cadastro">Cadastro</option>
             <option value="validando_gr_interna">Validando GR Interna</option>
@@ -4297,6 +4297,7 @@ function renderFiscal(dados) {
 
 // ============ MODAL FISCAL ============
 let motoristFiscalId = null;
+function _fiscalStatusChangeHandler() { atualizarStatusFiscal(); }
 
 async function abrirFiscalModal(id) {
   const m = fiscalData.find(x => x.id === id);
@@ -4311,7 +4312,11 @@ async function abrirFiscalModal(id) {
   document.getElementById('mf-contato').textContent = m.contato || '—';
   document.getElementById('mf-peso').textContent = m.peso_saida ? m.peso_saida + ' ton' : '—';
   document.getElementById('mf-status').innerHTML = badgeMotorista(m.status);
-  document.getElementById('mf-status-select').value = m.status || 'em_negociacao';
+  // Setar value sem disparar onchange (remover e re-adicionar o listener)
+  const selStatus = document.getElementById('mf-status-select');
+  selStatus.removeEventListener('change', _fiscalStatusChangeHandler);
+  selStatus.value = m.status || 'em_negociacao';
+  setTimeout(() => selStatus.addEventListener('change', _fiscalStatusChangeHandler), 50);
   // Tipo motorista TAC/ETC
   const tipoMotEl = document.getElementById('mf-tipo-motorista');
   if (tipoMotEl) {
@@ -4395,7 +4400,17 @@ async function abrirFiscalModal(id) {
     selfie_placa: 'Selfie ao lado do veículo',
     lonas: 'Fotos das Lonas',
   };
-  const anexos = m.anexos || [];
+  // Busca anexos do motorista real se não vierem no registro de lote_motoristas
+  let anexos = m.anexos || [];
+  if (anexos.length === 0 && m.motorista_id) {
+    try {
+      const motReal = await supabaseRequest('GET', `motoristas?id=eq.${m.motorista_id}&select=anexos`);
+      if (motReal && motReal.length && motReal[0].anexos) {
+        anexos = motReal[0].anexos;
+        m.anexos = anexos; // cache local para não rebuscar
+      }
+    } catch(e) { console.warn('Erro ao buscar anexos do motorista:', e); }
+  }
   const todosDocTipos = Object.keys(nomeDocLabel);
   document.getElementById('mf-ck-docs').innerHTML = todosDocTipos.map(tipo => {
     const docsDoTipo = anexos.filter(a => a.tipo === tipo);
@@ -4440,7 +4455,7 @@ async function abrirFiscalModal(id) {
   const refPropEl = document.getElementById('mf-ref-proprietario');
   if (refPropEl) refPropEl.textContent = ck.contato_proprietario || '—';
 
-  // Anexos — arquivos para download
+  // Anexos — arquivos para download (estilo Painel Fiscal)
   const nomeAnexo = {
     cnh: 'CNH', antt: 'ANTT', doc_caminhao: 'Doc. Caminhão/Carretas',
     residencia: 'Comp. Residência', foto_caminhao: 'Foto Caminhão/Carretas',
@@ -4448,37 +4463,35 @@ async function abrirFiscalModal(id) {
   };
   const containerAnexos = document.getElementById('mf-ck-anexos');
   if (anexos.length === 0) {
-    containerAnexos.innerHTML = '<div style="font-size:13px;color:var(--muted);">Nenhum arquivo anexado.</div>';
+    containerAnexos.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:8px 0;">Nenhum arquivo anexado.</div>';
   } else {
-    containerAnexos.innerHTML = '<div style="font-size:13px;color:var(--muted);">Carregando arquivos...</div>';
+    containerAnexos.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:4px 0;">⏳ Carregando arquivos...</div>';
     try {
-      // Gera URLs assinadas (válidas por 1 hora) para cada anexo
-      const paths = anexos.map(a => a.path || a.url); // compatibilidade com registros antigos
-      const { data: signedUrls, error } = await sb.storage
-        .from('motoristas-docs')
-        .createSignedUrls(paths.filter(Boolean), 3600);
-
-      if (error) throw error;
-
-      // Mapeia path -> signedUrl
-      const urlMap = {};
-      (signedUrls || []).forEach(s => { urlMap[s.path] = s.signedUrl; });
-
+      const paths = anexos.map(a => a.path || a.url).filter(Boolean);
+      let urlMap = {};
+      if (paths.length > 0) {
+        const { data: signedUrls, error } = await sb.storage
+          .from('motoristas-docs')
+          .createSignedUrls(paths, 3600);
+        if (error) throw error;
+        (signedUrls || []).forEach(s => { urlMap[s.path] = s.signedUrl; });
+      }
       containerAnexos.innerHTML = anexos.map(a => {
         const caminho = a.path || a.url;
         const url = urlMap[caminho] || caminho;
-        const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome);
-        const label = nomeAnexo[a.tipo] || a.tipo;
+        const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome || '');
+        const label = nomeAnexo[a.tipo] || a.tipo || 'Arquivo';
+        const nomeArquivo = (a.nome || '').length > 35 ? (a.nome || '').substring(0, 35) + '...' : (a.nome || '');
         return `
         <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;gap:10px;">
-          <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
-            <span style="font-size:16px;">${isImg ? "🖼️" : "📄"}</span>
-            <div>
-              <div style="font-size:12px;font-weight:600;color:var(--text);">${label}</div>
-              <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">${a.nome}</div>
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+            <span style="font-size:20px;flex-shrink:0;">${isImg ? "🖼️" : "📄"}</span>
+            <div style="min-width:0;">
+              <div style="font-size:13px;font-weight:600;color:var(--text);">${label}</div>
+              <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nomeArquivo}</div>
             </div>
           </div>
-          <a href="${url}" target="_blank" style="display:flex;align-items:center;gap:5px;background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;">
+          <a href="${url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:rgba(59,130,246,0.12);color:#3b82f6;border:1px solid rgba(59,130,246,0.35);border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0;">
             ${isImg ? "🔍 Ver" : "⬇️ Abrir"}
           </a>
         </div>`;
@@ -4490,8 +4503,9 @@ async function abrirFiscalModal(id) {
 }
 
 async function emitirDocumentoFiscal() {
-  if (!confirm('Confirmar emissão do documento?\nO motorista será enviado ao Logístico para fotos do carregamento.')) return;
   try {
+    const btn = document.getElementById('mf-btn-doc-emitido');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Processando...'; }
     const statusFinal = 'aguardando_fotos';
     // PATCH principal em lote_motoristas (fonte que o logístico lê)
     await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: statusFinal });
@@ -4508,12 +4522,15 @@ async function emitirDocumentoFiscal() {
     fecharModalFiscalBtn();
     // Recarrega para garantir que a tabela reflita o novo status
     await carregarFiscal();
-  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+  } catch(e) {
+    const btn = document.getElementById('mf-btn-doc-emitido');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<span style="font-size:20px;">📄</span> Documento Emitido — Enviar ao Logístico'; }
+    showToast('Erro: ' + e.message, 'error');
+  }
 }
 
 // Chamado diretamente da tabela (sem modal aberto)
 async function emitirDocumento(loteMotId) {
-  if (!confirm('Confirmar: documento emitido?\nO motorista será enviado ao Logístico para inserir as fotos do carregamento.')) return;
   try {
     const statusFinal = 'aguardando_fotos';
     await supabaseRequest('PATCH', `lote_motoristas?id=eq.${loteMotId}`, { status: statusFinal });
