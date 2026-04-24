@@ -1419,14 +1419,20 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
             </div>
           </div>
           <!-- Doc Caminhão -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;">Documentação do caminhão e carretas</span>
-            <div style="display:flex;gap:4px;">
-              <label id="label-gr-arq-doc-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-                <span>📎 Anexar</span><input type="file" id="gr-arq-doc-caminhao" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-doc-caminhao','label-gr-arq-doc-caminhao')">
-              </label>
-              <button type="button" onclick="limparAnexo('gr-arq-doc-caminhao','label-gr-arq-doc-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;">
+              <span style="font-size:13px;">Documentação do caminhão e carretas <span style="color:var(--red);font-size:11px;">*obrigatório</span></span>
+              <div style="display:flex;gap:4px;">
+                <label id="label-gr-arq-doc-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                  <span>📎 Anexar</span><input type="file" id="gr-arq-doc-caminhao" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-doc-caminhao','label-gr-arq-doc-caminhao')">
+                </label>
+                <button type="button" onclick="limparAnexo('gr-arq-doc-caminhao','label-gr-arq-doc-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+              </div>
             </div>
+            <!-- Lista de docs extras -->
+            <div id="gr-docs-caminhao-extras" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
+            <!-- Botão adicionar mais -->
+            <button type="button" onclick="grAdicionarDocCaminhao()" style="margin-top:8px;background:rgba(59,130,246,0.08);color:#3b82f6;border:1px dashed rgba(59,130,246,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outro documento (opcional)</button>
           </div>
           <!-- Residência -->
           <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
@@ -1611,8 +1617,9 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
       <!-- Checklist da Gerenciadora — OBRIGATÓRIO para aprovar -->
       <div style="background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.25);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
-        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;">📋 Checklist da Gerenciadora <span style="color:var(--red)">*</span> <span style="font-weight:400;color:var(--muted);font-size:11px;">(obrigatório para aprovar)</span></div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;">📋 Checklist da Gerenciadora <span style="color:var(--red)">*</span> <span style="font-weight:400;color:var(--muted);font-size:11px;">(1º obrigatório)</span></div>
+        <!-- Primeiro checklist — obrigatório -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
           <label id="label-gr-checklist-ger" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:7px 14px;cursor:pointer;font-size:13px;color:var(--accent);white-space:nowrap;">
             <span id="label-gr-checklist-ger-txt">📎 Anexar Checklist</span>
             <input type="file" id="gr-checklist-ger" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexoGRChecklist()">
@@ -1620,6 +1627,9 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
           <button type="button" id="btn-limpar-gr-checklist" onclick="limparGRChecklist()" style="display:none;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:7px 10px;font-size:12px;cursor:pointer;">🗑️ Remover</button>
           <span id="gr-checklist-ger-status" style="font-size:12px;color:var(--muted);"></span>
         </div>
+        <!-- Checklists extras (opcionais) -->
+        <div id="gr-checklists-extras" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px;"></div>
+        <button type="button" onclick="grAdicionarChecklistExtra()" style="background:rgba(249,115,22,0.07);color:var(--accent);border:1px dashed rgba(249,115,22,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outro checklist (opcional)</button>
       </div>
 
       <div style="display:flex;gap:10px;margin-bottom:14px;">
@@ -1713,8 +1723,9 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     </div>
     <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:16px;">
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Nota Fiscal (NF)</div>
+      <!-- NF principal — obrigatória -->
       <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-        <span style="font-size:13px;">Arquivo da Nota Fiscal</span>
+        <span style="font-size:13px;">Nota Fiscal <span style="color:var(--red);font-size:11px;">*obrigatório</span></span>
         <div style="display:flex;gap:4px;">
           <label id="label-log-nf-arquivo" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
             <span>📎 Anexar</span>
@@ -1723,6 +1734,9 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
           <button type="button" onclick="limparAnexo('log-nf-arquivo','label-log-nf-arquivo')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
         </div>
       </div>
+      <!-- NFs extras opcionais -->
+      <div id="log-nf-extras" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
+      <button type="button" onclick="nfAdicionarExtra()" style="margin-top:8px;background:rgba(59,130,246,0.08);color:#3b82f6;border:1px dashed rgba(59,130,246,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outra NF (opcional)</button>
       <div id="mlog-nf-arquivo-status" style="font-size:12px;color:var(--muted);margin-top:8px;"></div>
     </div>
     <div class="form-actions">
@@ -1749,16 +1763,20 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     </div>
     <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:16px;">
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Fotos do Carregamento</div>
+      <!-- Foto principal — obrigatória -->
       <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-        <span style="font-size:13px;">Fotos do carregamento (múltiplas permitidas)</span>
+        <span style="font-size:13px;">Foto do carregamento <span style="color:var(--red);font-size:11px;">*obrigatório</span></span>
         <div style="display:flex;gap:4px;">
           <label id="label-log-fotos-arquivo" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
             <span>📎 Anexar</span>
-            <input type="file" id="log-fotos-arquivo" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('log-fotos-arquivo','label-log-fotos-arquivo')">
+            <input type="file" id="log-fotos-arquivo" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('log-fotos-arquivo','label-log-fotos-arquivo')">
           </label>
           <button type="button" onclick="limparAnexo('log-fotos-arquivo','label-log-fotos-arquivo')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
         </div>
       </div>
+      <!-- Fotos extras opcionais -->
+      <div id="log-fotos-extras" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
+      <button type="button" onclick="fotosCarregAdicionarExtra()" style="margin-top:8px;background:rgba(59,130,246,0.08);color:#3b82f6;border:1px dashed rgba(59,130,246,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outra foto (opcional)</button>
     </div>
     <div class="form-actions">
       <button class="btn-secondary" onclick="fecharModalLogisticoFotos()">Cancelar</button>
@@ -1853,6 +1871,24 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     <div id="mf-secao-mdfe" style="display:none;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.3);border-radius:10px;padding:16px;margin-bottom:16px;">
       <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:10px;">⚠️ Aguardando Encerramento do MDFe</div>
       <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">O motorista foi finalizado pelo setor financeiro. Realize o encerramento do MDFe no sistema externo e confirme abaixo.</p>
+
+      <!-- Canhoto — 1ª obrigatório + extras opcionais -->
+      <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.25);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:8px;">📋 Canhoto <span style="color:var(--red)">*</span> <span style="font-weight:400;color:var(--muted);font-size:11px;">(1º obrigatório)</span></div>
+        <!-- Primeiro canhoto — obrigatório -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+          <label id="label-mdfe-canhoto-0" style="display:flex;align-items:center;gap:6px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--green);white-space:nowrap;">
+            <span id="label-mdfe-canhoto-0-txt">📎 Anexar Canhoto</span>
+            <input type="file" id="mdfe-canhoto-0" accept="image/*,.pdf" style="display:none;" onchange="mdfeCanhotoAtualizar(0)">
+          </label>
+          <button type="button" onclick="mdfeCanhotoLimpar(0)" id="btn-mdfe-canhoto-0-limpar" style="display:none;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:6px 8px;font-size:12px;cursor:pointer;">🗑️</button>
+          <span id="mdfe-canhoto-0-status" style="font-size:12px;color:var(--muted);"></span>
+        </div>
+        <!-- Canhotos extras (adicionais opcionais) -->
+        <div id="mdfe-canhotos-extras" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px;"></div>
+        <button type="button" onclick="mdfeAdicionarCanhoto()" style="background:rgba(34,197,94,0.08);color:var(--green);border:1px dashed rgba(34,197,94,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outro canhoto (opcional)</button>
+      </div>
+
       <button onclick="confirmarEncerramentoMDFe()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding:10px 24px;cursor:pointer;">📄 Encerrar MDFe</button>
     </div>
 
@@ -2050,7 +2086,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
     <!-- Galeria de fotos -->
     <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:10px;">📎 Arquivos Anexados</div>
-    <div id="mfin-fotos-container" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;max-height:50vh;overflow-y:auto;padding-right:4px;">
+    <div id="mfin-fotos-container" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;max-height:60vh;overflow-y:auto;padding-right:6px;">
       <div style="text-align:center;padding:24px;color:var(--muted);">Carregando fotos...</div>
     </div>
 
@@ -4485,13 +4521,96 @@ async function atualizarStatusFiscal() {
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 
+// ======= CANHOTO MDFe =======
+let _mdfeCanhotoCount = 0;
+
+function mdfeCanhotoAtualizar(idx) {
+  const input = document.getElementById(`mdfe-canhoto-${idx}`);
+  const txt = document.getElementById(`label-mdfe-canhoto-${idx}-txt`);
+  const label = document.getElementById(`label-mdfe-canhoto-${idx}`);
+  const btnLimpar = document.getElementById(`btn-mdfe-canhoto-${idx}-limpar`);
+  const status = document.getElementById(`mdfe-canhoto-${idx}-status`);
+  if (input && input.files.length) {
+    if (txt) txt.textContent = '✅ ' + input.files[0].name;
+    if (label) { label.style.background='rgba(34,197,94,0.12)'; label.style.borderColor='rgba(34,197,94,0.5)'; label.style.color='var(--green)'; }
+    if (btnLimpar) btnLimpar.style.display='';
+    if (status) status.textContent='';
+  }
+}
+
+function mdfeCanhotoLimpar(idx) {
+  const input = document.getElementById(`mdfe-canhoto-${idx}`);
+  const txt = document.getElementById(`label-mdfe-canhoto-${idx}-txt`);
+  const label = document.getElementById(`label-mdfe-canhoto-${idx}`);
+  const btnLimpar = document.getElementById(`btn-mdfe-canhoto-${idx}-limpar`);
+  if (input) input.value='';
+  if (txt) txt.textContent='📎 Anexar Canhoto';
+  if (label) { label.style.background='rgba(34,197,94,0.1)'; label.style.borderColor='rgba(34,197,94,0.3)'; label.style.color='var(--green)'; }
+  if (btnLimpar) btnLimpar.style.display='none';
+}
+
+function mdfeAdicionarCanhoto() {
+  const container = document.getElementById('mdfe-canhotos-extras');
+  if (!container) return;
+  const idx = ++_mdfeCanhotoCount;
+  const div = document.createElement('div');
+  div.id = `mdfe-canhoto-extra-${idx}`;
+  div.style.cssText = 'display:flex;align-items:center;gap:6px;';
+  div.innerHTML = `
+    <label id="label-mdfe-canhoto-${idx}" style="display:flex;align-items:center;gap:6px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--green);white-space:nowrap;flex:1;">
+      <span id="label-mdfe-canhoto-${idx}-txt">📎 Canhoto adicional</span>
+      <input type="file" id="mdfe-canhoto-${idx}" accept="image/*,.pdf" style="display:none;" onchange="mdfeCanhotoAtualizar(${idx})">
+    </label>
+    <button type="button" id="btn-mdfe-canhoto-${idx}-limpar" onclick="document.getElementById('mdfe-canhoto-extra-${idx}').remove()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:6px 8px;font-size:12px;cursor:pointer;">🗑️</button>`;
+  container.appendChild(div);
+}
+
 async function confirmarEncerramentoMDFe() {
+  // Valida canhoto obrigatório
+  const canhoto0 = document.getElementById('mdfe-canhoto-0');
+  if (!canhoto0 || !canhoto0.files.length) {
+    const label = document.getElementById('label-mdfe-canhoto-0');
+    const status = document.getElementById('mdfe-canhoto-0-status');
+    if (label) { label.style.borderColor='var(--red)'; label.style.background='rgba(239,68,68,0.1)'; label.style.color='var(--red)'; }
+    if (status) { status.textContent='⚠️ Obrigatório'; status.style.color='var(--red)'; }
+    showToast('⚠️ Anexe o canhoto antes de encerrar o MDFe', 'error');
+    return;
+  }
   if (!confirm('Deseja realizar o encerramento do MDFe?\nApós confirmar, o motorista irá para o Financeiro com status Manifesto Encerrado.')) return;
   try {
+    // Coleta todos os canhotos (0 + extras)
+    const canhotoTasks = [];
+    // Canhoto 0 (obrigatório)
+    const file0 = canhoto0.files[0];
+    const ext0 = file0.name.split('.').pop();
+    const path0 = `motoristas/${motoristFiscalId}/canhoto_${Date.now()}_0.${ext0}`;
+    canhotoTasks.push(sb.storage.from('motoristas-docs').upload(path0, file0, { upsert: true }).then(({error}) => error ? null : { tipo: 'canhoto', nome: file0.name, path: path0 }));
+    // Extras
+    const extrasContainer = document.getElementById('mdfe-canhotos-extras');
+    if (extrasContainer) {
+      const rows = extrasContainer.querySelectorAll('[id^="mdfe-canhoto-extra-"]');
+      for (const row of rows) {
+        const match = row.id.match(/mdfe-canhoto-extra-(\d+)/);
+        if (!match) continue;
+        const input = document.getElementById(`mdfe-canhoto-${match[1]}`);
+        if (input && input.files.length) {
+          const file = input.files[0];
+          const ext = file.name.split('.').pop();
+          const path = `motoristas/${motoristFiscalId}/canhoto_${Date.now()}_${match[1]}.${ext}`;
+          canhotoTasks.push(sb.storage.from('motoristas-docs').upload(path, file, { upsert: true }).then(({error}) => error ? null : { tipo: 'canhoto', nome: file.name, path }));
+        }
+      }
+    }
+    const canhotoAnexos = (await Promise.all(canhotoTasks)).filter(Boolean);
+
     await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: 'manifesto_encerrado' });
-    // Sincroniza motoristas
+    // Salva canhotos na tabela motoristas
     const loteMotReg = fiscalData.find(x => x.id === motoristFiscalId);
-    if (loteMotReg?.motorista_id) {
+    if (loteMotReg?.motorista_id && canhotoAnexos.length) {
+      const motAtual = await supabaseRequest('GET', `motoristas?id=eq.${loteMotReg.motorista_id}&select=id,anexos`) || [];
+      const anexosAtuais = motAtual[0]?.anexos || [];
+      await supabaseRequest('PATCH', `motoristas?id=eq.${loteMotReg.motorista_id}`, { status: 'manifesto_encerrado', anexos: [...anexosAtuais, ...canhotoAnexos] });
+    } else if (loteMotReg?.motorista_id) {
       await supabaseRequest('PATCH', `motoristas?id=eq.${loteMotReg.motorista_id}`, { status: 'manifesto_encerrado' });
     }
     const m = fiscalData.find(x => x.id === motoristFiscalId);
@@ -4511,7 +4630,15 @@ async function confirmarEncerramentoMDFe() {
 }
 
 function fecharModalFiscal(e) { if (e.target === document.getElementById('modal-fiscal-overlay')) fecharModalFiscalBtn(); }
-function fecharModalFiscalBtn() { document.getElementById('modal-fiscal-overlay').classList.remove('open'); motoristFiscalId = null; }
+function fecharModalFiscalBtn() {
+  document.getElementById('modal-fiscal-overlay').classList.remove('open');
+  motoristFiscalId = null;
+  // Reset canhotos
+  mdfeCanhotoLimpar(0);
+  _mdfeCanhotoCount = 0;
+  const extras = document.getElementById('mdfe-canhotos-extras');
+  if (extras) extras.innerHTML = '';
+}
 
 // ============ TIPO PAGAMENTO ============
 function selecionarTipoPagamento(tipo) {
@@ -5333,6 +5460,7 @@ function abrirModalLogisticoNF(id, nome, placa, cpf, loteId, origem) {
 function fecharModalLogisticoNF() {
   document.getElementById('modal-logistico-nf-overlay').classList.remove('open');
   logisticoMotoristaSelecionadoId = null;
+  nfResetarExtras();
 }
 
 async function confirmarAnexoNF() {
@@ -5342,42 +5470,45 @@ async function confirmarAnexoNF() {
   }
   try {
     document.getElementById('mlog-nf-arquivo-status').textContent = 'Fazendo upload...';
-    const file = input.files[0];
-    const ext = file.name.split('.').pop();
     const motoristaId = logisticoMotoristaSelecionadoId;
-    const path = `motoristas/${motoristaId}/nf_${Date.now()}.${ext}`;
-    const { error: upErr } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
-    if (upErr) throw new Error('Erro no upload: ' + upErr.message);
 
-    const novoAnexo = { tipo: 'nf', nome: file.name, path };
+    // Coleta NF principal + extras
+    const todosArquivos = [input.files[0], ...nfColetarExtras()].filter(Boolean);
 
-    // 1. Busca dados atuais do motorista
-    const motAtual = await supabaseRequest('GET', `motoristas?id=eq.${motoristaId}`) || [];
-    const motDados = motAtual[0] || {};
-    const anexosMotorista = [...(motDados.anexos || []), novoAnexo];
+    // Busca dados atuais em paralelo com os uploads
+    const [motAtual, uploadResults] = await Promise.all([
+      supabaseRequest('GET', `motoristas?id=eq.${motoristaId}`),
+      Promise.all(todosArquivos.map(async (file) => {
+        const ext = file.name.split('.').pop();
+        const path = `motoristas/${motoristaId}/nf_${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
+        const { error: upErr } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
+        if (upErr) throw new Error('Erro no upload: ' + upErr.message);
+        return { tipo: 'nf', nome: file.name, path };
+      })),
+    ]);
 
-    // 2. Atualiza tabela motoristas
+    const motDados = (motAtual || [])[0] || {};
+    const anexosMotorista = [...(motDados.anexos || []), ...uploadResults];
+
+    // Atualiza tabela motoristas
     await supabaseRequest('PATCH', `motoristas?id=eq.${motoristaId}`, {
       status: 'aguardando_emissao_doc',
       anexos: anexosMotorista,
     });
 
-    // 3. Busca registro em lote_motoristas por motorista_id
+    // Atualiza lote_motoristas
     const loteMotLista = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${motoristaId}`) || [];
-
     if (loteMotLista.length) {
-      // Já tem vínculo — atualiza TODOS os registros desse motorista em lote_motoristas
-      for (const reg of loteMotLista) {
-        const anexosLote = [...(reg.anexos || []), novoAnexo];
-        await supabaseRequest('PATCH', `lote_motoristas?id=eq.${reg.id}`, {
+      await Promise.all(loteMotLista.map(reg => {
+        const anexosLote = [...(reg.anexos || []), ...uploadResults];
+        return supabaseRequest('PATCH', `lote_motoristas?id=eq.${reg.id}`, {
           status: 'aguardando_emissao_doc',
           anexos: anexosLote,
         });
-      }
-      registrarLog('logistico', 'NF anexada — enviado ao Fiscal', `Motorista: #${motoristaId}`);
+      }));
+      registrarLog('logistico', 'NF(s) anexada(s) — enviado ao Fiscal', `Motorista: #${motoristaId} · ${uploadResults.length} arquivo(s)`);
       showToast('✅ NF anexada! Motorista enviado ao Fiscal para emissão do documento.', 'success');
     } else {
-      // Sem vínculo de lote ainda — status já foi salvo no motorista, aparecerá no Fiscal após ser adicionado ao lote
       registrarLog('logistico', 'NF anexada — sem lote vinculado ainda', `Motorista: #${motoristaId}`);
       showToast('✅ NF salva! Motorista ainda não está em nenhum lote. Ao ser adicionado ao lote, irá direto ao Fiscal.', 'success');
     }
@@ -5410,6 +5541,7 @@ function abrirModalLogisticoFotos(id, nome, placa, cpf, loteId, origem) {
 function fecharModalLogisticoFotos() {
   document.getElementById('modal-logistico-fotos-overlay').classList.remove('open');
   logisticoMotoristaSelecionadoId = null;
+  fotosCarregResetarExtras();
 }
 
 async function confirmarFotosCarregamento() {
@@ -5418,29 +5550,36 @@ async function confirmarFotosCarregamento() {
     showToast('Insira ao menos uma foto do carregamento', 'error'); return;
   }
   try {
-    // As fotos ficam em lote_motoristas (origem sempre é lote_motoristas nessa etapa)
     const loteMotId = logisticoMotoristaSelecionadoId;
-    const motAtual = await supabaseRequest('GET', `lote_motoristas?id=eq.${loteMotId}`) || [];
-    const anexosAtuais = motAtual[0]?.anexos || [];
-    const motoristaId = motAtual[0]?.motorista_id;
-    const novosAnexos = [...anexosAtuais];
-    for (const file of input.files) {
-      const ext = file.name.split('.').pop();
-      const path = `motoristas/${loteMotId}/foto_carg_${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
-      const { error: upErr } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
-      if (upErr) throw new Error('Erro upload foto: ' + upErr.message);
-      novosAnexos.push({ tipo: 'foto_carregamento', nome: file.name, path });
-    }
+
+    // Coleta foto principal + extras
+    const todosArquivos = [input.files[0], ...fotosCarregColetarExtras()].filter(Boolean);
+
+    // Busca dados atuais em paralelo com os uploads
+    const [motAtual, uploadResults] = await Promise.all([
+      supabaseRequest('GET', `lote_motoristas?id=eq.${loteMotId}`),
+      Promise.all(todosArquivos.map(async (file) => {
+        const ext = file.name.split('.').pop();
+        const path = `motoristas/${loteMotId}/foto_carg_${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
+        const { error: upErr } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
+        if (upErr) throw new Error('Erro upload foto: ' + upErr.message);
+        return { tipo: 'foto_carregamento', nome: file.name, path };
+      })),
+    ]);
+
+    const anexosAtuais = (motAtual || [])[0]?.anexos || [];
+    const motoristaId = (motAtual || [])[0]?.motorista_id;
+    const novosAnexos = [...anexosAtuais, ...uploadResults];
+
     await supabaseRequest('PATCH', `lote_motoristas?id=eq.${loteMotId}`, {
       status: 'fotos_inseridas',
       anexos: novosAnexos,
     });
-    // Sincroniza status na tabela motoristas
     if (motoristaId) {
       await supabaseRequest('PATCH', `motoristas?id=eq.${motoristaId}`, { status: 'fotos_inseridas' });
     }
-    registrarLog('logistico', 'Fotos do carregamento inseridas — enviado ao Financeiro', `ID: #${loteMotId}`);
-    showToast('✅ Fotos inseridas! Motorista enviado ao Financeiro.', 'success');
+    registrarLog('logistico', `Fotos do carregamento inseridas (${uploadResults.length}) — enviado ao Financeiro`, `ID: #${loteMotId}`);
+    showToast(`✅ ${uploadResults.length} foto(s) inserida(s)! Motorista enviado ao Financeiro.`, 'success');
     fecharModalLogisticoFotos();
     await carregarLogistico();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
@@ -5583,6 +5722,32 @@ function renderFinanceiro(dados) {
 
 let financeiroModalId = null;
 
+function mfinAdicionarPDF() {
+  const container = document.getElementById('mfin-pdfs-container');
+  if (!container) return;
+  const idx = ++window._mfinPdfCount;
+  const div = document.createElement('div');
+  div.id = `mfin-pdf-row-${idx}`;
+  div.style.cssText = 'display:flex;align-items:center;gap:6px;';
+  div.innerHTML = `
+    <label style="display:flex;align-items:center;gap:6px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:#3b82f6;white-space:nowrap;flex:1;">
+      <span id="mfin-pdf-txt-${idx}">📎 Selecionar PDF</span>
+      <input type="file" id="mfin-pdf-${idx}" accept=".pdf,application/pdf" style="display:none;" onchange="mfinAtualizarPDFLabel(${idx})">
+    </label>
+    <button type="button" onclick="document.getElementById('mfin-pdf-row-${idx}').remove()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>`;
+  container.appendChild(div);
+}
+
+function mfinAtualizarPDFLabel(idx) {
+  const input = document.getElementById(`mfin-pdf-${idx}`);
+  const txt = document.getElementById(`mfin-pdf-txt-${idx}`);
+  if (input && input.files.length && txt) {
+    txt.textContent = '✅ ' + input.files[0].name;
+    const label = txt.closest('label');
+    if (label) { label.style.borderColor = 'rgba(34,197,94,0.4)'; label.style.color = 'var(--green)'; label.style.background = 'rgba(34,197,94,0.08)'; }
+  }
+}
+
 function fecharModalFinFotos() {
   document.getElementById('modal-fin-fotos-overlay').classList.remove('open');
   financeiroModalId = null;
@@ -5617,7 +5782,9 @@ async function abrirModalFinFotos(id) {
         nf: 'Nota Fiscal', foto_carregamento: 'Foto Carregamento',
         cnh: 'CNH', antt: 'ANTT', doc_caminhao: 'Doc. Caminhão',
         residencia: 'Comp. Residência', foto_caminhao: 'Foto Caminhão',
-        selfie_cnh: 'Selfie CNH', selfie_placa: 'Selfie Placa', lonas: 'Lonas'
+        selfie_cnh: 'Selfie CNH', selfie_placa: 'Selfie Placa', lonas: 'Lonas',
+        canhoto: 'Canhoto', checklist_gerenciadora: 'Checklist Gerenciadora',
+        comprovante_adiantamento: 'Comprovante Adiantamento'
       };
 
       container.innerHTML = anexos.map(a => {
@@ -5626,21 +5793,25 @@ async function abrirModalFinFotos(id) {
         const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome || '');
         const label = nomeAnexo[a.tipo] || a.tipo || 'Arquivo';
         const isFoto = a.tipo === 'foto_carregamento';
+        const isCanhoto = a.tipo === 'canhoto';
+        const borderColor = isFoto ? 'rgba(249,115,22,0.4)' : isCanhoto ? 'rgba(34,197,94,0.4)' : 'var(--border)';
+        const labelColor = isFoto ? 'var(--accent)' : isCanhoto ? 'var(--green)' : 'var(--text)';
+        const icon = isFoto ? '📸' : isCanhoto ? '✅' : isImg ? '🖼️' : '📄';
         return `
-        <div style="background:var(--surface2);border:1px solid ${isFoto ? 'rgba(249,115,22,0.3)' : 'var(--border)'};border-radius:10px;overflow:hidden;">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;gap:10px;">
-            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
-              <span style="font-size:18px;flex-shrink:0;">${isFoto ? '📸' : isImg ? '🖼️' : '📄'}</span>
+        <div style="background:var(--surface2);border:1px solid ${borderColor};border-radius:12px;overflow:hidden;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;gap:10px;border-bottom:${isImg ? '1px solid var(--border)' : 'none'};">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+              <span style="font-size:22px;flex-shrink:0;">${icon}</span>
               <div>
-                <div style="font-size:12px;font-weight:600;color:${isFoto ? 'var(--accent)' : 'var(--text)'};">${label}</div>
-                <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:250px;">${a.nome || 'arquivo'}</div>
+                <div style="font-size:13px;font-weight:700;color:${labelColor};margin-bottom:2px;">${label}</div>
+                <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;">${a.nome || 'arquivo'}</div>
               </div>
             </div>
-            <a href="${url}" target="_blank" style="display:flex;align-items:center;gap:5px;background:rgba(59,130,246,0.15);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0;">
+            <a href="${url}" target="_blank" style="display:flex;align-items:center;gap:5px;background:rgba(59,130,246,0.15);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0;">
               ${isImg ? '🔍 Visualizar' : '⬇️ Abrir'}
             </a>
           </div>
-          ${isImg ? `<div style="padding:0 14px 14px;"><a href="${url}" target="_blank"><img src="${url}" alt="${label}" style="width:100%;max-height:260px;object-fit:contain;border-radius:6px;background:#000;cursor:zoom-in;" loading="lazy" onerror="this.style.display='none'"></a></div>` : ''}
+          ${isImg ? `<div style="padding:14px 16px;background:rgba(0,0,0,0.2);"><a href="${url}" target="_blank"><img src="${url}" alt="${label}" style="width:100%;max-height:300px;object-fit:contain;border-radius:8px;cursor:zoom-in;display:block;" loading="lazy" onerror="this.parentElement.style.display='none'"></a></div>` : ''}
         </div>`;
       }).join('');
     } catch(e) {
@@ -5652,14 +5823,22 @@ async function abrirModalFinFotos(id) {
   const acoes = document.getElementById('mfin-acoes');
   acoes.innerHTML = `
     <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:12px;">Ação — Adiantamento</div>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;">
       <div style="display:flex;flex-direction:column;gap:4px;">
         <label style="font-size:11px;color:var(--muted);text-transform:uppercase;">Data de Pagamento</label>
         <input type="date" id="mfin-adiantamento-data" style="font-size:13px;padding:8px 12px;width:auto;">
       </div>
-      <button onclick="aprovarAdiantamentoModal()" style="background:var(--green);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding:10px 22px;cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:18px;">✅ Aprovar Adiantamento</button>
-      <button onclick="reprovarFinanceiroModal()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:10px 18px;cursor:pointer;margin-top:18px;">❌ Reprovar</button>
+      <button onclick="aprovarAdiantamentoModal()" style="background:var(--green);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding:10px 22px;cursor:pointer;display:flex;align-items:center;gap:6px;">✅ Aprovar Adiantamento</button>
+      <button onclick="reprovarFinanceiroModal()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:10px 18px;cursor:pointer;">❌ Reprovar</button>
+    </div>
+    <div style="background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:12px 14px;">
+      <div style="font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">📎 Comprovantes de Pagamento (PDF) — opcional</div>
+      <div id="mfin-pdfs-container" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+      <button type="button" onclick="mfinAdicionarPDF()" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px dashed rgba(59,130,246,0.4);border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;width:100%;">+ Anexar PDF</button>
     </div>`;
+  // Inicializa com um campo PDF opcional
+  window._mfinPdfCount = 0;
+  mfinAdicionarPDF();
 
   document.getElementById('modal-fin-fotos-overlay').classList.add('open');
 }
@@ -5668,7 +5847,33 @@ async function aprovarAdiantamentoModal() {
   const dt = document.getElementById('mfin-adiantamento-data')?.value;
   if (!dt) { showToast('Informe a data de pagamento do adiantamento', 'error'); return; }
   try {
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${financeiroModalId}`, { status: 'adiantamento_pago', financeiro_adiantamento_data: dt, financeiro_adiantamento_motivo: null });
+    // Upload dos PDFs opcionais de comprovante
+    const pdfContainer = document.getElementById('mfin-pdfs-container');
+    const pdfRows = pdfContainer ? pdfContainer.querySelectorAll('[id^="mfin-pdf-row-"]') : [];
+    const pdfUploadTasks = [];
+    for (const row of pdfRows) {
+      const match = row.id.match(/mfin-pdf-row-(\d+)/);
+      if (!match) continue;
+      const input = document.getElementById(`mfin-pdf-${match[1]}`);
+      if (input && input.files.length > 0) {
+        const file = input.files[0];
+        const ext = file.name.split('.').pop();
+        const path = `motoristas/${financeiroModalId}/comprovante_adiantamento_${Date.now()}_${match[1]}.${ext}`;
+        pdfUploadTasks.push(
+          sb.storage.from('motoristas-docs').upload(path, file, { upsert: true })
+            .then(({ error }) => error ? null : { tipo: 'comprovante_adiantamento', nome: file.name, path })
+        );
+      }
+    }
+    const pdfResultados = (await Promise.all(pdfUploadTasks)).filter(Boolean);
+    const patchData = { status: 'adiantamento_pago', financeiro_adiantamento_data: dt, financeiro_adiantamento_motivo: null };
+    // Adiciona anexos de comprovante se houver
+    if (pdfResultados.length > 0) {
+      const reg = (financeiroData || []).find(x => x.id === financeiroModalId);
+      const anexosAtuais = reg?.anexos || [];
+      patchData.anexos = [...anexosAtuais, ...pdfResultados];
+    }
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${financeiroModalId}`, patchData);
     registrarLog('financeiro', 'Adiantamento aprovado', `Lote_motoristas: #${financeiroModalId} · Data: ${dt}`);
     showToast('✅ Adiantamento aprovado.', 'success');
     fecharModalFinFotos();
@@ -5930,6 +6135,7 @@ function limparAnexosFormularioCadastroMotoristaGR() {
   ];
   pares.forEach(([inputId, labelId]) => limparAnexo(inputId, labelId));
   if (typeof grResetarFotosCaminhao === 'function') grResetarFotosCaminhao();
+  if (typeof grResetarDocsExtras === 'function') grResetarDocsExtras();
 }
 
 function abrirCadastroMotoristaGR() {
@@ -6143,30 +6349,44 @@ async function salvarMotoristaGR() {
 
     const motoristaId = resultado[0]?.id;
 
-    // Upload de arquivos
+    // Upload de todos os arquivos em PARALELO (Promise.all) — elimina a lentidão
     if (motoristaId) {
       const arquivos = [
-        { id: 'gr-arq-cnh', tipo: 'cnh' }, { id: 'gr-arq-antt', tipo: 'antt' },
-        { id: 'gr-arq-doc-caminhao', tipo: 'doc_caminhao' }, { id: 'gr-arq-residencia', tipo: 'residencia' },
-        { id: 'gr-arq-selfie-cnh', tipo: 'selfie_cnh' },
-        { id: 'gr-arq-selfie-placa', tipo: 'selfie_placa' }, { id: 'gr-arq-lonas', tipo: 'lonas' },
+        { id: 'gr-arq-cnh',          tipo: 'cnh' },
+        { id: 'gr-arq-antt',         tipo: 'antt' },
+        { id: 'gr-arq-doc-caminhao', tipo: 'doc_caminhao' },
+        { id: 'gr-arq-residencia',   tipo: 'residencia' },
+        { id: 'gr-arq-selfie-cnh',   tipo: 'selfie_cnh' },
+        { id: 'gr-arq-selfie-placa', tipo: 'selfie_placa' },
+        { id: 'gr-arq-lonas',        tipo: 'lonas' },
       ];
-      const anexos = [];
+
+      // Monta lista de todas as tarefas de upload (arquivos simples + extras doc_caminhao + fotos caminhão)
+      const uploadTasks = [];
+
       for (const { id, tipo } of arquivos) {
         const input = document.getElementById(id);
         if (input && input.files.length > 0) {
           for (const file of input.files) {
-            const anexo = await uploadAnexoGR(file, motoristaId, tipo);
-            if (anexo) anexos.push(anexo);
+            uploadTasks.push(uploadAnexoGR(file, motoristaId, tipo));
           }
         }
       }
-      // Upload das fotos extras do caminhão (principal + adicionais)
+      // Docs extras do caminhão (adicionais opcionais)
+      const docsExtras = grColetarTodosDocsExtras();
+      for (const file of docsExtras) {
+        uploadTasks.push(uploadAnexoGR(file, motoristaId, 'doc_caminhao'));
+      }
+      // Fotos do caminhão (principal + adicionais)
       const fotosCaminhao = grColetarTodasFotosCaminhao();
       for (const file of fotosCaminhao) {
-        const anexo = await uploadAnexoGR(file, motoristaId, 'foto_caminhao');
-        if (anexo) anexos.push(anexo);
+        uploadTasks.push(uploadAnexoGR(file, motoristaId, 'foto_caminhao'));
       }
+
+      // Executa todos os uploads ao mesmo tempo
+      const resultados = await Promise.all(uploadTasks);
+      const anexos = resultados.filter(Boolean);
+
       if (anexos.length > 0) {
         await supabaseRequest('PATCH', `motoristas?id=eq.${motoristaId}`, { anexos });
       }
@@ -6418,6 +6638,44 @@ function limparGRChecklist() {
   }
 }
 
+let _grChecklistCount = 0;
+function grAdicionarChecklistExtra() {
+  const container = document.getElementById('gr-checklists-extras');
+  if (!container) return;
+  const idx = ++_grChecklistCount;
+  const div = document.createElement('div');
+  div.id = `gr-checklist-extra-row-${idx}`;
+  div.style.cssText = 'display:flex;align-items:center;gap:6px;';
+  div.innerHTML = `
+    <label id="label-gr-checklist-extra-${idx}" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;flex:1;">
+      <span id="label-gr-checklist-extra-${idx}-txt">📎 Checklist adicional</span>
+      <input type="file" id="gr-checklist-extra-${idx}" accept="image/*,.pdf" style="display:none;" onchange="grChecklistExtraAtualizar(${idx})">
+    </label>
+    <button type="button" onclick="document.getElementById('gr-checklist-extra-row-${idx}').remove()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:6px 8px;font-size:12px;cursor:pointer;">🗑️</button>`;
+  container.appendChild(div);
+}
+function grChecklistExtraAtualizar(idx) {
+  const input = document.getElementById(`gr-checklist-extra-${idx}`);
+  const txt = document.getElementById(`label-gr-checklist-extra-${idx}-txt`);
+  const label = document.getElementById(`label-gr-checklist-extra-${idx}`);
+  if (input && input.files.length && txt) {
+    txt.textContent = '✅ ' + input.files[0].name;
+    if (label) { label.style.background='rgba(34,197,94,0.08)'; label.style.borderColor='rgba(34,197,94,0.4)'; label.style.color='var(--green)'; }
+  }
+}
+function grColetarChecklistsExtras() {
+  const files = [];
+  const container = document.getElementById('gr-checklists-extras');
+  if (!container) return files;
+  container.querySelectorAll('[id^="gr-checklist-extra-row-"]').forEach(row => {
+    const match = row.id.match(/gr-checklist-extra-row-(\d+)/);
+    if (!match) return;
+    const input = document.getElementById(`gr-checklist-extra-${match[1]}`);
+    if (input && input.files.length) files.push(input.files[0]);
+  });
+  return files;
+}
+
 async function registrarSinistro() {
   const motivo = prompt('Descreva o sinistro ocorrido:');
   if (!motivo || !motivo.trim()) return;
@@ -6457,6 +6715,7 @@ async function salvarDecisaoGR() {
   }
   try {
     let checklistPath = null;
+    let checklistPaths = [];
     // Faz upload do checklist se aprovando
     if (decisao === 'aprovado' && checklistInput && checklistInput.files.length) {
       const file = checklistInput.files[0];
@@ -6465,6 +6724,15 @@ async function salvarDecisaoGR() {
       const { error: upErr } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
       if (upErr) throw new Error('Erro no upload do checklist: ' + upErr.message);
       checklistPath = path;
+      checklistPaths.push({ tipo: 'checklist_gerenciadora', nome: file.name, path });
+      // Upload dos checklists extras opcionais
+      const extrasFiles = grColetarChecklistsExtras();
+      for (const ef of extrasFiles) {
+        const ext2 = ef.name.split('.').pop();
+        const path2 = `motoristas/${grMotoristaSelecionadoId}/checklist_ger_${Date.now()}_extra.${ext2}`;
+        const { error: upErr2 } = await sb.storage.from('motoristas-docs').upload(path2, ef, { upsert: true });
+        if (!upErr2) checklistPaths.push({ tipo: 'checklist_gerenciadora', nome: ef.name, path: path2 });
+      }
     }
     const patchData = {
       gr_status: decisao,
@@ -6473,6 +6741,12 @@ async function salvarDecisaoGR() {
       gr_analisado_em: new Date().toISOString(),
     };
     if (checklistPath) patchData.gr_checklist_ger_path = checklistPath;
+    // Salva checklists extras como anexos
+    if (checklistPaths.length > 0) {
+      const motAtual = await supabaseRequest('GET', `motoristas?id=eq.${grMotoristaSelecionadoId}&select=id,anexos`) || [];
+      const anexosAtuais = motAtual[0]?.anexos || [];
+      patchData.anexos = [...anexosAtuais, ...checklistPaths];
+    }
     await supabaseRequest('PATCH', `motoristas?id=eq.${grMotoristaSelecionadoId}`, patchData);
     const m = grData.find(x => x.id === grMotoristaSelecionadoId);
     if (m) {
@@ -6490,6 +6764,10 @@ async function salvarDecisaoGR() {
 function fecharModalGR() {
   document.getElementById('modal-gr-overlay').classList.remove('open');
   limparGRChecklist();
+  // Reset extras
+  _grChecklistCount = 0;
+  const extras = document.getElementById('gr-checklists-extras');
+  if (extras) extras.innerHTML = '';
   grMotoristaSelecionadoId = null;
 }
 
@@ -6995,6 +7273,7 @@ function limparAnexosFormularioEditarMotorista() {
     ['em-arq-lonas', 'label-em-arq-lonas'],
   ].forEach(([inputId, labelId]) => limparAnexo(inputId, labelId));
   if (typeof emResetarFotosCaminhao === 'function') emResetarFotosCaminhao();
+  if (typeof emResetarAnttExtras === 'function') emResetarAnttExtras();
 }
 
 /** Atualiza o ícone de status de um documento no modal de edição ao selecionar novo arquivo */
@@ -7279,6 +7558,14 @@ async function salvarEdicaoMotorista() {
           if (anexo) anexos.push(anexo);
         }
       }
+      // Upload das ANTTs extras (principal já foi processada acima, apenas extras)
+      const anttsExtras = emColetarTodasAntts().slice(1); // pula a primeira (já processada)
+      if (anttsExtras.length > 0) {
+        for (const file of anttsExtras) {
+          const anexo = await uploadAnexoGR(file, motoristaEditandoId, 'antt');
+          if (anexo) anexos.push(anexo);
+        }
+      }
       dados.anexos = anexos;
     }
 
@@ -7341,6 +7628,46 @@ let _grFotosExtras = [];
 function grFotoCaminhaoPreview(input) {
   // Primeira foto selecionada — apenas atualiza o label (já feito pelo atualizarBotaoAnexo)
 }
+
+// ── Docs extras: Documentação do caminhão e carretas (GR) ──
+let _grDocsExtras = [];
+function grAdicionarDocCaminhao() {
+  const container = document.getElementById('gr-docs-caminhao-extras');
+  if (!container) return;
+  const idx = _grDocsExtras.length;
+  const uid = 'gr-doc-extra-' + idx;
+  const div = document.createElement('div');
+  div.id = 'gr-doc-extra-row-' + idx;
+  div.style.cssText = 'display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px;';
+  div.innerHTML = `
+    <label id="label-${uid}" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;width:100%;">
+      <span>📎 Doc. adicional ${idx + 2}</span>
+      <input type="file" id="${uid}" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('${uid}','label-${uid}')">
+    </label>
+    <button type="button" onclick="grRemoverDocExtra(${idx})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;flex-shrink:0;">🗑️</button>
+  `;
+  container.appendChild(div);
+  _grDocsExtras.push(uid);
+}
+function grRemoverDocExtra(idx) {
+  const row = document.getElementById('gr-doc-extra-row-' + idx);
+  if (row) row.remove();
+  _grDocsExtras[idx] = null;
+}
+function grColetarTodosDocsExtras() {
+  const files = [];
+  _grDocsExtras.forEach(uid => {
+    if (!uid) return;
+    const el = document.getElementById(uid);
+    if (el && el.files[0]) files.push(el.files[0]);
+  });
+  return files;
+}
+function grResetarDocsExtras() {
+  _grDocsExtras = [];
+  const container = document.getElementById('gr-docs-caminhao-extras');
+  if (container) container.innerHTML = '';
+}
 function grAdicionarFotoCaminhao() {
   const container = document.getElementById('gr-fotos-caminhao-extras');
   if (!container) return;
@@ -7381,7 +7708,85 @@ function grResetarFotosCaminhao() {
   if (container) container.innerHTML = '';
 }
 
-// ── Fotos múltiplas: Foto do caminhão e carretas (Edição motorista) ──
+// ── NFs extras: Modal Anexar NF (Logístico) ──
+let _nfExtras = [];
+function nfAdicionarExtra() {
+  const container = document.getElementById('log-nf-extras');
+  if (!container) return;
+  const idx = _nfExtras.length;
+  const uid = 'log-nf-extra-' + idx;
+  const div = document.createElement('div');
+  div.id = 'log-nf-extra-row-' + idx;
+  div.style.cssText = 'display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px;';
+  div.innerHTML = `
+    <label id="label-${uid}" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;width:100%;">
+      <span>📎 NF adicional ${idx + 2}</span>
+      <input type="file" id="${uid}" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('${uid}','label-${uid}')">
+    </label>
+    <button type="button" onclick="nfRemoverExtra(${idx})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;flex-shrink:0;">🗑️</button>
+  `;
+  container.appendChild(div);
+  _nfExtras.push(uid);
+}
+function nfRemoverExtra(idx) {
+  const row = document.getElementById('log-nf-extra-row-' + idx);
+  if (row) row.remove();
+  _nfExtras[idx] = null;
+}
+function nfColetarExtras() {
+  const files = [];
+  _nfExtras.forEach(uid => {
+    if (!uid) return;
+    const el = document.getElementById(uid);
+    if (el && el.files[0]) files.push(el.files[0]);
+  });
+  return files;
+}
+function nfResetarExtras() {
+  _nfExtras = [];
+  const container = document.getElementById('log-nf-extras');
+  if (container) container.innerHTML = '';
+}
+
+// ── Fotos extras: Modal Fotos Carregamento (Logístico) ──
+let _fotosCarregExtras = [];
+function fotosCarregAdicionarExtra() {
+  const container = document.getElementById('log-fotos-extras');
+  if (!container) return;
+  const idx = _fotosCarregExtras.length;
+  const uid = 'log-fotos-extra-' + idx;
+  const div = document.createElement('div');
+  div.id = 'log-fotos-extra-row-' + idx;
+  div.style.cssText = 'display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px;';
+  div.innerHTML = `
+    <label id="label-${uid}" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;width:100%;">
+      <span>📎 Foto adicional ${idx + 2}</span>
+      <input type="file" id="${uid}" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('${uid}','label-${uid}')">
+    </label>
+    <button type="button" onclick="fotosCarregRemoverExtra(${idx})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;flex-shrink:0;">🗑️</button>
+  `;
+  container.appendChild(div);
+  _fotosCarregExtras.push(uid);
+}
+function fotosCarregRemoverExtra(idx) {
+  const row = document.getElementById('log-fotos-extra-row-' + idx);
+  if (row) row.remove();
+  _fotosCarregExtras[idx] = null;
+}
+function fotosCarregColetarExtras() {
+  const files = [];
+  _fotosCarregExtras.forEach(uid => {
+    if (!uid) return;
+    const el = document.getElementById(uid);
+    if (el && el.files[0]) files.push(el.files[0]);
+  });
+  return files;
+}
+function fotosCarregResetarExtras() {
+  _fotosCarregExtras = [];
+  const container = document.getElementById('log-fotos-extras');
+  if (container) container.innerHTML = '';
+}
 let _emFotosExtras = [];
 function emFotoCaminhaoPreview(input) {
   // Primeira foto — label já atualizado
@@ -7423,6 +7828,47 @@ function emColetarTodasFotosCaminhao() {
 function emResetarFotosCaminhao() {
   _emFotosExtras = [];
   const container = document.getElementById('em-fotos-caminhao-extras');
+  if (container) container.innerHTML = '';
+}
+
+// ===== ANTT EXTRAS =====
+let _emAnttExtras = [];
+function emAdicionarAnttExtra() {
+  const container = document.getElementById('em-antt-extras');
+  if (!container) return;
+  const idx = _emAnttExtras.length;
+  const uid = 'em-antt-extra-' + idx;
+  const div = document.createElement('div');
+  div.id = 'em-antt-extra-row-' + idx;
+  div.style.cssText = 'display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px;';
+  div.innerHTML = `
+    <label id="label-${uid}" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;width:100%;">
+      <span>📎 ANTT adicional ${idx + 2}</span>
+      <input type="file" id="${uid}" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('${uid}','label-${uid}')">
+    </label>
+    <button type="button" onclick="emRemoverAnttExtra(${idx})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;flex-shrink:0;">🗑️</button>`;
+  container.appendChild(div);
+  _emAnttExtras.push(uid);
+}
+function emRemoverAnttExtra(idx) {
+  const row = document.getElementById('em-antt-extra-row-' + idx);
+  if (row) row.remove();
+  _emAnttExtras[idx] = null;
+}
+function emColetarTodasAntts() {
+  const files = [];
+  const inp = document.getElementById('em-arq-antt');
+  if (inp && inp.files[0]) files.push(inp.files[0]);
+  _emAnttExtras.forEach(uid => {
+    if (!uid) return;
+    const el = document.getElementById(uid);
+    if (el && el.files[0]) files.push(el.files[0]);
+  });
+  return files;
+}
+function emResetarAnttExtras() {
+  _emAnttExtras = [];
+  const container = document.getElementById('em-antt-extras');
   if (container) container.innerHTML = '';
 }
 
@@ -7511,15 +7957,20 @@ sb.auth.onAuthStateChange(async (event, session) => {
             </div>
           </div>
 
-          <div id="em-doc-row-antt" style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;transition:border-color 0.2s;">
-            <span id="em-doc-status-antt" style="font-size:16px;flex-shrink:0;">⬜</span>
-            <span style="font-size:13px;">Registro na ANTT <span style="color:#ef4444;font-weight:700;">*</span></span>
-            <div style="display:flex;gap:4px;">
-              <label id="label-em-arq-antt" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-                <span>📎 Anexar</span><input type="file" id="em-arq-antt" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-antt','label-em-arq-antt');atualizarStatusDocEdit('antt','em-arq-antt')">
-              </label>
-              <button type="button" onclick="limparAnexo('em-arq-antt','label-em-arq-antt')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          <div id="em-doc-row-antt" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;transition:border-color 0.2s;">
+            <div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;">
+              <span id="em-doc-status-antt" style="font-size:16px;flex-shrink:0;">⬜</span>
+              <span style="font-size:13px;">Registro na ANTT <span style="color:#ef4444;font-weight:700;">*</span></span>
+              <div style="display:flex;gap:4px;">
+                <label id="label-em-arq-antt" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                  <span>📎 Anexar</span><input type="file" id="em-arq-antt" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('em-arq-antt','label-em-arq-antt');atualizarStatusDocEdit('antt','em-arq-antt')">
+                </label>
+                <button type="button" onclick="limparAnexo('em-arq-antt','label-em-arq-antt')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+              </div>
             </div>
+            <!-- ANTTs extras (opcionais) -->
+            <div id="em-antt-extras" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
+            <button type="button" onclick="emAdicionarAnttExtra()" style="margin-top:8px;background:rgba(249,115,22,0.07);color:var(--accent);border:1px dashed rgba(249,115,22,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outra ANTT (opcional)</button>
           </div>
 
           <div id="em-doc-row-doc_caminhao" style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;transition:border-color 0.2s;">
