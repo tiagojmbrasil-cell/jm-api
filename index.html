@@ -1814,9 +1814,9 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
           style="padding:12px;border-radius:8px;border:2px solid rgba(234,179,8,0.4);background:rgba(234,179,8,0.08);color:#eab308;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-align:left;">
           ⏳ Aguardando Chegada — Aguardando no destino
         </button>
-        <button onclick="confirmarFinalizarTransito()"
+        <button onclick="abrirEncerrarMDFeLogistico()"
           style="padding:12px;border-radius:8px;border:2px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.08);color:#22c55e;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-align:left;">
-          ✅ Finalizado — Entrega concluída, enviar ao Fiscal (MDFe)
+          ✅ Finalizado — Entrega concluída, encerrar MDFe e enviar ao Financeiro
         </button>
         <button onclick="registrarSinistro()"
           style="padding:12px;border-radius:8px;border:2px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.08);color:#ef4444;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-align:left;">
@@ -1826,6 +1826,49 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     </div>
     <div class="form-actions">
       <button class="btn-secondary" onclick="fecharModalTransito()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ENCERRAR MDFe — LOGÍSTICO -->
+<div class="modal-overlay" id="modal-log-mdfe-overlay" onclick="if(event.target===this)fecharEncerrarMDFeLogistico()">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-title">
+      <span>📄 Encerrar MDFe — <span id="mlog-mdfe-nome">—</span></span>
+      <button class="modal-close" onclick="fecharEncerrarMDFeLogistico()">✕</button>
+    </div>
+
+    <!-- Info -->
+    <div style="background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.25);border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:var(--text);">
+      <div style="font-weight:700;color:var(--green);margin-bottom:6px;">✅ Entrega concluída</div>
+      Realize o encerramento do MDFe no sistema externo e anexe o canhoto abaixo. Após confirmar, o motorista será enviado direto ao <strong>Financeiro</strong>.
+    </div>
+
+    <!-- Canhoto — 1ª obrigatório + extras opcionais -->
+    <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.25);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:10px;">
+        📋 Canhoto <span style="color:var(--red)">*</span>
+        <span style="font-weight:400;color:var(--muted);font-size:11px;">(1º obrigatório)</span>
+      </div>
+
+      <!-- Primeiro canhoto — obrigatório -->
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        <label id="label-log-canhoto-0" style="display:flex;align-items:center;gap:6px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:7px 14px;cursor:pointer;font-size:13px;color:var(--green);white-space:nowrap;">
+          <span id="label-log-canhoto-0-txt">📎 Anexar Canhoto</span>
+          <input type="file" id="log-canhoto-0" accept="image/*,.pdf" style="display:none;" onchange="logCanhotoAtualizar(0)">
+        </label>
+        <button type="button" id="btn-log-canhoto-0-limpar" onclick="logCanhotoLimpar(0)" style="display:none;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:7px 10px;font-size:12px;cursor:pointer;">🗑️</button>
+        <span id="log-canhoto-0-status" style="font-size:12px;color:var(--red);font-weight:600;"></span>
+      </div>
+
+      <!-- Canhotos extras -->
+      <div id="log-canhotos-extras" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+      <button type="button" onclick="logAdicionarCanhoto()" style="background:rgba(34,197,94,0.07);color:var(--green);border:1px dashed rgba(34,197,94,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outro canhoto (opcional)</button>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-secondary" onclick="fecharEncerrarMDFeLogistico()">Cancelar</button>
+      <button onclick="confirmarEncerrarMDFeLogistico()" style="background:var(--green);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding:10px 28px;cursor:pointer;">📄 Encerrar MDFe e Enviar ao Financeiro</button>
     </div>
   </div>
 </div>
@@ -1851,7 +1894,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
           <option value="carregado">Carregado</option>
           <option value="em_transito">Em Trânsito</option>
           <option value="aguardando_chegada">Aguardando Chegada</option>
-          <option value="aguardando_encerramento_mdfe">Ag. Encerramento MDFe</option>
           <option value="aguardando_coleta">Aguardando Coleta</option>
           <option value="aguardando_descarga">Aguardando Descarga</option>
         </select>
@@ -4236,7 +4278,7 @@ let fiscalData = [];
 async function carregarFiscal() {
   try {
     document.getElementById('fiscal-table').innerHTML = '<div class="loading">Carregando motoristas...</div>';
-    const statusFiscal = ['aguardando_emissao_doc', 'aguardando_encerramento_mdfe'];
+    const statusFiscal = ['aguardando_emissao_doc'];
 
     // Fonte única e autoritativa: lote_motoristas
     const todosLoteMot = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500') || [];
@@ -4295,10 +4337,6 @@ function renderFiscal(dados) {
                  <button class="btn-primary" style="padding:6px 12px;font-size:12px;background:var(--green);" onclick="emitirDocumento(${m.id})">✅ Documento Emitido</button>
                  <button class="btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="abrirFiscalModal(${m.id})">👁️ Ver</button>
                </div>`
-            : st === 'aguardando_encerramento_mdfe'
-            ? `<div style="display:flex;gap:8px;">
-                 <button class="btn-primary" style="padding:6px 12px;font-size:12px;background:var(--accent);" onclick="abrirFiscalModal(${m.id})">📄 Encerrar MDFe</button>
-               </div>`
             : `<button class="btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="abrirFiscalModal(${m.id})">👁️ Ver</button>`;
           return `<tr>
             <td style="color:var(--muted);font-size:12px">#${m.id}</td>
@@ -4352,9 +4390,9 @@ async function abrirFiscalModal(id) {
       : '—';
   }
 
-  // Mostra seção MDFe só se status for aguardando_encerramento_mdfe
+  // Seção MDFe ocultada — encerramento agora é feito pelo Logístico
   const secaoMdfe = document.getElementById('mf-secao-mdfe');
-  if (secaoMdfe) secaoMdfe.style.display = m.status === 'aguardando_encerramento_mdfe' ? '' : 'none';
+  if (secaoMdfe) secaoMdfe.style.display = 'none';
 
   document.getElementById('mf-lote').textContent = 'Lote #' + m.lote_id;
   document.getElementById('mf-cliente').textContent = m.lote ? (m.lote.cliente || '—') : '—';
@@ -4590,7 +4628,7 @@ async function atualizarStatusFiscal() {
       document.getElementById('mf-status-bar').innerHTML = badgeMotorista(statusFinal);
       document.getElementById('mf-status').innerHTML = badgeMotorista(statusFinal);
       const secaoMdfe = document.getElementById('mf-secao-mdfe');
-      if (secaoMdfe) secaoMdfe.style.display = statusFinal === 'aguardando_encerramento_mdfe' ? '' : 'none';
+      if (secaoMdfe) secaoMdfe.style.display = 'none';
     }
 
     if (novoStatus === 'documento_emitido') {
@@ -5829,15 +5867,143 @@ async function alterarTransitoModal(novoStatus) {
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 
-async function confirmarFinalizarTransito() {
-  if (!confirm('Tem certeza que deseja finalizar?\nO motorista será enviado ao Fiscal para encerramento do MDFe.')) return;
+// ---- Encerrar MDFe pelo Logístico ----
+let _logCanhotoCount = 0;
+
+function abrirEncerrarMDFeLogistico() {
+  const nome = document.getElementById('mlog-transito-nome')?.textContent || '—';
+  document.getElementById('mlog-mdfe-nome').textContent = nome;
+  // Reset campos
+  logCanhotoLimpar(0);
+  _logCanhotoCount = 0;
+  const extras = document.getElementById('log-canhotos-extras');
+  if (extras) extras.innerHTML = '';
+  // Fecha o modal de trânsito e abre o de MDFe
+  document.getElementById('modal-logistico-transito-overlay').classList.remove('open');
+  document.getElementById('modal-log-mdfe-overlay').classList.add('open');
+}
+
+function fecharEncerrarMDFeLogistico() {
+  document.getElementById('modal-log-mdfe-overlay').classList.remove('open');
+  logCanhotoLimpar(0);
+  _logCanhotoCount = 0;
+  const extras = document.getElementById('log-canhotos-extras');
+  if (extras) extras.innerHTML = '';
+}
+
+function logCanhotoAtualizar(idx) {
+  const input = document.getElementById(`log-canhoto-${idx}`);
+  const txt = document.getElementById(`label-log-canhoto-${idx}-txt`);
+  const label = document.getElementById(`label-log-canhoto-${idx}`);
+  const btnLimpar = document.getElementById(`btn-log-canhoto-${idx}-limpar`);
+  const status = document.getElementById(`log-canhoto-${idx}-status`);
+  if (input && input.files.length) {
+    if (txt) txt.textContent = '✅ ' + input.files[0].name;
+    if (label) { label.style.background='rgba(34,197,94,0.15)'; label.style.borderColor='rgba(34,197,94,0.5)'; }
+    if (btnLimpar) btnLimpar.style.display='';
+    if (status) status.textContent = '';
+  }
+}
+
+function logCanhotoLimpar(idx) {
+  const input = document.getElementById(`log-canhoto-${idx}`);
+  const txt = document.getElementById(`label-log-canhoto-${idx}-txt`);
+  const label = document.getElementById(`label-log-canhoto-${idx}`);
+  const btnLimpar = document.getElementById(`btn-log-canhoto-${idx}-limpar`);
+  if (input) input.value = '';
+  if (txt) txt.textContent = idx === 0 ? '📎 Anexar Canhoto' : '📎 Canhoto adicional';
+  if (label) { label.style.background='rgba(34,197,94,0.1)'; label.style.borderColor='rgba(34,197,94,0.3)'; label.style.color='var(--green)'; }
+  if (btnLimpar) btnLimpar.style.display='none';
+}
+
+function logAdicionarCanhoto() {
+  const container = document.getElementById('log-canhotos-extras');
+  if (!container) return;
+  const idx = ++_logCanhotoCount;
+  const div = document.createElement('div');
+  div.id = `log-canhoto-extra-${idx}`;
+  div.style.cssText = 'display:flex;align-items:center;gap:6px;';
+  div.innerHTML = `
+    <label id="label-log-canhoto-${idx}" style="display:flex;align-items:center;gap:6px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--green);white-space:nowrap;flex:1;">
+      <span id="label-log-canhoto-${idx}-txt">📎 Canhoto adicional</span>
+      <input type="file" id="log-canhoto-${idx}" accept="image/*,.pdf" style="display:none;" onchange="logCanhotoAtualizar(${idx})">
+    </label>
+    <button type="button" onclick="document.getElementById('log-canhoto-extra-${idx}').remove()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:6px 8px;font-size:12px;cursor:pointer;">🗑️</button>`;
+  container.appendChild(div);
+}
+
+async function confirmarEncerrarMDFeLogistico() {
+  // Valida canhoto obrigatório
+  const canhoto0 = document.getElementById('log-canhoto-0');
+  if (!canhoto0 || !canhoto0.files.length) {
+    const label = document.getElementById('label-log-canhoto-0');
+    const status = document.getElementById('log-canhoto-0-status');
+    if (label) { label.style.borderColor='var(--red)'; label.style.background='rgba(239,68,68,0.1)'; label.style.color='var(--red)'; }
+    if (status) status.textContent = '⚠️ Obrigatório';
+    showToast('⚠️ Anexe o canhoto antes de encerrar o MDFe', 'error');
+    return;
+  }
+  if (!confirm('Encerrar MDFe e enviar ao Financeiro?\nEsta ação não pode ser desfeita.')) return;
   try {
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`, { status: 'aguardando_encerramento_mdfe' });
-    // Sincroniza motoristas
+    const id = logisticoMotoristaSelecionadoId;
+    // Coleta todos os canhotos (0 + extras)
+    const canhotoTasks = [];
+    const file0 = canhoto0.files[0];
+    const ext0 = file0.name.split('.').pop();
+    const path0 = `motoristas/${id}/canhoto_${Date.now()}_0.${ext0}`;
+    canhotoTasks.push(
+      sb.storage.from('motoristas-docs').upload(path0, file0, { upsert: true })
+        .then(({error}) => error ? null : { tipo: 'canhoto', nome: file0.name, path: path0 })
+    );
+    // Extras
+    const extrasContainer = document.getElementById('log-canhotos-extras');
+    if (extrasContainer) {
+      extrasContainer.querySelectorAll('[id^="log-canhoto-extra-"]').forEach(row => {
+        const match = row.id.match(/log-canhoto-extra-(\d+)/);
+        if (!match) return;
+        const input = document.getElementById(`log-canhoto-${match[1]}`);
+        if (input && input.files.length) {
+          const file = input.files[0];
+          const ext = file.name.split('.').pop();
+          const path = `motoristas/${id}/canhoto_${Date.now()}_${match[1]}.${ext}`;
+          canhotoTasks.push(
+            sb.storage.from('motoristas-docs').upload(path, file, { upsert: true })
+              .then(({error}) => error ? null : { tipo: 'canhoto', nome: file.name, path })
+          );
+        }
+      });
+    }
+    const canhotoAnexos = (await Promise.all(canhotoTasks)).filter(Boolean);
+
+    // Atualiza status → manifesto_encerrado (vai direto ao Financeiro)
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'manifesto_encerrado' });
+    // Sincroniza motoristas e salva canhotos
+    const reg = await supabaseRequest('GET', `lote_motoristas?id=eq.${id}&select=id,motorista_id`) || [];
+    if (reg[0]?.motorista_id) {
+      const motAtual = await supabaseRequest('GET', `motoristas?id=eq.${reg[0].motorista_id}&select=id,anexos`) || [];
+      const anexosAtuais = motAtual[0]?.anexos || [];
+      await supabaseRequest('PATCH', `motoristas?id=eq.${reg[0].motorista_id}`, {
+        status: 'manifesto_encerrado',
+        anexos: [...anexosAtuais, ...canhotoAnexos]
+      });
+    }
+    registrarLog('logistico', 'MDFe encerrado pelo Logístico — enviado ao Financeiro', `ID: #${id}`);
+    showToast('✅ MDFe encerrado! Motorista enviado ao Financeiro.', 'success');
+    fecharEncerrarMDFeLogistico();
+    logisticoMotoristaSelecionadoId = null;
+    await carregarLogistico();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+// (mantida por compatibilidade, não usada no fluxo principal)
+async function confirmarFinalizarTransito() {
+  if (!confirm('Tem certeza que deseja finalizar?\nO motorista será enviado ao Financeiro.')) return;
+  try {
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`, { status: 'manifesto_encerrado' });
     const reg = await supabaseRequest('GET', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`) || [];
-    if (reg[0]?.motorista_id) await supabaseRequest('PATCH', `motoristas?id=eq.${reg[0].motorista_id}`, { status: 'aguardando_encerramento_mdfe' });
-    registrarLog('logistico', 'Motorista finalizado — enviado ao Fiscal (MDFe)', `ID: #${logisticoMotoristaSelecionadoId}`);
-    showToast('✅ Finalizado! Aguardando encerramento do MDFe no Fiscal.', 'success');
+    if (reg[0]?.motorista_id) await supabaseRequest('PATCH', `motoristas?id=eq.${reg[0].motorista_id}`, { status: 'manifesto_encerrado' });
+    registrarLog('logistico', 'Motorista finalizado — enviado ao Financeiro', `ID: #${logisticoMotoristaSelecionadoId}`);
+    showToast('✅ Finalizado! Motorista enviado ao Financeiro.', 'success');
     fecharModalTransito();
     await carregarLogistico();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
