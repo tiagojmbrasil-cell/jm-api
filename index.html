@@ -2089,9 +2089,13 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">LOTE</div><div style="font-weight:600;font-size:13px" id="mfin-lote">—</div></div>
     </div>
 
+    <!-- Documentos recebidos -->
+    <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Documentos Recebidos</div>
+    <div id="mfin-ck-docs" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
+
     <!-- Galeria de fotos -->
     <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:10px;">📎 Arquivos Anexados</div>
-    <div id="mfin-fotos-container" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;max-height:60vh;overflow-y:auto;padding-right:6px;">
+    <div id="mfin-fotos-container" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;max-height:40vh;overflow-y:auto;padding-right:6px;">
       <div style="text-align:center;padding:24px;color:var(--muted);">Carregando fotos...</div>
     </div>
 
@@ -5799,6 +5803,32 @@ async function abrirModalFinFotos(id) {
   document.getElementById('mfin-cpf').textContent = m.cpf || '—';
   document.getElementById('mfin-lote').textContent = 'Lote #' + (m.lote_id || '—');
 
+  // Documentos recebidos (checklist de tipos de anexo)
+  const nomeDocLabelFin = {
+    cnh: 'Habilitação (CNH)',
+    antt: 'Registro na ANTT',
+    doc_caminhao: 'Doc. Caminhão/Carretas',
+    residencia: 'Comprovante de Residência',
+    foto_caminhao: 'Foto Caminhão/Carretas',
+    selfie_cnh: 'Selfie segurando CNH',
+    selfie_placa: 'Selfie ao lado do veículo',
+    lonas: 'Fotos das Lonas',
+  };
+  const anexosDocsCheck = m.anexos || [];
+  const ckDocsEl = document.getElementById('mfin-ck-docs');
+  if (ckDocsEl) {
+    ckDocsEl.innerHTML = Object.keys(nomeDocLabelFin).map(tipo => {
+      const docsDoTipo = anexosDocsCheck.filter(a => a.tipo === tipo);
+      const temAnexo = docsDoTipo.length > 0;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surface);border-radius:6px;border:1px solid ${temAnexo ? 'rgba(34,197,94,0.3)' : 'var(--border)'};">
+        <span style="font-size:13px;color:var(--text);">${nomeDocLabelFin[tipo]}</span>
+        <span style="font-size:12px;font-weight:600;color:${temAnexo ? 'var(--green)' : 'var(--muted)'};">
+          ${temAnexo ? '✅ ' + docsDoTipo.map(a => a.nome || 'Anexado').join(', ') : '— Não anexado'}
+        </span>
+      </div>`;
+    }).join('');
+  }
+
   const container = document.getElementById('mfin-fotos-container');
   container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">⏳ Carregando arquivos...</div>';
 
@@ -7611,6 +7641,45 @@ async function abrirEditarMotorista(id) {
   document.getElementById('em-pix').value = m.chave_pix || '';
   selecionarTipoPagamentoEditar(m.tipo_pagamento || 'conta_bancaria');
 
+  // Carrega dados de carga/checklist do lote_motoristas mais recente
+  const ck = m.checklist || {};
+  let loteMotId = null;
+  if (motoristaEditandoTabela === 'lote_motoristas') {
+    loteMotId = id;
+    const ckLM = m.checklist || {};
+    document.getElementById('em-valor-frete').value = ckLM.valor_frete_motorista || '';
+    document.getElementById('em-valor-carga').value = ckLM.valor_carga || '';
+    document.getElementById('em-canal-contato').value = ckLM.canal_contato || '';
+    document.getElementById('em-prazo-saldo').value = ckLM.prazo_saldo || '';
+    document.getElementById('em-peso').value = m.peso_saida || '';
+  } else {
+    // tabela motoristas — busca lote_motoristas vinculado para pegar checklist
+    try {
+      const lmList = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${id}&order=criado_em.desc&limit=1`) || [];
+      const lm = lmList[0];
+      if (lm) {
+        loteMotId = lm.id;
+        const ckLM = lm.checklist || {};
+        document.getElementById('em-valor-frete').value = ckLM.valor_frete_motorista || '';
+        document.getElementById('em-valor-carga').value = ckLM.valor_carga || '';
+        document.getElementById('em-canal-contato').value = ckLM.canal_contato || '';
+        document.getElementById('em-prazo-saldo').value = ckLM.prazo_saldo || '';
+        if (!document.getElementById('em-peso').value) document.getElementById('em-peso').value = lm.peso_saida || '';
+      } else {
+        document.getElementById('em-valor-frete').value = '';
+        document.getElementById('em-valor-carga').value = '';
+        document.getElementById('em-canal-contato').value = '';
+        document.getElementById('em-prazo-saldo').value = '';
+      }
+    } catch(e) {
+      document.getElementById('em-valor-frete').value = '';
+      document.getElementById('em-valor-carga').value = '';
+      document.getElementById('em-canal-contato').value = '';
+      document.getElementById('em-prazo-saldo').value = '';
+    }
+  }
+  window._em_lote_mot_id = loteMotId;
+
   const secaoAnexos = document.getElementById('em-secao-anexos');
   if (motoristaEditandoTabela === 'motoristas') {
     motoristaEditandoAnexos = JSON.parse(JSON.stringify(m.anexos || []));
@@ -7771,6 +7840,29 @@ async function salvarEdicaoMotorista() {
     }
 
     await supabaseRequest('PATCH', `${tabela}?id=eq.${motoristaEditandoId}`, dados);
+
+    // Salva campos de carga/checklist no lote_motoristas vinculado
+    const lmId = window._em_lote_mot_id;
+    const valorFrete = parseFloat(document.getElementById('em-valor-frete').value) || null;
+    const valorCarga = parseFloat(document.getElementById('em-valor-carga').value) || null;
+    const canalContato = document.getElementById('em-canal-contato').value || null;
+    const prazoSaldo = document.getElementById('em-prazo-saldo').value || null;
+    const pesoSaidaEdit = parseFloat(document.getElementById('em-peso').value) || null;
+    if (lmId && (valorFrete !== null || valorCarga !== null || canalContato || prazoSaldo || pesoSaidaEdit)) {
+      try {
+        // Busca checklist atual para fazer merge
+        const lmAtual = await supabaseRequest('GET', `lote_motoristas?id=eq.${lmId}&select=checklist,peso_saida`) || [];
+        const ckAtual = lmAtual[0]?.checklist || {};
+        const novoChecklist = { ...ckAtual };
+        if (valorFrete !== null) novoChecklist.valor_frete_motorista = valorFrete;
+        if (valorCarga !== null) novoChecklist.valor_carga = valorCarga;
+        if (canalContato) novoChecklist.canal_contato = canalContato;
+        if (prazoSaldo) novoChecklist.prazo_saldo = prazoSaldo;
+        const lmUpdate = { checklist: novoChecklist };
+        if (pesoSaidaEdit !== null) lmUpdate.peso_saida = pesoSaidaEdit;
+        await supabaseRequest('PATCH', `lote_motoristas?id=eq.${lmId}`, lmUpdate);
+      } catch(e2) { console.warn('Erro ao salvar checklist:', e2); }
+    }
 
     if (tabela === 'motoristas' && dados.anexos) {
       try {
@@ -8106,6 +8198,22 @@ sb.auth.onAuthStateChange(async (event, session) => {
       <div class="form-group"><label>Contato / Telefone</label><input type="text" id="em-contato" placeholder="(34) 99999-9999"></div>
       <div class="form-group"><label>CPF</label><input type="text" id="em-cpf" placeholder="000.000.000-00"></div>
       <div class="form-group"><label>Peso Saída (ton)</label><input type="number" id="em-peso" placeholder="Ex: 40" step="0.1" min="0"></div>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">Dados da Carga</div>
+    <div id="em-secao-carga" style="background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:4px;">
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label>Valor Frete Motorista (R$)</label><input type="number" id="em-valor-frete" placeholder="Ex: 5000.00" step="0.01" min="0"></div>
+        <div class="form-group"><label>Valor da Carga (R$)</label><input type="number" id="em-valor-carga" placeholder="Ex: 80000.00" step="0.01" min="0"></div>
+        <div class="form-group"><label>Canal de Contato</label><input type="text" id="em-canal-contato" placeholder="Ex: WhatsApp, Telefone..."></div>
+        <div class="form-group"><label>Prazo do Saldo</label>
+          <select id="em-prazo-saldo">
+            <option value="">Selecione...</option>
+            <option value="5">05 dias após descarga</option>
+            <option value="7">07 dias após descarga</option>
+            <option value="8+">08+ dias após descarga</option>
+          </select>
+        </div>
+      </div>
     </div>
     <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">Dados Bancários</div>
     <div style="display:flex;gap:8px;margin-bottom:14px;">
