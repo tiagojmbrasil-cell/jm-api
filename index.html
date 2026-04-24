@@ -2943,6 +2943,7 @@ async function salvarCotacao() {
       quantidade: parseFloat(quantidade),
       tipo_produto: tipoProduto,
       preco: parseFloat(preco),
+      valor_cotado: parseFloat(preco),
       status: 'pendente',
       motivo_nao_fechamento: null,
     });
@@ -4188,33 +4189,9 @@ async function carregarFiscal() {
     document.getElementById('fiscal-table').innerHTML = '<div class="loading">Carregando motoristas...</div>';
     const statusFiscal = ['aguardando_emissao_doc', 'aguardando_encerramento_mdfe'];
 
-    // Busca em lote_motoristas (fonte principal)
+    // Fonte única e autoritativa: lote_motoristas
     const todosLoteMot = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500') || [];
-    const doLoteMot = todosLoteMot.filter(m => statusFiscal.includes(m.status || ''));
-
-    // Busca também em motoristas diretamente (fallback para quem ainda não foi sincronizado)
-    const todosMotoristas = await supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500') || [];
-    const motoristasComStatusFiscal = todosMotoristas.filter(m => statusFiscal.includes(m.status || ''));
-
-    // Para cada motorista com status fiscal direto, verifica se já tem registro em lote_motoristas atualizado
-    // Se não tiver (ou estiver desatualizado), sincroniza e inclui
-    const idsJaNoLoteMot = new Set(doLoteMot.map(m => m.motorista_id).filter(Boolean));
-    const motoristasParaSincronizar = motoristasComStatusFiscal.filter(m => !idsJaNoLoteMot.has(m.id));
-
-    // Sincroniza os que estão na tabela motoristas mas não em lote_motoristas
-    for (const mot of motoristasParaSincronizar) {
-      const loteRegs = todosLoteMot.filter(lm => lm.motorista_id === mot.id || lm.nome === mot.nome);
-      for (const reg of loteRegs) {
-        if (!statusFiscal.includes(reg.status)) {
-          await supabaseRequest('PATCH', `lote_motoristas?id=eq.${reg.id}`, { status: mot.status });
-          reg.status = mot.status; // atualiza localmente
-        }
-      }
-    }
-
-    // Recarrega lote_motoristas após sincronização
-    const todosAtualizado = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500') || [];
-    const motoristas = todosAtualizado.filter(m => statusFiscal.includes(m.status || ''));
+    const motoristas = todosLoteMot.filter(m => statusFiscal.includes(m.status || ''));
 
     const loteIds = [...new Set(motoristas.map(m => m.lote_id))];
     const lotesMap = {};
