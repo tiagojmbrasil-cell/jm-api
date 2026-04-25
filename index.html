@@ -835,6 +835,13 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <input type="text" id="l-pagador-outro" placeholder="Informe o nome do pagador">
       </div>
       <div class="form-group full" style="grid-column:1/-1;margin-top:8px;border-top:1px solid var(--border);padding-top:16px;">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📄 Dados do CTe</div>
+      </div>
+      <div class="form-group full">
+        <label>Emissor do CTe</label>
+        <input type="text" id="l-emissor-cte" placeholder="Ex: Transportadora XYZ Ltda / Nome do emissor">
+      </div>
+      <div class="form-group full" style="grid-column:1/-1;margin-top:8px;border-top:1px solid var(--border);padding-top:16px;">
         <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📬 Cliente Recebedor da Mercadoria</div>
       </div>
       <div class="form-group">
@@ -851,7 +858,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <button class="btn-primary" onclick="salvarLote()">💾 Salvar Lote</button>
     </div>
   </div>
-  <div class="card">
     <div class="table-header">
       <h2>Lotes Registrados</h2>
       <div class="filters">
@@ -1216,6 +1222,13 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <div class="form-group" id="el-pagador-outro-group" style="display:none;">
         <label>Quem é o pagador?</label>
         <input type="text" id="el-pagador-outro" placeholder="Informe o nome do pagador">
+      </div>
+      <div class="form-group full" style="grid-column:1/-1;margin-top:8px;border-top:1px solid var(--border);padding-top:16px;">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📄 Dados do CTe</div>
+      </div>
+      <div class="form-group full">
+        <label>Emissor do CTe</label>
+        <input type="text" id="el-emissor-cte" placeholder="Ex: Transportadora XYZ Ltda / Nome do emissor">
       </div>
       <div class="form-group full" style="grid-column:1/-1;margin-top:8px;border-top:1px solid var(--border);padding-top:16px;">
         <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📬 Cliente Recebedor da Mercadoria</div>
@@ -1962,6 +1975,10 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PRODUTO</div><div style="font-weight:600" id="mf-produto">—</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">AGÊNCIA</div><div style="font-weight:600" id="mf-agencia-lote">—</div></div>
         <div class="full" style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">ROTA</div><div style="font-weight:600" id="mf-rota">—</div></div>
+        <div style="grid-column:1/-1;background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.25);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:11px;color:#8b5cf6;margin-bottom:3px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">📄 EMISSOR DO CTe</div>
+          <div style="font-weight:700;font-size:14px;" id="mf-emissor-cte">—</div>
+        </div>
         <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:10px 12px;">
           <div style="font-size:11px;color:var(--green);margin-bottom:3px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">💵 TARIFA EMPRESA</div>
           <div style="font-weight:700;font-size:16px;color:var(--green);" id="mf-tarifa-empresa">—</div>
@@ -3216,6 +3233,7 @@ async function salvarLote() {
       pagador_outro: document.getElementById('l-pagador').value === 'outro' ? (document.getElementById('l-pagador-outro').value || null) : null,
       recebedor_nome: document.getElementById('l-recebedor-nome').value || null,
       recebedor_contato: document.getElementById('l-recebedor-contato').value || null,
+      emissor_cte: document.getElementById('l-emissor-cte').value || null,
     });
     registrarLog('lote', 'Lote criado', `Cliente: ${document.getElementById('l-cliente')?.value||'—'}`);
     showToast('✅ Lote salvo!', 'success');
@@ -3230,7 +3248,7 @@ async function salvarLote() {
 }
 
 function resetLote() {
-  ['l-produto','l-coleta','l-origem','l-entrega','l-destino','l-tarifa-emp','l-tarifa-mot','l-peso','l-obs','l-pagador-outro','l-recebedor-nome','l-recebedor-contato'].forEach(id => {
+  ['l-produto','l-coleta','l-origem','l-entrega','l-destino','l-tarifa-emp','l-tarifa-mot','l-peso','l-obs','l-pagador-outro','l-recebedor-nome','l-recebedor-contato','l-emissor-cte'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('l-agencia').value = '';
@@ -3371,6 +3389,7 @@ async function editarLote(id) {
   document.getElementById('el-pagador-outro').value = l.pagador_outro || '';
   document.getElementById('el-recebedor-nome').value = l.recebedor_nome || '';
   document.getElementById('el-recebedor-contato').value = l.recebedor_contato || '';
+  document.getElementById('el-emissor-cte').value = l.emissor_cte || '';
   document.getElementById('modal-lote-overlay').classList.add('open');
 }
 
@@ -3394,6 +3413,7 @@ async function salvarEdicaoLote() {
       pagador_outro: document.getElementById('el-pagador').value === 'outro' ? (document.getElementById('el-pagador-outro').value || null) : null,
       recebedor_nome: document.getElementById('el-recebedor-nome').value || null,
       recebedor_contato: document.getElementById('el-recebedor-contato').value || null,
+      emissor_cte: document.getElementById('el-emissor-cte').value || null,
     });
     showToast('✅ Lote atualizado!', 'success');
     fecharModalLoteBtn();
@@ -4296,7 +4316,7 @@ async function carregarFiscal() {
     const lotesMap = {};
     await Promise.all(loteIds.map(async lid => {
       if (!lid) return;
-      const l = await supabaseRequest('GET', `lotes?id=eq.${lid}&select=id,cliente,produto,origem,destino,agencia,tarifa_empresa,tarifa_motorista,pagador,pagador_outro`) || [];
+      const l = await supabaseRequest('GET', `lotes?id=eq.${lid}&select=id,cliente,produto,origem,destino,agencia,tarifa_empresa,tarifa_motorista,pagador,pagador_outro,emissor_cte`) || [];
       if (l.length) lotesMap[lid] = l[0];
     }));
     fiscalData = motoristas.map(m => ({ ...m, lote: lotesMap[m.lote_id] || null }));
@@ -4407,6 +4427,9 @@ async function abrirFiscalModal(id) {
   document.getElementById('mf-produto').textContent = m.lote ? (m.lote.produto || '—') : '—';
   document.getElementById('mf-agencia-lote').textContent = m.lote ? (m.lote.agencia || '—') : '—';
   document.getElementById('mf-rota').textContent = m.lote ? ((m.lote.origem||'—') + ' → ' + (m.lote.destino||'—')) : '—';
+  // Emissor do CTe
+  const mfEmissorEl = document.getElementById('mf-emissor-cte');
+  if (mfEmissorEl) mfEmissorEl.textContent = m.lote?.emissor_cte || '—';
   // Tarifas do lote
   const fmtTar = v => v != null ? 'R$ ' + Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—';
   const mfTarEmpEl = document.getElementById('mf-tarifa-empresa');
@@ -6656,6 +6679,14 @@ async function carregarDashboardCliente() {
             <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--accent);margin-bottom:2px;">Recebedor da Mercadoria</div>
             <div style="font-size:13px;font-weight:600;">${l.recebedor_nome || '—'}</div>
             ${l.recebedor_contato ? `<div style="font-size:12px;color:var(--muted);">📞 ${l.recebedor_contato}</div>` : ''}
+          </div>
+        </div>` : ''}
+        ${l.emissor_cte ? `
+        <div style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.2);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;">
+          <span style="font-size:16px;">📄</span>
+          <div>
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:#8b5cf6;margin-bottom:2px;">Emissor do CTe</div>
+            <div style="font-size:13px;font-weight:600;">${l.emissor_cte}</div>
           </div>
         </div>` : ''}
         <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:6px;">Motoristas (${l.motoristas.length})</div>
