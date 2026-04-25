@@ -681,7 +681,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <label>Preço</label>
         <div style="position:relative">
           <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
-          <input type="number" id="f-preco" placeholder="0,00" step="0.01" min="0" style="padding-left:36px" required>
+          <input type="text" id="f-preco" placeholder="R$ 0,00" style="padding-left:36px" required oninput="mascaraReal(this)">
         </div>
       </div>
     </div>
@@ -799,14 +799,14 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <label>Tarifa Empresa (R$)</label>
         <div style="position:relative">
           <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
-          <input type="number" id="l-tarifa-emp" placeholder="0,00" step="0.01" min="0" style="padding-left:36px" required>
+          <input type="text" id="l-tarifa-emp" placeholder="R$ 0,00" style="padding-left:36px" required oninput="mascaraReal(this)">
         </div>
       </div>
       <div class="form-group">
         <label>Tarifa Motorista (R$)</label>
         <div style="position:relative">
           <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
-          <input type="number" id="l-tarifa-mot" placeholder="0,00" step="0.01" min="0" style="padding-left:36px" required>
+          <input type="text" id="l-tarifa-mot" placeholder="R$ 0,00" style="padding-left:36px" required oninput="mascaraReal(this)">
         </div>
       </div>
       <div class="form-group">
@@ -1182,14 +1182,14 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <label>Tarifa Empresa (R$)</label>
         <div style="position:relative">
           <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
-          <input type="number" id="el-tarifa-emp" placeholder="0,00" step="0.01" min="0" style="padding-left:36px">
+          <input type="text" id="el-tarifa-emp" placeholder="R$ 0,00" style="padding-left:36px" oninput="mascaraReal(this)">
         </div>
       </div>
       <div class="form-group">
         <label>Tarifa Motorista (R$)</label>
         <div style="position:relative">
           <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">R$</span>
-          <input type="number" id="el-tarifa-mot" placeholder="0,00" step="0.01" min="0" style="padding-left:36px">
+          <input type="text" id="el-tarifa-mot" placeholder="R$ 0,00" style="padding-left:36px" oninput="mascaraReal(this)">
         </div>
       </div>
       <div class="form-group">
@@ -1314,7 +1314,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 <div class="modal-overlay" id="modal-cadastro-motorista-overlay" onclick="if(event.target===this)fecharCadastroMotoristaGR()">
   <div class="modal" style="max-width:700px;">
     <div class="modal-title">
-      <span>🚛 Cadastrar Motorista — GR</span>
+      <span>🚛 Incluir Motorista — GR</span>
       <button class="modal-close" onclick="fecharCadastroMotoristaGR()">✕</button>
     </div>
 
@@ -1382,7 +1382,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     <!-- PEDÁGIO -->
     <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">🛣️ Pedágio</div>
     <div class="form-grid" style="grid-template-columns:1fr 1fr;">
-      <div class="form-group"><label>Valor do Pedágio (R$)</label><input type="number" id="gr-valor-pedagio" placeholder="R$ 0,00" step="0.01" min="0"></div>
+      <div class="form-group"><label>Valor do Pedágio (R$)</label><input type="text" id="gr-valor-pedagio" placeholder="R$ 0,00" oninput="mascaraReal(this)"></div>
       <div class="form-group"><label>Nome da Administradora da TAG</label><input type="text" id="gr-tag-administradora" placeholder="Ex: ConectCar, Sem Parar..."></div>
       <div class="form-group full"><label>Número da TAG</label><input type="text" id="gr-tag-numero" placeholder="Ex: 0000 0000 0000 0000"></div>
     </div>
@@ -1391,8 +1391,8 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:16px;">
       <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">📋 Check List — Documentação</div>
       <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px;">
-        <div class="form-group"><label>Valor do Frete do Motorista (R$)</label><input type="number" id="gr-ck-valor-frete" placeholder="R$ 0,00" step="0.01" min="0" required></div>
-        <div class="form-group"><label>Valor da Carga (R$)</label><input type="number" id="gr-ck-valor-carga" placeholder="R$ 0,00" step="0.01" min="0" required></div>
+        <div class="form-group"><label>Valor do Frete do Motorista (R$)</label><input type="text" id="gr-ck-valor-frete" placeholder="R$ 0,00" required oninput="mascaraReal(this)"></div>
+        <div class="form-group"><label>Valor da Carga (R$)</label><input type="text" id="gr-ck-valor-carga" placeholder="R$ 0,00" required oninput="mascaraReal(this)"></div>
         <div class="form-group full"><label>Canal de Contato do Motorista</label><input type="text" id="gr-ck-canal" placeholder="Ex: WhatsApp, Fretebras, indicação..." required></div>
       </div>
 
@@ -1549,7 +1549,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
     <div class="form-actions">
       <button class="btn-secondary" onclick="fecharCadastroMotoristaGR()">Cancelar</button>
-      <button class="btn-primary" onclick="salvarMotoristaGR()">💾 Cadastrar Motorista</button>
+      <button class="btn-primary" onclick="salvarMotoristaGR()">💾 Incluir Motorista</button>
     </div>
   </div>
 </div>
@@ -1678,7 +1678,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
           <option value="transito">🚛 Controle de Trânsito</option>
         </select>
         <button onclick="carregarLogistico()" class="btn-secondary" style="padding:8px 14px;font-size:13px;">🔄 Atualizar</button>
-        <button class="btn-primary" onclick="abrirCadastroMotoristaGR()" style="padding:8px 16px;font-size:13px;">+ Cadastrar Motorista</button>
+        <button class="btn-primary" onclick="abrirCadastroMotoristaGR()" style="padding:8px 16px;font-size:13px;">+ Incluir Motorista</button>
       </div>
     </div>
     <div id="logistico-table"><div class="loading">Carregando...</div></div>
@@ -1962,6 +1962,14 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PRODUTO</div><div style="font-weight:600" id="mf-produto">—</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">AGÊNCIA</div><div style="font-weight:600" id="mf-agencia-lote">—</div></div>
         <div class="full" style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">ROTA</div><div style="font-weight:600" id="mf-rota">—</div></div>
+        <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:11px;color:var(--green);margin-bottom:3px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">💵 TARIFA EMPRESA</div>
+          <div style="font-weight:700;font-size:16px;color:var(--green);" id="mf-tarifa-empresa">—</div>
+        </div>
+        <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:11px;color:#3b82f6;margin-bottom:3px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">💵 TARIFA MOTORISTA</div>
+          <div style="font-weight:700;font-size:16px;color:#3b82f6;" id="mf-tarifa-motorista">—</div>
+        </div>
         <div style="grid-column:1/-1;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:8px;padding:10px 12px;">
           <div style="font-size:11px;color:var(--accent);margin-bottom:3px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">💰 PAGADOR (FINANCEIRO)</div>
           <div style="font-weight:700;font-size:14px;" id="mf-pagador-lote">—</div>
@@ -3033,7 +3041,7 @@ async function salvarCotacao() {
       cliente_id: clienteId, origem, destino,
       quantidade: parseFloat(quantidade),
       tipo_produto: tipoProduto,
-      preco: parseFloat(preco),
+      preco: parseMoeda(preco) ?? parseFloat(preco),
       valor_cotado: parseFloat(preco),
       status: 'pendente',
       motivo_nao_fechamento: null,
@@ -3199,8 +3207,8 @@ async function salvarLote() {
       origem: document.getElementById('l-origem').value || null,
       entrega: document.getElementById('l-entrega').value || null,
       destino: document.getElementById('l-destino').value || null,
-      tarifa_empresa: document.getElementById('l-tarifa-emp').value || null,
-      tarifa_motorista: document.getElementById('l-tarifa-mot').value || null,
+      tarifa_empresa: parseMoeda(document.getElementById('l-tarifa-emp').value),
+      tarifa_motorista: parseMoeda(document.getElementById('l-tarifa-mot').value),
       peso_ton: document.getElementById('l-peso').value || null,
       data_lote: document.getElementById('l-data').value || null,
       observacao: document.getElementById('l-obs').value || null,
@@ -3352,8 +3360,8 @@ async function editarLote(id) {
   document.getElementById('el-origem').value = l.origem || '';
   document.getElementById('el-entrega').value = l.entrega || '';
   document.getElementById('el-destino').value = l.destino || '';
-  document.getElementById('el-tarifa-emp').value = l.tarifa_empresa || '';
-  document.getElementById('el-tarifa-mot').value = l.tarifa_motorista || '';
+  document.getElementById('el-tarifa-emp').value = l.tarifa_empresa ? 'R$ ' + Number(l.tarifa_empresa).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.') : '';
+  document.getElementById('el-tarifa-mot').value = l.tarifa_motorista ? 'R$ ' + Number(l.tarifa_motorista).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.') : '';
   document.getElementById('el-peso').value = l.peso_ton || '';
   document.getElementById('el-data').value = l.data_lote || '';
   document.getElementById('el-obs').value = l.observacao || '';
@@ -3377,8 +3385,8 @@ async function salvarEdicaoLote() {
       origem: document.getElementById('el-origem').value || null,
       entrega: document.getElementById('el-entrega').value || null,
       destino: document.getElementById('el-destino').value || null,
-      tarifa_empresa: document.getElementById('el-tarifa-emp').value || null,
-      tarifa_motorista: document.getElementById('el-tarifa-mot').value || null,
+      tarifa_empresa: parseMoeda(document.getElementById('el-tarifa-emp').value),
+      tarifa_motorista: parseMoeda(document.getElementById('el-tarifa-mot').value),
       peso_ton: document.getElementById('el-peso').value || null,
       data_lote: document.getElementById('el-data').value || null,
       observacao: document.getElementById('el-obs').value || null,
@@ -3423,8 +3431,8 @@ async function abrirInserirInformacoes(id) {
   document.getElementById('el-origem').value = l.origem || '';
   document.getElementById('el-entrega').value = l.entrega || '';
   document.getElementById('el-destino').value = l.destino || '';
-  document.getElementById('el-tarifa-emp').value = l.tarifa_empresa || '';
-  document.getElementById('el-tarifa-mot').value = l.tarifa_motorista || '';
+  document.getElementById('el-tarifa-emp').value = l.tarifa_empresa ? 'R$ ' + Number(l.tarifa_empresa).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.') : '';
+  document.getElementById('el-tarifa-mot').value = l.tarifa_motorista ? 'R$ ' + Number(l.tarifa_motorista).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.') : '';
   document.getElementById('el-peso').value = l.peso_ton || '';
   document.getElementById('el-data').value = l.data_lote || '';
   document.getElementById('el-obs').value = l.observacao || '';
@@ -4288,7 +4296,7 @@ async function carregarFiscal() {
     const lotesMap = {};
     await Promise.all(loteIds.map(async lid => {
       if (!lid) return;
-      const l = await supabaseRequest('GET', `lotes?id=eq.${lid}&select=id,cliente,produto,origem,destino,agencia,pagador,pagador_outro`) || [];
+      const l = await supabaseRequest('GET', `lotes?id=eq.${lid}&select=id,cliente,produto,origem,destino,agencia,tarifa_empresa,tarifa_motorista,pagador,pagador_outro`) || [];
       if (l.length) lotesMap[lid] = l[0];
     }));
     fiscalData = motoristas.map(m => ({ ...m, lote: lotesMap[m.lote_id] || null }));
@@ -4399,6 +4407,12 @@ async function abrirFiscalModal(id) {
   document.getElementById('mf-produto').textContent = m.lote ? (m.lote.produto || '—') : '—';
   document.getElementById('mf-agencia-lote').textContent = m.lote ? (m.lote.agencia || '—') : '—';
   document.getElementById('mf-rota').textContent = m.lote ? ((m.lote.origem||'—') + ' → ' + (m.lote.destino||'—')) : '—';
+  // Tarifas do lote
+  const fmtTar = v => v != null ? 'R$ ' + Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—';
+  const mfTarEmpEl = document.getElementById('mf-tarifa-empresa');
+  if (mfTarEmpEl) mfTarEmpEl.textContent = fmtTar(m.lote?.tarifa_empresa);
+  const mfTarMotEl = document.getElementById('mf-tarifa-motorista');
+  if (mfTarMotEl) mfTarMotEl.textContent = fmtTar(m.lote?.tarifa_motorista);
   // Pagador do lote
   const pagadorMap = { destinatario:'Destinatário', remetente:'Remetente', outro:'Outro' };
   const pagadorVal = m.lote?.pagador || '';
@@ -6816,7 +6830,7 @@ async function salvarMotoristaGR() {
     { id: 'gr-placa',    label: 'Placa do Veículo' },
     { id: 'gr-contato',  label: 'Contato / Telefone' },
     { id: 'gr-cpf',      label: 'CPF' },
-    { id: 'gr-ck-valor-frete', label: 'Valor do Frete do Motorista' },
+    { id: 'gr-ck-valor-frete', label: 'Valor do Frete do Motorista' }, { id: 'gr-ck-valor-carga', label: 'Valor da Carga' },
     { id: 'gr-ck-valor-carga', label: 'Valor da Carga' },
     { id: 'gr-ck-canal', label: 'Canal de Contato do Motorista' },
     { id: 'gr-ck-ref-prof', label: 'Referências Profissionais' },
@@ -6885,7 +6899,7 @@ async function salvarMotoristaGR() {
 
   const prazoSaldoEl = document.querySelector('input[name="gr-ck-prazo-saldo"]:checked');
   const checklist = {
-    valor_frete_motorista: document.getElementById('gr-ck-valor-frete').value || null,
+    valor_frete_motorista: parseMoeda(document.getElementById('gr-ck-valor-frete').value),
     valor_carga: document.getElementById('gr-ck-valor-carga').value || null,
     canal_contato: document.getElementById('gr-ck-canal').value || null,
     pgto_adiantamento70: document.getElementById('gr-ck-adiantamento').checked,
@@ -6919,7 +6933,7 @@ async function salvarMotoristaGR() {
       tipo_conta: document.getElementById('gr-tipo-conta').value || null,
       tipo_chave_pix: document.getElementById('gr-tipo-pix').value || null,
       chave_pix: document.getElementById('gr-pix').value || null,
-      valor_pedagio: document.getElementById('gr-valor-pedagio').value || null,
+      valor_pedagio: parseMoeda(document.getElementById('gr-valor-pedagio').value),
       tag_administradora: document.getElementById('gr-tag-administradora').value || null,
       tag_numero: document.getElementById('gr-tag-numero').value || null,
       status: 'aguardando_gr',
@@ -7795,6 +7809,23 @@ function alternarTema() {
     if (btn) { btn.textContent = '☀️'; btn.title = 'Modo escuro'; }
   }
 })();
+
+
+// ============ MÁSCARA MONETÁRIA ============
+function mascaraReal(input) {
+  let v = input.value.replace(/\D/g, '');
+  if (!v) { input.value = ''; return; }
+  v = (parseInt(v, 10) / 100).toFixed(2);
+  input.value = 'R$ ' + v.replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+// Converte valor mascarado para número float
+function parseMoeda(val) {
+  if (!val) return null;
+  const limpo = String(val).replace(/[R$\s.]/g, '').replace(',', '.');
+  const n = parseFloat(limpo);
+  return isNaN(n) ? null : n;
+}
 
 // INIT
 sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
