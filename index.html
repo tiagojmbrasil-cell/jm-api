@@ -1419,6 +1419,17 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <div class="form-group"><label>Valor da Carga (R$)</label><input type="text" id="gr-ck-valor-carga" placeholder="R$ 0,00" required oninput="mascaraReal(this)"></div>
         <div class="form-group full"><label>Canal de Contato do Motorista</label><input type="text" id="gr-ck-canal" placeholder="Ex: WhatsApp, Fretebras, indicação..." required></div>
       </div>
+      <!-- Campo Peso Saída — aparece somente quando cadastro vem de um lote -->
+      <div id="gr-peso-lote-row" style="display:none;background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.25);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:8px;">⚖️ Peso Saída no Lote <span id="gr-lote-nome-hint" style="font-weight:400;color:var(--muted);"></span></div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="number" id="gr-peso-saida" placeholder="Toneladas (ex: 40)" step="0.1" min="0.1" style="flex:1;font-size:14px;padding:8px 12px;">
+          <span style="font-size:13px;color:var(--muted);">ton</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;">Ao ser aprovado pela GR, o motorista será vinculado automaticamente ao lote com esse peso.</div>
+      </div>
+
+      </div>
 
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Documentos Recebidos</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
@@ -6763,11 +6774,25 @@ function abrirCadastroMotoristaDoLote() {
   // Fecha o modal de motoristas temporariamente para não sobrepor
   document.getElementById('modal-motoristas-overlay').classList.remove('open');
   abrirCadastroMotoristaGR();
+  // Exibe campo de peso saída e informa o lote
+  const pesoRow = document.getElementById('gr-peso-lote-row');
+  const pesoInput = document.getElementById('gr-peso-saida');
+  const hint = document.getElementById('gr-lote-nome-hint');
+  if (pesoRow) pesoRow.style.display = 'block';
+  if (pesoInput) pesoInput.value = '';
+  if (hint && loteAtualDados) {
+    hint.textContent = '— Lote #' + loteAtualId + (loteAtualDados.cliente ? ' · ' + loteAtualDados.cliente : '');
+  }
 }
 
 let _grLoteIdOrigem = null; // lote de origem quando cadastro vem do modal do lote
 
 function abrirCadastroMotoristaGR() {
+  // Esconde campo peso (só aparece quando vem do lote via abrirCadastroMotoristaDoLote)
+  const pesoRow = document.getElementById('gr-peso-lote-row');
+  if (pesoRow) pesoRow.style.display = 'none';
+  const pesoInput = document.getElementById('gr-peso-saida');
+  if (pesoInput) pesoInput.value = '';
   // Reset form
   ['gr-nome','gr-placa','gr-contato','gr-cpf','gr-nome-titular','gr-cpf-titular','gr-banco','gr-agencia','gr-conta','gr-pix',
    'gr-ck-valor-frete','gr-ck-valor-carga','gr-ck-canal','gr-ck-excecao-pgto','gr-ck-assinatura-pgto','gr-ck-excecao-prazo','gr-ck-assinatura-prazo',
@@ -6962,6 +6987,16 @@ async function salvarMotoristaGR() {
     }
   }
 
+  // Validação de peso quando vem do lote
+  if (_grLoteIdOrigem) {
+    const pesoInput = document.getElementById('gr-peso-saida');
+    if (!pesoInput || !pesoInput.value || parseFloat(pesoInput.value) <= 0) {
+      showToast('Informe o peso de saída (toneladas) para este lote', 'error');
+      pesoInput && pesoInput.focus();
+      return;
+    }
+  }
+
   // Validação de anexos obrigatórios
   const anexosObrigatorios = [
     { id: 'gr-arq-cnh',          label: 'CNH do motorista' },
@@ -7023,6 +7058,7 @@ async function salvarMotoristaGR() {
       status: 'aguardando_gr',
       gr_status: 'pendente',
       lote_id_origem: _grLoteIdOrigem || null,
+      peso_saida_origem: _grLoteIdOrigem ? (parseFloat(document.getElementById('gr-peso-saida')?.value) || null) : null,
       checklist,
       anexos: [],
     });
@@ -7447,6 +7483,55 @@ async function salvarDecisaoGR() {
       m.status = patchData.status;
       m.gr_motivo = patchData.gr_motivo;
     }
+    // Se aprovado e veio de um lote, vincula automaticamente ao lote
+    if (decisao === 'aprovado') {
+      const motAtualDados = await supabaseRequest('GET', `motoristas?id=eq.${grMotoristaSelecionadoId}&select=id,nome,placa,contato,cpf,tipo_pagamento,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,tipo_chave_pix,chave_pix,checklist,anexos,lote_id_origem,peso_saida_origem,gr_motivo`) || [];
+      const motDados = motAtualDados[0];
+      if (motDados?.lote_id_origem && motDados?.peso_saida_origem) {
+        // Verifica se há peso disponível no lote
+        const loteMotExist = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${motDados.lote_id_origem}`) || [];
+        const loteInfo = await supabaseRequest('GET', `lotes?id=eq.${motDados.lote_id_origem}&select=id,peso_ton`) || [];
+        const pesoTotal = parseFloat(loteInfo[0]?.peso_ton || 0);
+        const totalCarregado = loteMotExist.reduce((s, m) => s + parseFloat(m.peso_saida || 0), 0);
+        const restante = pesoTotal > 0 ? pesoTotal - totalCarregado : 999999;
+        if (parseFloat(motDados.peso_saida_origem) > restante) {
+          showToast(`⚠️ Aprovado, mas peso (${motDados.peso_saida_origem} ton) excede o restante do lote (${restante.toFixed(2)} ton). Vínculo não realizado — adicione manualmente.`, 'error');
+        } else {
+          await supabaseRequest('POST', 'lote_motoristas', {
+            lote_id: motDados.lote_id_origem,
+            motorista_id: motDados.id,
+            nome: motDados.nome,
+            placa: motDados.placa,
+            contato: motDados.contato,
+            cpf: motDados.cpf,
+            peso_saida: parseFloat(motDados.peso_saida_origem),
+            status: 'em_negociacao',
+            tipo_pagamento: motDados.tipo_pagamento,
+            nome_titular: motDados.nome_titular,
+            cpf_titular: motDados.cpf_titular,
+            banco: motDados.banco,
+            agencia: motDados.agencia,
+            numero_conta: motDados.numero_conta,
+            tipo_conta: motDados.tipo_conta,
+            tipo_chave_pix: motDados.tipo_chave_pix,
+            chave_pix: motDados.chave_pix,
+            checklist: motDados.checklist || {},
+            anexos: motDados.anexos || [],
+            gr_status: 'aprovado',
+            gr_motivo: motDados.gr_motivo,
+          });
+          // Atualiza status do motorista para aguardando_nf (próxima etapa do fluxo)
+          await supabaseRequest('PATCH', `motoristas?id=eq.${grMotoristaSelecionadoId}`, { status: 'aguardando_nf' });
+          registrarLog('gr', 'Motorista aprovado e vinculado automaticamente ao lote', `Motorista: ${motDados.nome||'—'} · Lote: #${motDados.lote_id_origem} · Peso: ${motDados.peso_saida_origem} ton`);
+          showToast('✅ Motorista aprovado e vinculado ao Lote #' + motDados.lote_id_origem + ' automaticamente!', 'success');
+          document.getElementById('mgr-status-bar').innerHTML = badgeGR(decisao);
+          filtrarGR();
+          fecharModalGR();
+          return;
+        }
+      }
+    }
+
     showToast(decisao === 'aprovado' ? '✅ Motorista aprovado!' : '❌ Motorista reprovado!', 'success');
     document.getElementById('mgr-status-bar').innerHTML = badgeGR(decisao);
     filtrarGR();
