@@ -6235,7 +6235,7 @@ async function abrirModalFinFotos(id) {
   const container = document.getElementById('mfin-fotos-container');
   container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">⏳ Carregando arquivos...</div>';
 
-  // Busca os anexos do lote_motoristas (fotos + docs) e do motorista (documentos cadastrais)
+  // Busca os anexos do lote_motoristas e do motorista
   let anexosLote = m.anexos || [];
   let anexosMot = [];
   if (m.motorista_id) {
@@ -6244,8 +6244,6 @@ async function abrirModalFinFotos(id) {
       anexosMot = motData?.[0]?.anexos || [];
     } catch(e) { console.warn('Erro ao buscar anexos do motorista:', e); }
   }
-  // Mescla: docs do motorista primeiro, depois fotos/docs do lote
-  const anexos = [...anexosMot, ...anexosLote];
 
   // Checklist de documentos cadastrais — só mostra os que existem
   const nomeDocLabelFin = {
@@ -6253,10 +6251,11 @@ async function abrirModalFinFotos(id) {
     residencia: 'Comprovante de Residência', foto_caminhao: 'Foto Caminhão/Carretas',
     selfie_cnh: 'Selfie segurando CNH', selfie_placa: 'Selfie ao lado do veículo', lonas: 'Fotos das Lonas',
   };
+  const todosAnexos = [...anexosMot, ...anexosLote];
   const ckDocsEl = document.getElementById('mfin-ck-docs');
   if (ckDocsEl) {
     const linhas = Object.keys(nomeDocLabelFin).map(tipo => {
-      const docsDoTipo = anexos.filter(a => a.tipo === tipo);
+      const docsDoTipo = todosAnexos.filter(a => a.tipo === tipo);
       const temAnexo = docsDoTipo.length > 0;
       return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surface);border-radius:6px;border:1px solid ${temAnexo ? 'rgba(34,197,94,0.3)' : 'var(--border)'};">
         <span style="font-size:13px;color:var(--text);">${nomeDocLabelFin[tipo]}</span>
@@ -6267,17 +6266,18 @@ async function abrirModalFinFotos(id) {
     }).join('');
     ckDocsEl.innerHTML = linhas || '<div style="font-size:13px;color:var(--muted);">Nenhum documento cadastral encontrado.</div>';
   }
-
-  // Gera URLs assinadas para todos os anexos
-  if (!anexos.length) {
+  if (!todosAnexos.length) {
     container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Nenhum arquivo anexado neste registro.</div>';
   } else {
+    container.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:4px 0;">⏳ Carregando arquivos...</div>';
     try {
-      const paths = anexos.map(a => a.path || a.url || '').filter(Boolean);
-      const { data: signedUrls } = await sb.storage.from('motoristas-docs').createSignedUrls(paths, 3600);
-      const urlMap = {};
-      (signedUrls || []).forEach(s => { if (s.signedUrl) urlMap[s.path] = s.signedUrl; });
-
+      const paths = todosAnexos.map(a => a.path || a.url).filter(Boolean);
+      let urlMap = {};
+      if (paths.length > 0) {
+        const { data: signedUrls, error } = await sb.storage.from('motoristas-docs').createSignedUrls(paths, 3600);
+        if (error) throw error;
+        (signedUrls || []).forEach(s => { urlMap[s.path] = s.signedUrl; });
+      }
       const nomeAnexoFin = {
         nf: 'Nota Fiscal', foto_carregamento: 'Foto Carregamento',
         cnh: 'CNH', antt: 'ANTT', doc_caminhao: 'Doc. Caminhão/Carretas',
@@ -6286,25 +6286,26 @@ async function abrirModalFinFotos(id) {
         canhoto: 'Canhoto', checklist_gerenciadora: 'Checklist Gerenciadora',
         comprovante_adiantamento: 'Comprovante Adiantamento'
       };
-
-      const itens = anexos.map(a => {
-        const url = urlMap[a.path || a.url] || a.path || a.url || '';
+      container.innerHTML = todosAnexos.map(a => {
+        const caminho = a.path || a.url;
+        const url = urlMap[caminho] || caminho;
         const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome || '');
         const label = nomeAnexoFin[a.tipo] || a.tipo || 'Arquivo';
-        const nomeArq = (a.nome || 'arquivo').length > 40 ? (a.nome||'arquivo').substring(0,40)+'...' : (a.nome||'arquivo');
-        return `<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;gap:10px;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span>${isImg ? '🖼️' : '📄'}</span>
-            <div>
-              <div style="font-size:13px;font-weight:600;">${label}</div>
-              <div style="font-size:11px;color:var(--muted);">${nomeArq}</div>
+        const nomeArquivo = (a.nome || '').length > 35 ? (a.nome || '').substring(0, 35) + '...' : (a.nome || '');
+        return `
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+            <span style="font-size:20px;flex-shrink:0;">${isImg ? '🖼️' : '📄'}</span>
+            <div style="min-width:0;">
+              <div style="font-size:13px;font-weight:600;color:var(--text);">${label}</div>
+              <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nomeArquivo}</div>
             </div>
           </div>
-          ${url ? `<a href="${url}" target="_blank" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;text-decoration:none;">${isImg ? '🔍 Ver' : '⬇️ Abrir'}</a>` : `<span style="font-size:11px;color:var(--muted);">—</span>`}
+          <a href="${url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:rgba(59,130,246,0.12);color:#3b82f6;border:1px solid rgba(59,130,246,0.35);border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0;">
+            ${isImg ? '🔍 Ver' : '⬇️ Abrir'}
+          </a>
         </div>`;
       }).join('');
-
-      container.innerHTML = itens || '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Nenhum arquivo encontrado.</div>';
     } catch(e) {
       container.innerHTML = `<div style="text-align:center;padding:24px;color:var(--red);font-size:13px;">Erro ao carregar arquivos: ${e.message}</div>`;
     }
