@@ -1583,14 +1583,25 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         </label>
       </div>
 
-    <!-- Campo Peso Saída — aparece somente quando cadastro vem de um lote -->
+    <!-- Campo Peso Saída — aparece somente quando cadastro vem de um lote -->\
     <div id="gr-peso-lote-row" style="display:none;background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.25);border-radius:8px;padding:12px 14px;margin:0 0 16px;">
       <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:8px;">⚖️ Peso Saída no Lote <span id="gr-lote-nome-hint" style="font-weight:400;color:var(--muted);"></span></div>
-      <div style="display:flex;align-items:center;gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
         <input type="number" id="gr-peso-saida" placeholder="Toneladas (ex: 40)" step="0.1" min="0.1" style="flex:1;font-size:14px;padding:8px 12px;">
         <span style="font-size:13px;color:var(--muted);">ton</span>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px;">Ao ser aprovado pela GR, o motorista será vinculado automaticamente ao lote com esse peso.</div>
+      <!-- Datas da viagem — aparecem junto com o peso quando vem do lote -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--green);display:block;margin-bottom:5px;">📅 Data Início da Viagem <span style="color:var(--red);">*</span></label>
+          <input type="date" id="gr-data-inicio-viagem" style="width:100%;font-size:13px;padding:8px 10px;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--green);display:block;margin-bottom:5px;">🏁 Data Final da Viagem <span style="color:var(--red);">*</span></label>
+          <input type="date" id="gr-data-fim-viagem" style="width:100%;font-size:13px;padding:8px 10px;">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);">Ao ser aprovado pela GR, o motorista será vinculado automaticamente ao lote com esse peso.</div>
     </div>
 
     <div class="form-actions">
@@ -3731,8 +3742,8 @@ async function adicionarMotorista() {
     showToast(`Peso excede o restante (${restante.toFixed(2)} ton)`, 'error'); return;
   }
 
-  // Captura nome do auxiliar logado
-  const nomeAuxiliar = userAtual?.user_metadata?.nome || userAtual?.email || 'Desconhecido';
+  // Captura nome do auxiliar logado (prioriza nome da tabela usuarios_perfil)
+  const nomeAuxiliar = window._nomeUsuarioPerfil || userAtual?.user_metadata?.nome || userAtual?.email || 'Desconhecido';
 
   try {
     // Busca dados completos do motorista aprovado
@@ -4964,8 +4975,10 @@ async function carregarPerfilUsuario(userId) {
     const perfis = await supabaseRequest('GET', `usuarios_perfil?id=eq.${userId}`);
     if (perfis && perfis.length) {
       console.log('Perfil encontrado:', perfis[0].setor);
+      window._nomeUsuarioPerfil = perfis[0].nome || userAtual?.user_metadata?.nome || userAtual?.email || 'Desconhecido';
       aplicarPermissoes(perfis[0].setor || 'comercial', getPermissoesUsuario(perfis[0]));
     } else {
+      window._nomeUsuarioPerfil = userAtual?.user_metadata?.nome || userAtual?.email || 'Desconhecido';
       await supabaseRequest('POST', 'usuarios_perfil', {
         id: userId,
         setor: 'comercial',
@@ -6866,11 +6879,15 @@ function abrirCadastroMotoristaDoLote() {
 let _grLoteIdOrigem = null; // lote de origem quando cadastro vem do modal do lote
 
 function abrirCadastroMotoristaGR() {
-  // Esconde campo peso (só aparece quando vem do lote via abrirCadastroMotoristaDoLote)
   const pesoRow = document.getElementById('gr-peso-lote-row');
   if (pesoRow) pesoRow.style.display = 'none';
   const pesoInput = document.getElementById('gr-peso-saida');
   if (pesoInput) pesoInput.value = '';
+  // Reset datas
+  const di = document.getElementById('gr-data-inicio-viagem');
+  const df = document.getElementById('gr-data-fim-viagem');
+  if (di) di.value = '';
+  if (df) df.value = '';
   // Reset form
   ['gr-nome','gr-placa','gr-contato','gr-cpf','gr-nome-titular','gr-cpf-titular','gr-banco','gr-agencia','gr-conta','gr-pix',
    'gr-ck-valor-frete','gr-ck-valor-carga','gr-ck-canal','gr-ck-excecao-pgto','gr-ck-assinatura-pgto','gr-ck-excecao-prazo','gr-ck-assinatura-prazo',
@@ -6961,6 +6978,10 @@ function coletarPlacasExtras() {
 
 function fecharCadastroMotoristaGR() {
   document.getElementById('modal-cadastro-motorista-overlay').classList.remove('open');
+  const di = document.getElementById('gr-data-inicio-viagem');
+  const df = document.getElementById('gr-data-fim-viagem');
+  if (di) di.value = '';
+  if (df) df.value = '';
   // Se veio do modal do lote e fechou sem salvar, reabre o modal do lote
   if (_grLoteIdOrigem) {
     const loteIdRetorno = _grLoteIdOrigem;
@@ -7073,6 +7094,11 @@ async function salvarMotoristaGR() {
       pesoInput && pesoInput.focus();
       return;
     }
+    const di = document.getElementById('gr-data-inicio-viagem');
+    const df = document.getElementById('gr-data-fim-viagem');
+    if (!di?.value) { showToast('Informe a data de início da viagem', 'error'); di?.focus(); return; }
+    if (!df?.value) { showToast('Informe a data final da viagem', 'error'); df?.focus(); return; }
+    if (df.value < di.value) { showToast('A data final não pode ser anterior à data de início', 'error'); return; }
   }
 
   // Validação de anexos obrigatórios
@@ -7137,6 +7163,9 @@ async function salvarMotoristaGR() {
       gr_status: 'pendente',
       lote_id_origem: _grLoteIdOrigem || null,
       peso_saida_origem: _grLoteIdOrigem ? (parseFloat(document.getElementById('gr-peso-saida')?.value) || null) : null,
+      data_inicio_viagem_origem: _grLoteIdOrigem ? (document.getElementById('gr-data-inicio-viagem')?.value || null) : null,
+      data_fim_viagem_origem: _grLoteIdOrigem ? (document.getElementById('gr-data-fim-viagem')?.value || null) : null,
+      auxiliar_operacao_origem: _grLoteIdOrigem ? (window._nomeUsuarioPerfil || userAtual?.email || 'Desconhecido') : null,
       checklist,
       anexos: [],
     });
@@ -7568,7 +7597,7 @@ async function salvarDecisaoGR() {
     // Se aprovado e veio de um lote, vincula automaticamente ao lote
     if (decisao === 'aprovado') {
       // Busca dados do motorista — dividida em 2 queries menores para evitar timeout 504
-      const motBasico = await supabaseRequest('GET', `motoristas?id=eq.${grMotoristaSelecionadoId}&select=id,nome,placa,contato,cpf,tipo_pagamento,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,tipo_chave_pix,chave_pix,lote_id_origem,peso_saida_origem,gr_motivo`) || [];
+      const motBasico = await supabaseRequest('GET', `motoristas?id=eq.${grMotoristaSelecionadoId}&select=id,nome,placa,contato,cpf,tipo_pagamento,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,tipo_chave_pix,chave_pix,lote_id_origem,peso_saida_origem,data_inicio_viagem_origem,data_fim_viagem_origem,auxiliar_operacao_origem,gr_motivo`) || [];
       const motExtra = await supabaseRequest('GET', `motoristas?id=eq.${grMotoristaSelecionadoId}&select=id,checklist,anexos`) || [];
       const motDados = motBasico[0] ? { ...motBasico[0], checklist: motExtra[0]?.checklist || {}, anexos: motExtra[0]?.anexos || [] } : null;
       if (motDados?.lote_id_origem && motDados?.peso_saida_origem) {
@@ -7603,6 +7632,9 @@ async function salvarDecisaoGR() {
             anexos: motDados.anexos || [],
             gr_status: 'aprovado',
             gr_motivo: motDados.gr_motivo,
+            data_inicio_viagem: motDados.data_inicio_viagem_origem || null,
+            data_fim_viagem: motDados.data_fim_viagem_origem || null,
+            auxiliar_operacao: motDados.auxiliar_operacao_origem || null,
           });
           // Status já foi setado para aguardando_cadastro pelo patchData — fluxo externo de cadastro deve ocorrer antes de seguir
           registrarLog('gr', 'Motorista aprovado e vinculado automaticamente ao lote', `Motorista: ${motDados.nome||'—'} · Lote: #${motDados.lote_id_origem} · Peso: ${motDados.peso_saida_origem} ton`);
