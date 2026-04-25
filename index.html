@@ -1108,6 +1108,16 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <label>Peso Saída (ton)</label>
         <input type="number" id="nm-peso" placeholder="Ex: 40" step="0.1" min="0">
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label>📅 Data Início da Viagem <span style="color:var(--red)">*</span></label>
+          <input type="date" id="nm-data-inicio">
+        </div>
+        <div class="form-group">
+          <label>📅 Data Final da Viagem <span style="color:var(--red)">*</span></label>
+          <input type="date" id="nm-data-fim">
+        </div>
+      </div>
       <div style="margin-top:14px;">
         <button onclick="adicionarMotorista()" class="btn-primary" style="width:100%;padding:12px;">+ Adicionar ao Lote</button>
       </div>
@@ -1611,6 +1621,12 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CONTATO</div><div style="font-weight:600" id="mgr-contato">—</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PESO SAÍDA</div><div style="font-weight:600;color:var(--accent)" id="mgr-peso">—</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PAGAMENTO</div><div id="mgr-pagamento">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">📅 INÍCIO VIAGEM</div><div style="font-weight:600" id="mgr-data-inicio">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">🏁 FIM VIAGEM</div><div style="font-weight:600" id="mgr-data-fim">—</div></div>
+        <div style="grid-column:1/-1;background:rgba(249,115,22,0.07);border:1px solid rgba(249,115,22,0.2);border-radius:7px;padding:8px 12px;">
+          <div style="font-size:11px;color:var(--accent);margin-bottom:2px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">👤 AUXILIAR DA OPERAÇÃO</div>
+          <div style="font-weight:700;font-size:14px;" id="mgr-auxiliar-operacao">—</div>
+        </div>
       </div>
     </div>
 
@@ -1837,6 +1853,13 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <span>🚛 <strong id="mlog-transito-nome">—</strong></span>
         <span>Status atual: <span id="mlog-transito-status"></span></span>
       </div>
+      <div style="margin-top:10px;display:flex;gap:16px;flex-wrap:wrap;font-size:12px;">
+        <span>📅 Início: <strong id="mlog-transito-data-inicio">—</strong></span>
+        <span>🏁 Fim: <strong id="mlog-transito-data-fim">—</strong></span>
+        <span style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:5px;padding:2px 8px;">
+          👤 Auxiliar: <strong style="color:var(--accent);" id="mlog-transito-auxiliar">—</strong>
+        </span>
+      </div>
     </div>
     <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:16px;">
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;">Atualizar Status de Trânsito</div>
@@ -1984,7 +2007,13 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CONTATO</div><div style="font-weight:600" id="mf-contato">—</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">PESO SAÍDA</div><div style="font-weight:600;color:var(--accent)" id="mf-peso">—</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">STATUS</div><div id="mf-status">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">DATA INÍCIO VIAGEM</div><div style="font-weight:600" id="mf-data-inicio">—</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">DATA FIM VIAGEM</div><div style="font-weight:600" id="mf-data-fim">—</div></div>
         <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">TIPO MOTORISTA</div><div style="font-weight:700;font-size:15px;" id="mf-tipo-motorista">—</div></div>
+        <div style="grid-column:1/-1;background:rgba(249,115,22,0.07);border:1px solid rgba(249,115,22,0.2);border-radius:7px;padding:8px 12px;">
+          <div style="font-size:11px;color:var(--accent);margin-bottom:2px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">👤 AUXILIAR DA OPERAÇÃO</div>
+          <div style="font-weight:700;font-size:14px;" id="mf-auxiliar-operacao">—</div>
+        </div>
       </div>
     </div>
 
@@ -2176,6 +2205,12 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">MOTORISTA</div><div style="font-weight:600;font-size:13px" id="mfin-nome">—</div></div>
       <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CPF</div><div style="font-weight:600;font-size:13px" id="mfin-cpf">—</div></div>
       <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">LOTE</div><div style="font-weight:600;font-size:13px" id="mfin-lote">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">📅 INÍCIO VIAGEM</div><div style="font-weight:600;font-size:13px" id="mfin-data-inicio">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">🏁 FIM VIAGEM</div><div style="font-weight:600;font-size:13px" id="mfin-data-fim">—</div></div>
+      <div style="background:rgba(249,115,22,0.07);border:1px solid rgba(249,115,22,0.2);border-radius:7px;padding:6px 10px;">
+        <div style="font-size:10px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">👤 AUXILIAR</div>
+        <div style="font-weight:700;font-size:13px;" id="mfin-auxiliar">—</div>
+      </div>
     </div>
 
     <!-- Documentos recebidos -->
@@ -3588,6 +3623,15 @@ async function carregarMotoristas() {
               <div style="min-width:0;flex:1;">
                 <div style="font-weight:700;font-size:14px;">${esc(m.nome)}</div>
                 <div style="font-size:12px;color:var(--muted);">Placa: ${esc(m.placa)} · ${parseFloat(m.peso_saida || 0).toFixed(2)} ton</div>
+                ${m.data_inicio_viagem || m.data_fim_viagem ? `
+                <div style="font-size:12px;color:var(--text);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;">
+                  ${m.data_inicio_viagem ? `<span>📅 <strong>Início:</strong> ${m.data_inicio_viagem.split('-').reverse().join('/')}</span>` : ''}
+                  ${m.data_fim_viagem ? `<span>🏁 <strong>Fim:</strong> ${m.data_fim_viagem.split('-').reverse().join('/')}</span>` : ''}
+                </div>` : ''}
+                ${m.auxiliar_operacao ? `
+                <div style="font-size:11px;margin-top:4px;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:5px;padding:3px 8px;display:inline-block;">
+                  👤 <span style="color:var(--muted);">Auxiliar da Operação:</span> <strong style="color:var(--accent);">${esc(m.auxiliar_operacao)}</strong>
+                </div>` : ''}
               </div>
               <button type="button" class="btn-secondary" style="padding:6px 10px;font-size:12px;white-space:nowrap;" onclick="removerMotorista(${m.id})" title="Remove só deste lote">Remover</button>
             </div>
@@ -3670,8 +3714,13 @@ function selecionarMotoristaParaLote(id, nome, placa, cpf) {
 async function adicionarMotorista() {
   const motoristaId = document.getElementById('nm-motorista-selecionado-id').value;
   const peso = document.getElementById('nm-peso').value;
+  const dataInicio = document.getElementById('nm-data-inicio').value;
+  const dataFim = document.getElementById('nm-data-fim').value;
   if (!motoristaId) { showToast('Selecione um motorista aprovado', 'error'); return; }
   if (!peso) { showToast('Informe o peso saída', 'error'); return; }
+  if (!dataInicio) { showToast('Informe a data de início da viagem', 'error'); return; }
+  if (!dataFim) { showToast('Informe a data final da viagem', 'error'); return; }
+  if (dataFim < dataInicio) { showToast('A data final não pode ser anterior à data de início', 'error'); return; }
 
   const pesoTotal = parseFloat(loteAtualDados.peso_ton || 0);
   const motoristasExistentes = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}`) || [];
@@ -3681,6 +3730,9 @@ async function adicionarMotorista() {
   if (pesoTotal > 0 && parseFloat(peso) > restante) {
     showToast(`Peso excede o restante (${restante.toFixed(2)} ton)`, 'error'); return;
   }
+
+  // Captura nome do auxiliar logado
+  const nomeAuxiliar = userAtual?.user_metadata?.nome || userAtual?.email || 'Desconhecido';
 
   try {
     // Busca dados completos do motorista aprovado
@@ -3718,11 +3770,16 @@ async function adicionarMotorista() {
       anexos: m.anexos || [],
       gr_status: 'aprovado',
       gr_motivo: m.gr_motivo,
+      data_inicio_viagem: dataInicio,
+      data_fim_viagem: dataFim,
+      auxiliar_operacao: nomeAuxiliar,
     });
 
-    registrarLog('motorista', 'Motorista adicionado ao lote', `Nome: ${m.nome||'—'}, Lote: ${loteAtualId}, Status: ${statusInicial}`);
+    registrarLog('motorista', 'Motorista adicionado ao lote', `Nome: ${m.nome||'—'}, Lote: ${loteAtualId}, Status: ${statusInicial}, Auxiliar: ${nomeAuxiliar}`);
     showToast('✅ Motorista adicionado ao lote!', 'success');
     document.getElementById('nm-peso').value = '';
+    document.getElementById('nm-data-inicio').value = '';
+    document.getElementById('nm-data-fim').value = '';
     document.getElementById('nm-motorista-selecionado-id').value = '';
     document.getElementById('nm-motorista-selecionado-info').style.display = 'none';
     await carregarMotoristas();
@@ -3770,7 +3827,14 @@ async function carregarMotoristasPagina() {
     motoristasPageData = motoristas.map(m => {
       const loteReg = loteMotoristas.find(lm => lm.motorista_id === m.id);
       const statusFinal = (loteReg && statusAvancados.includes(loteReg.status)) ? loteReg.status : m.status;
-      return { ...m, status: statusFinal, _lote_id: loteReg?.lote_id || null };
+      return {
+        ...m,
+        status: statusFinal,
+        _lote_id: loteReg?.lote_id || null,
+        data_inicio_viagem: loteReg?.data_inicio_viagem || null,
+        data_fim_viagem: loteReg?.data_fim_viagem || null,
+        auxiliar_operacao: loteReg?.auxiliar_operacao || null,
+      };
     });
     filtrarMotoristasPagina();
   } catch(e) {
@@ -3805,9 +3869,17 @@ function renderMotoristasPagina(dados) {
         <th>Status no Processo</th><th>Status GR</th><th>Pagamento</th><th></th>
       </tr></thead>
       <tbody>
-        ${dados.map(m => `<tr>
+        ${dados.map(m => {
+          const fmtD = d => d ? d.split('-').reverse().join('/') : null;
+          const dInicio = fmtD(m.data_inicio_viagem);
+          const dFim = fmtD(m.data_fim_viagem);
+          return `<tr>
           <td style="color:var(--muted);font-size:12px">#${m.id}</td>
-          <td><strong>${m.nome || '—'}</strong></td>
+          <td>
+            <strong>${m.nome || '—'}</strong>
+            ${m.auxiliar_operacao ? `<div style="font-size:11px;margin-top:3px;"><span style="background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2);border-radius:4px;padding:2px 6px;">👤 <span style="color:var(--muted);">Aux.:</span> <strong style="color:var(--accent);">${m.auxiliar_operacao}</strong></span></div>` : ''}
+            ${dInicio || dFim ? `<div style="font-size:11px;color:var(--muted);margin-top:3px;">${dInicio ? '📅 ' + dInicio : ''} ${dFim ? '→ 🏁 ' + dFim : ''}</div>` : ''}
+          </td>
           <td style="font-size:12px">${m.cpf || '—'}</td>
           <td style="font-size:12px">${m.placa || '—'}</td>
           <td style="font-size:12px">${m.contato || '—'}</td>
@@ -3818,7 +3890,7 @@ function renderMotoristasPagina(dados) {
             <button onclick="abrirEditarMotorista(${m.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">✏️ Editar</button>
             <button onclick="removerMotoristaPagina(${m.id})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🗑</button>
           </td>
-        </tr>`).join('')}
+        </tr>`;}).join('')}
       </tbody>
     </table>`;
 }
@@ -4426,6 +4498,10 @@ async function abrirFiscalModal(id) {
   document.getElementById('mf-placa').textContent = m.placa || '—';
   document.getElementById('mf-contato').textContent = m.contato || '—';
   document.getElementById('mf-peso').textContent = m.peso_saida ? m.peso_saida + ' ton' : '—';
+  const fmtData = d => d ? d.split('-').reverse().join('/') : '—';
+  document.getElementById('mf-data-inicio').textContent = fmtData(m.data_inicio_viagem);
+  document.getElementById('mf-data-fim').textContent = fmtData(m.data_fim_viagem);
+  document.getElementById('mf-auxiliar-operacao').textContent = m.auxiliar_operacao || '—';
   document.getElementById('mf-status').innerHTML = badgeMotorista(m.status);
   // Setar value sem disparar onchange (remover e re-adicionar o listener)
   const selStatus = document.getElementById('mf-status-select');
@@ -5931,6 +6007,12 @@ function abrirModalTransito(id, nome, statusAtual, origem) {
   document.getElementById('mlog-transito-titulo').textContent = 'Trânsito — ' + nome;
   document.getElementById('mlog-transito-nome').textContent = nome || '—';
   document.getElementById('mlog-transito-status').innerHTML = badgeMotorista(statusAtual);
+  // Preenche datas e auxiliar se disponível nos dados
+  const reg = (logisticoData || []).find(m => m.id === id);
+  const fmtD = d => d ? d.split('-').reverse().join('/') : '—';
+  document.getElementById('mlog-transito-data-inicio').textContent = fmtD(reg?.data_inicio_viagem);
+  document.getElementById('mlog-transito-data-fim').textContent = fmtD(reg?.data_fim_viagem);
+  document.getElementById('mlog-transito-auxiliar').textContent = reg?.auxiliar_operacao || '—';
   document.getElementById('modal-logistico-transito-overlay').classList.add('open');
 }
 
@@ -6230,6 +6312,10 @@ async function abrirModalFinFotos(id) {
   document.getElementById('mfin-nome').textContent = m.nome || '—';
   document.getElementById('mfin-cpf').textContent = m.cpf || '—';
   document.getElementById('mfin-lote').textContent = 'Lote #' + (m.lote_id || '—');
+  const fmtD = d => d ? d.split('-').reverse().join('/') : '—';
+  document.getElementById('mfin-data-inicio').textContent = fmtD(m.data_inicio_viagem);
+  document.getElementById('mfin-data-fim').textContent = fmtD(m.data_fim_viagem);
+  document.getElementById('mfin-auxiliar').textContent = m.auxiliar_operacao || '—';
 
   const container = document.getElementById('mfin-fotos-container');
   container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">⏳ Carregando arquivos...</div>';
@@ -7209,6 +7295,10 @@ async function abrirModalGR(id) {
   document.getElementById('mgr-contato').textContent = m.contato || '—';
   document.getElementById('mgr-peso').textContent = '—';
   document.getElementById('mgr-pagamento').innerHTML = badgeTipoPagamento(m.tipo_pagamento);
+  const _fmtD = d => d ? d.split('-').reverse().join('/') : '—';
+  document.getElementById('mgr-data-inicio').textContent = _fmtD(m.data_inicio_viagem);
+  document.getElementById('mgr-data-fim').textContent = _fmtD(m.data_fim_viagem);
+  document.getElementById('mgr-auxiliar-operacao').textContent = m.auxiliar_operacao || '—';
   document.getElementById('mgr-lote').textContent = '—';
   document.getElementById('mgr-cliente').textContent = '—';
   document.getElementById('mgr-produto').textContent = '—';
