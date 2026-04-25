@@ -6289,7 +6289,6 @@ async function abrirModalFinFotos(id) {
 
       const itens = anexos.map(a => {
         const url = urlMap[a.path || a.url] || a.path || a.url || '';
-        if (!url) return '';
         const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(a.nome || '');
         const label = nomeAnexoFin[a.tipo] || a.tipo || 'Arquivo';
         const nomeArq = (a.nome || 'arquivo').length > 40 ? (a.nome||'arquivo').substring(0,40)+'...' : (a.nome||'arquivo');
@@ -6301,9 +6300,9 @@ async function abrirModalFinFotos(id) {
               <div style="font-size:11px;color:var(--muted);">${nomeArq}</div>
             </div>
           </div>
-          <a href="${url}" target="_blank" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;text-decoration:none;">${isImg ? '🔍 Ver' : '⬇️ Abrir'}</a>
+          ${url ? `<a href="${url}" target="_blank" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;text-decoration:none;">${isImg ? '🔍 Ver' : '⬇️ Abrir'}</a>` : `<span style="font-size:11px;color:var(--muted);">—</span>`}
         </div>`;
-      }).filter(Boolean).join('');
+      }).join('');
 
       container.innerHTML = itens || '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Nenhum arquivo encontrado.</div>';
     } catch(e) {
