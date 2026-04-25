@@ -1059,6 +1059,11 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <button class="modal-close" onclick="fecharModalMotoristasBtn()">✕</button>
     </div>
 
+    <!-- Botão incluir motorista no lote -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+      <button class="btn-primary" onclick="abrirCadastroMotoristaDoLote()" style="padding:8px 18px;font-size:13px;">+ Incluir Motorista</button>
+    </div>
+
     <!-- Info do lote -->
     <div id="modal-lote-info" style="background:var(--surface2);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;">
       <div style="display:flex;gap:24px;flex-wrap:wrap;">
@@ -1071,6 +1076,12 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <div style="margin-top:10px;background:var(--border);border-radius:20px;height:8px;overflow:hidden;">
         <div id="ml-barra" style="height:100%;background:var(--green);border-radius:20px;transition:width 0.3s;width:0%"></div>
       </div>
+    </div>
+
+    <!-- Motoristas pendentes (aguardando GR) originados deste lote -->
+    <div id="secao-motoristas-pendentes-lote" style="background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.25);border-radius:8px;padding:16px;margin-bottom:16px;display:none;">
+      <div style="font-size:13px;font-weight:600;color:#eab308;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">⏳ Aguardando análise GR</div>
+      <div id="lista-motoristas-pendentes-lote" style="display:flex;flex-direction:column;gap:6px;"></div>
     </div>
 
     <!-- Motoristas já vinculados ao lote (remover se adicionou por engano) -->
@@ -1691,7 +1702,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
           <option value="transito">🚛 Controle de Trânsito</option>
         </select>
         <button onclick="carregarLogistico()" class="btn-secondary" style="padding:8px 14px;font-size:13px;">🔄 Atualizar</button>
-        <button class="btn-primary" onclick="abrirCadastroMotoristaGR()" style="padding:8px 16px;font-size:13px;">+ Incluir Motorista</button>
       </div>
     </div>
     <div id="logistico-table"><div class="loading">Carregando...</div></div>
@@ -3495,6 +3505,7 @@ async function abrirMotoristas(id) {
   document.getElementById('modal-motoristas-overlay').classList.add('open');
   await carregarMotoristas();
   await carregarMotoristasAprovadosParaLote();
+  await carregarMotoristasPendentesDoLote(id);
 }
 
 async function carregarMotoristas() {
@@ -5556,6 +5567,32 @@ let logisticoData = [];
 let logisticoMotoristaSelecionadoId = null;
 let logisticoMotoristaLoteId = null;
 
+async function carregarMotoristasPendentesDoLote(loteId) {
+  const secao = document.getElementById('secao-motoristas-pendentes-lote');
+  const lista = document.getElementById('lista-motoristas-pendentes-lote');
+  if (!secao || !lista) return;
+  try {
+    // Busca motoristas com status aguardando_gr originados deste lote
+    const pendentes = await supabaseRequest('GET', `motoristas?lote_id_origem=eq.${loteId}&status=eq.aguardando_gr&order=criado_em.desc`) || [];
+    if (!pendentes.length) {
+      secao.style.display = 'none';
+      return;
+    }
+    secao.style.display = 'block';
+    lista.innerHTML = pendentes.map(m => `
+      <div style="background:var(--surface);border:1px solid rgba(234,179,8,0.3);border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:700;font-size:13px;">${m.nome || '—'}</div>
+          <div style="font-size:11px;color:var(--muted);">Placa: ${m.placa || '—'} · CPF: ${m.cpf || '—'}</div>
+        </div>
+        <span style="font-size:11px;font-weight:600;color:#eab308;background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.3);border-radius:20px;padding:3px 10px;">⏳ Aguardando GR</span>
+      </div>`).join('');
+  } catch(e) {
+    secao.style.display = 'none';
+  }
+}
+
+
 async function carregarLogistico() {
   if (window._carregandoLogistico) return;
   try {
@@ -6720,6 +6757,16 @@ function limparAnexosFormularioCadastroMotoristaGR() {
   if (typeof grResetarAnttsExtras === 'function') grResetarAnttsExtras();
 }
 
+function abrirCadastroMotoristaDoLote() {
+  // Chamado a partir do modal de motoristas do lote — guarda o lote_id
+  _grLoteIdOrigem = loteAtualId;
+  // Fecha o modal de motoristas temporariamente para não sobrepor
+  document.getElementById('modal-motoristas-overlay').classList.remove('open');
+  abrirCadastroMotoristaGR();
+}
+
+let _grLoteIdOrigem = null; // lote de origem quando cadastro vem do modal do lote
+
 function abrirCadastroMotoristaGR() {
   // Reset form
   ['gr-nome','gr-placa','gr-contato','gr-cpf','gr-nome-titular','gr-cpf-titular','gr-banco','gr-agencia','gr-conta','gr-pix',
@@ -6811,6 +6858,12 @@ function coletarPlacasExtras() {
 
 function fecharCadastroMotoristaGR() {
   document.getElementById('modal-cadastro-motorista-overlay').classList.remove('open');
+  // Se veio do modal do lote e fechou sem salvar, reabre o modal do lote
+  if (_grLoteIdOrigem) {
+    const loteIdRetorno = _grLoteIdOrigem;
+    _grLoteIdOrigem = null;
+    abrirMotoristas(loteIdRetorno);
+  }
 }
 
 function selecionarTipoMotorista(tipo) {
@@ -6969,6 +7022,7 @@ async function salvarMotoristaGR() {
       tag_numero: document.getElementById('gr-tag-numero').value || null,
       status: 'aguardando_gr',
       gr_status: 'pendente',
+      lote_id_origem: _grLoteIdOrigem || null,
       checklist,
       anexos: [],
     });
@@ -7027,6 +7081,14 @@ async function salvarMotoristaGR() {
     limparAnexosFormularioCadastroMotoristaGR();
     fecharCadastroMotoristaGR();
     carregarGR();
+    // Se veio do modal do lote, reabre o modal do lote
+    if (_grLoteIdOrigem) {
+      const loteIdRetorno = _grLoteIdOrigem;
+      _grLoteIdOrigem = null;
+      await abrirMotoristas(loteIdRetorno);
+    } else {
+      _grLoteIdOrigem = null;
+    }
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 
