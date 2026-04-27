@@ -391,6 +391,21 @@ td{padding:14px;color:var(--text);}
 .logs-table-wrap--expanded table{margin:0;}
 .logs-actions-footer{margin-top:14px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border);}
 .logs-actions-hint{font-size:12px;color:var(--muted);}
+
+/* ── Painel de Configurações ─────────────────────────── */
+.cfg-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;transition:border-color 0.15s;}
+.cfg-row:hover{border-color:var(--muted2);}
+.cfg-label{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.cfg-desc{font-size:11px;color:var(--muted);line-height:1.4;}
+.cfg-toggle{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;cursor:pointer;}
+.cfg-toggle input{opacity:0;width:0;height:0;}
+.cfg-slider{position:absolute;inset:0;background:rgba(239,68,68,0.3);border-radius:24px;transition:0.25s;}
+.cfg-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:0.25s;box-shadow:0 1px 4px rgba(0,0,0,0.3);}
+.cfg-toggle input:checked + .cfg-slider{background:rgba(34,197,94,0.6);}
+.cfg-toggle input:checked + .cfg-slider::before{transform:translateX(20px);}
+.cfg-row[data-off="true"]{opacity:0.55;}
+.cfg-btn-substituto{display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.35);border-radius:8px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:600;color:var(--green);white-space:nowrap;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.cfg-btn-substituto:hover{background:rgba(34,197,94,0.18);}
 </style>
 </head>
 <body>
@@ -1414,11 +1429,13 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     </div>
 
     <!-- PEDÁGIO -->
+    <div id="gr-secao-pedagio">
     <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">🛣️ Pedágio</div>
     <div class="form-grid" style="grid-template-columns:1fr 1fr;">
       <div class="form-group"><label>Valor do Pedágio (R$)</label><input type="text" id="gr-valor-pedagio" placeholder="R$ 0,00" oninput="mascaraReal(this)"></div>
       <div class="form-group"><label>Nome da Administradora da TAG</label><input type="text" id="gr-tag-administradora" placeholder="Ex: ConectCar, Sem Parar..."></div>
       <div class="form-group full"><label>Número da TAG</label><input type="text" id="gr-tag-numero" placeholder="Ex: 0000 0000 0000 0000"></div>
+    </div>
     </div>
 
     <!-- CHECK LIST -->
@@ -1436,102 +1453,116 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Documentos Recebidos</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
         <!-- CNH -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+        <div id="gr-secao-anexo-cnh" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
             <span style="font-size:13px;">Habilitação do motorista (CNH)</span>
-            <div style="display:flex;gap:4px;">
+            <div class="cfg-upload-area" style="display:flex;gap:4px;">
               <label id="label-gr-arq-cnh" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
                 <span>📎 Anexar</span><input type="file" id="gr-arq-cnh" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-cnh','label-gr-arq-cnh')">
               </label>
               <button type="button" onclick="limparAnexo('gr-arq-cnh','label-gr-arq-cnh')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
             </div>
+            <button type="button" class="cfg-btn-sub cfg-btn-substituto" style="display:none;" onclick="cfgConfirmarSemAnexo('CNH', null)">✅ Confirmar sem anexo</button>
           </div>
+        </div>
           <!-- ANTT -->
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;">
+          <div id="gr-secao-anexo-antt" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
               <span style="font-size:13px;">Registro na ANTT <span style="color:var(--red);font-size:11px;">*obrigatório</span></span>
-              <div style="display:flex;gap:4px;">
+              <div class="cfg-upload-area" style="display:flex;gap:4px;">
                 <label id="label-gr-arq-antt" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
                   <span>📎 Anexar</span><input type="file" id="gr-arq-antt" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-antt','label-gr-arq-antt')">
                 </label>
                 <button type="button" onclick="limparAnexo('gr-arq-antt','label-gr-arq-antt')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
               </div>
+              <button type="button" class="cfg-btn-sub cfg-btn-substituto" style="display:none;" onclick="cfgConfirmarSemAnexo('ANTT', null)">✅ Confirmar sem anexo</button>
             </div>
-            <!-- ANTTs extras -->
             <div id="gr-antts-extras" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
             <button type="button" onclick="grAdicionarAnttExtra()" style="margin-top:8px;background:rgba(59,130,246,0.08);color:#3b82f6;border:1px dashed rgba(59,130,246,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outra ANTT (opcional)</button>
           </div>
           <!-- Doc Caminhão -->
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;">
+          <div id="gr-secao-anexo-doc-caminhao" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
               <span style="font-size:13px;">Documentação do caminhão e carretas <span style="color:var(--red);font-size:11px;">*obrigatório</span></span>
-              <div style="display:flex;gap:4px;">
+              <div class="cfg-upload-area" style="display:flex;gap:4px;">
                 <label id="label-gr-arq-doc-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
                   <span>📎 Anexar</span><input type="file" id="gr-arq-doc-caminhao" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-doc-caminhao','label-gr-arq-doc-caminhao')">
                 </label>
                 <button type="button" onclick="limparAnexo('gr-arq-doc-caminhao','label-gr-arq-doc-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
               </div>
+              <button type="button" class="cfg-btn-sub cfg-btn-substituto" style="display:none;" onclick="cfgConfirmarSemAnexo('Doc. Caminhão', null)">✅ Confirmar sem anexo</button>
             </div>
-            <!-- Lista de docs extras -->
             <div id="gr-docs-caminhao-extras" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
-            <!-- Botão adicionar mais -->
             <button type="button" onclick="grAdicionarDocCaminhao()" style="margin-top:8px;background:rgba(59,130,246,0.08);color:#3b82f6;border:1px dashed rgba(59,130,246,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outro documento (opcional)</button>
           </div>
           <!-- Residência -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;">Comprovante de residência</span>
-            <div style="display:flex;gap:4px;">
-              <label id="label-gr-arq-residencia" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-                <span>📎 Anexar</span><input type="file" id="gr-arq-residencia" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-residencia','label-gr-arq-residencia')">
-              </label>
-              <button type="button" onclick="limparAnexo('gr-arq-residencia','label-gr-arq-residencia')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          <div id="gr-secao-anexo-residencia" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+              <span style="font-size:13px;">Comprovante de residência</span>
+              <div class="cfg-upload-area" style="display:flex;gap:4px;">
+                <label id="label-gr-arq-residencia" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                  <span>📎 Anexar</span><input type="file" id="gr-arq-residencia" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-residencia','label-gr-arq-residencia')">
+                </label>
+                <button type="button" onclick="limparAnexo('gr-arq-residencia','label-gr-arq-residencia')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+              </div>
+              <button type="button" class="cfg-btn-sub cfg-btn-substituto" style="display:none;" onclick="cfgConfirmarSemAnexo('Comp. Residência', null)">✅ Confirmar sem anexo</button>
             </div>
           </div>
-          <!-- Foto Caminhão — múltiplas imagens -->
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;">
+          <!-- Foto Caminhão -->
+          <div id="gr-secao-anexo-foto-caminhao" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
               <span style="font-size:13px;">Foto do caminhão e carretas com as placas visíveis</span>
-              <div style="display:flex;gap:4px;">
+              <div class="cfg-upload-area" style="display:flex;gap:4px;">
                 <label id="label-gr-arq-foto-caminhao" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
                   <span>📎 Anexar</span><input type="file" id="gr-arq-foto-caminhao" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-foto-caminhao','label-gr-arq-foto-caminhao');grFotoCaminhaoPreview(this)">
                 </label>
                 <button type="button" onclick="limparAnexo('gr-arq-foto-caminhao','label-gr-arq-foto-caminhao')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
               </div>
+              <button type="button" class="cfg-btn-sub cfg-btn-substituto" style="display:none;" onclick="cfgConfirmarSemAnexo('Foto do Caminhão', null)">✅ Confirmar sem anexo</button>
             </div>
-            <!-- Lista de fotos adicionais -->
             <div id="gr-fotos-caminhao-extras" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
-            <!-- Botão adicionar mais -->
             <button type="button" onclick="grAdicionarFotoCaminhao()" style="margin-top:8px;background:rgba(59,130,246,0.08);color:#3b82f6;border:1px dashed rgba(59,130,246,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outra foto (opcional)</button>
           </div>
           <!-- Selfie CNH -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;">Foto do motorista (selfie segurando a CNH)</span>
-            <div style="display:flex;gap:4px;">
-              <label id="label-gr-arq-selfie-cnh" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-                <span>📎 Anexar</span><input type="file" id="gr-arq-selfie-cnh" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-selfie-cnh','label-gr-arq-selfie-cnh')">
-              </label>
-              <button type="button" onclick="limparAnexo('gr-arq-selfie-cnh','label-gr-arq-selfie-cnh')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          <div id="gr-secao-anexo-selfie-cnh" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+              <span style="font-size:13px;">Foto do motorista (selfie segurando a CNH)</span>
+              <div class="cfg-upload-area" style="display:flex;gap:4px;">
+                <label id="label-gr-arq-selfie-cnh" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                  <span>📎 Anexar</span><input type="file" id="gr-arq-selfie-cnh" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-selfie-cnh','label-gr-arq-selfie-cnh')">
+                </label>
+                <button type="button" onclick="limparAnexo('gr-arq-selfie-cnh','label-gr-arq-selfie-cnh')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+              </div>
+              <button type="button" class="cfg-btn-sub cfg-btn-substituto" style="display:none;" onclick="cfgConfirmarSemAnexo('Selfie CNH', null)">✅ Confirmar sem anexo</button>
             </div>
           </div>
           <!-- Selfie Placa -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;">Foto do motorista (selfie ao lado do veículo, mostrando a placa)</span>
-            <div style="display:flex;gap:4px;">
-              <label id="label-gr-arq-selfie-placa" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-                <span>📎 Anexar</span><input type="file" id="gr-arq-selfie-placa" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-selfie-placa','label-gr-arq-selfie-placa')">
-              </label>
-              <button type="button" onclick="limparAnexo('gr-arq-selfie-placa','label-gr-arq-selfie-placa')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          <div id="gr-secao-anexo-selfie-placa" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+              <span style="font-size:13px;">Foto do motorista (selfie ao lado do veículo, mostrando a placa)</span>
+              <div class="cfg-upload-area" style="display:flex;gap:4px;">
+                <label id="label-gr-arq-selfie-placa" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                  <span>📎 Anexar</span><input type="file" id="gr-arq-selfie-placa" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-selfie-placa','label-gr-arq-selfie-placa')">
+                </label>
+                <button type="button" onclick="limparAnexo('gr-arq-selfie-placa','label-gr-arq-selfie-placa')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+              </div>
+              <button type="button" class="cfg-btn-sub cfg-btn-substituto" style="display:none;" onclick="cfgConfirmarSemAnexo('Selfie Placa', null)">✅ Confirmar sem anexo</button>
             </div>
           </div>
           <!-- Lonas -->
-          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-            <span style="font-size:13px;">Fotos das lonas que serão utilizadas</span>
-            <div style="display:flex;gap:4px;">
-              <label id="label-gr-arq-lonas" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-                <span>📎 Anexar</span><input type="file" id="gr-arq-lonas" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-lonas','label-gr-arq-lonas')">
-              </label>
-              <button type="button" onclick="limparAnexo('gr-arq-lonas','label-gr-arq-lonas')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          <div id="gr-secao-anexo-lonas" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+              <span style="font-size:13px;">Fotos das lonas que serão utilizadas</span>
+              <div class="cfg-upload-area" style="display:flex;gap:4px;">
+                <label id="label-gr-arq-lonas" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+                  <span>📎 Anexar</span><input type="file" id="gr-arq-lonas" accept="image/*" multiple style="display:none;" onchange="atualizarBotaoAnexo('gr-arq-lonas','label-gr-arq-lonas')">
+                </label>
+                <button type="button" onclick="limparAnexo('gr-arq-lonas','label-gr-arq-lonas')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+              </div>
+              <button type="button" class="cfg-btn-sub cfg-btn-substituto" style="display:none;" onclick="cfgConfirmarSemAnexo('Fotos das Lonas', null)">✅ Confirmar sem anexo</button>
             </div>
           </div>
+        <div id="gr-secao-referencias">
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
           <div style="font-size:13px;margin-bottom:6px;">Três contatos de referência profissional</div>
           <input type="text" id="gr-ck-ref-prof" placeholder="Ex: João (34) 99999-1111, Maria (34) 99999-2222..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;" required>
@@ -1544,8 +1575,10 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
           <div style="font-size:13px;margin-bottom:6px;">Contato do proprietário ou responsável pelo veículo</div>
           <input type="text" id="gr-ck-proprietario" placeholder="Nome e telefone do proprietário..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;" required>
         </div>
+        </div>
       </div>
 
+      <div id="gr-secao-pagamento">
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Forma de Pagamento</div>
       <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;">
@@ -1555,11 +1588,16 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
           <input type="checkbox" id="gr-ck-saldo" style="width:16px;height:16px;accent-color:var(--accent);">Saldo 30%
         </label>
       </div>
+      </div>
+
+      <div id="gr-secao-excecoes">
       <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px;">
         <div class="form-group"><label>Exceção — Pagamento diferente</label><input type="text" id="gr-ck-excecao-pgto" placeholder="Descreva, se houver"></div>
         <div class="form-group"><label>Assinatura do Responsável</label><input type="text" id="gr-ck-assinatura-pgto" placeholder="Nome do responsável"></div>
       </div>
+      </div>
 
+      <div id="gr-secao-prazo">
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Prazo de Pagamento (Saldo)</div>
       <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;"><input type="radio" name="gr-ck-prazo-saldo" value="5" style="accent-color:var(--accent);">05 dias após a descarga</label>
@@ -1570,7 +1608,9 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <div class="form-group"><label>Exceção — Prazo menor que 05 dias</label><input type="text" id="gr-ck-excecao-prazo" placeholder="Prazo e responsável"></div>
         <div class="form-group"><label>Assinatura do Responsável</label><input type="text" id="gr-ck-assinatura-prazo" placeholder="Nome do responsável"></div>
       </div>
+      </div>
 
+      <div id="gr-secao-recolhimento">
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Recolhimento do Motorista</div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;">
         <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;flex:1;min-width:220px;">
@@ -1581,6 +1621,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
           <input type="checkbox" id="gr-ck-pessoa-juridica" style="width:16px;height:16px;min-width:16px;margin-top:2px;accent-color:var(--accent);">
           <span><strong>Pessoa Jurídica:</strong> Taxa administrativa de R$ 88,00</span>
         </label>
+      </div>
       </div>
 
     <!-- Campo Peso Saída — aparece somente quando cadastro vem de um lote -->\
@@ -1790,21 +1831,24 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     </div>
     <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:16px;">
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Nota Fiscal (NF)</div>
-      <!-- NF principal — obrigatória -->
-      <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-        <span style="font-size:13px;">Nota Fiscal <span style="color:var(--red);font-size:11px;">*obrigatório</span></span>
-        <div style="display:flex;gap:4px;">
-          <label id="label-log-nf-arquivo" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-            <span>📎 Anexar</span>
-            <input type="file" id="log-nf-arquivo" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('log-nf-arquivo','label-log-nf-arquivo')">
-          </label>
-          <button type="button" onclick="limparAnexo('log-nf-arquivo','label-log-nf-arquivo')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+      <div id="log-secao-nf-upload">
+        <!-- NF principal — obrigatória -->
+        <div class="cfg-upload-area" style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <span style="font-size:13px;">Nota Fiscal <span style="color:var(--red);font-size:11px;">*obrigatório</span></span>
+          <div style="display:flex;gap:4px;">
+            <label id="label-log-nf-arquivo" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              <span>📎 Anexar</span>
+              <input type="file" id="log-nf-arquivo" accept="image/*,.pdf" style="display:none;" onchange="atualizarBotaoAnexo('log-nf-arquivo','label-log-nf-arquivo')">
+            </label>
+            <button type="button" onclick="limparAnexo('log-nf-arquivo','label-log-nf-arquivo')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          </div>
         </div>
+        <!-- NFs extras opcionais -->
+        <div id="log-nf-extras" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
+        <button type="button" onclick="nfAdicionarExtra()" style="margin-top:8px;background:rgba(59,130,246,0.08);color:#3b82f6;border:1px dashed rgba(59,130,246,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outra NF (opcional)</button>
+        <div id="mlog-nf-arquivo-status" style="font-size:12px;color:var(--muted);margin-top:8px;"></div>
+        <button type="button" class="cfg-btn-sub cfg-btn-substituto" style="display:none;margin-top:10px;" onclick="confirmarAnexoNFSemArquivo()">✅ Confirmar sem anexar NF</button>
       </div>
-      <!-- NFs extras opcionais -->
-      <div id="log-nf-extras" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
-      <button type="button" onclick="nfAdicionarExtra()" style="margin-top:8px;background:rgba(59,130,246,0.08);color:#3b82f6;border:1px dashed rgba(59,130,246,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outra NF (opcional)</button>
-      <div id="mlog-nf-arquivo-status" style="font-size:12px;color:var(--muted);margin-top:8px;"></div>
     </div>
     <div class="form-actions">
       <button class="btn-secondary" onclick="fecharModalLogisticoNF()">Cancelar</button>
@@ -1830,20 +1874,23 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     </div>
     <div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:16px;">
       <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Fotos do Carregamento</div>
-      <!-- Foto principal — obrigatória -->
-      <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
-        <span style="font-size:13px;">Foto do carregamento <span style="color:var(--red);font-size:11px;">*obrigatório</span></span>
-        <div style="display:flex;gap:4px;">
-          <label id="label-log-fotos-arquivo" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
-            <span>📎 Anexar</span>
-            <input type="file" id="log-fotos-arquivo" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('log-fotos-arquivo','label-log-fotos-arquivo')">
-          </label>
-          <button type="button" onclick="limparAnexo('log-fotos-arquivo','label-log-fotos-arquivo')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+      <div id="log-secao-fotos-upload">
+        <!-- Foto principal — obrigatória -->
+        <div class="cfg-upload-area" style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <span style="font-size:13px;">Foto do carregamento <span style="color:var(--red);font-size:11px;">*obrigatório</span></span>
+          <div style="display:flex;gap:4px;">
+            <label id="label-log-fotos-arquivo" style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--accent);white-space:nowrap;">
+              <span>📎 Anexar</span>
+              <input type="file" id="log-fotos-arquivo" accept="image/*" style="display:none;" onchange="atualizarBotaoAnexo('log-fotos-arquivo','label-log-fotos-arquivo')">
+            </label>
+            <button type="button" onclick="limparAnexo('log-fotos-arquivo','label-log-fotos-arquivo')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 7px;font-size:12px;cursor:pointer;">🗑️</button>
+          </div>
         </div>
+        <!-- Fotos extras opcionais -->
+        <div id="log-fotos-extras" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
+        <button type="button" onclick="fotosCarregAdicionarExtra()" style="margin-top:8px;background:rgba(59,130,246,0.08);color:#3b82f6;border:1px dashed rgba(59,130,246,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outra foto (opcional)</button>
+        <button type="button" class="cfg-btn-sub cfg-btn-substituto" style="display:none;margin-top:10px;" onclick="confirmarFotosSemArquivo()">✅ Confirmar sem fotos</button>
       </div>
-      <!-- Fotos extras opcionais -->
-      <div id="log-fotos-extras" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
-      <button type="button" onclick="fotosCarregAdicionarExtra()" style="margin-top:8px;background:rgba(59,130,246,0.08);color:#3b82f6;border:1px dashed rgba(59,130,246,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outra foto (opcional)</button>
     </div>
     <div class="form-actions">
       <button class="btn-secondary" onclick="fecharModalLogisticoFotos()">Cancelar</button>
@@ -2527,6 +2574,161 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     </div>
   </div>
 
+  <!-- ════════════════════════════════════════════════════
+       PAINEL DE CONFIGURAÇÕES DO SISTEMA
+       Visível apenas para o setor Administrativo
+       ════════════════════════════════════════════════════ -->
+  <div class="card" id="card-cfg-sistema" style="margin-bottom:20px;display:none;">
+    <div class="form-title" style="margin-bottom:0;">
+      <span>⚙️</span>
+      <span>Configurações do Sistema</span>
+      <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:8px;">— campos e anexos obrigatórios por setor</span>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin:10px 0 20px;line-height:1.6;">
+      Ative ou desative campos e exigência de anexos em cada etapa do fluxo. Quando um anexo está <strong>desativado</strong>, um botão de confirmação simples substitui o upload. As configurações são salvas automaticamente.
+    </p>
+
+    <!-- Tabs internas -->
+    <div id="cfg-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:14px;">
+      <button onclick="cfgTab('gr')" id="cfg-tab-gr"
+        style="padding:7px 16px;border-radius:20px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;">
+        GR / Cadastro
+      </button>
+      <button onclick="cfgTab('log')" id="cfg-tab-log"
+        style="padding:7px 16px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;">
+        Logístico
+      </button>
+      <button onclick="cfgTab('fin')" id="cfg-tab-fin"
+        style="padding:7px 16px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;">
+        Financeiro
+      </button>
+    </div>
+
+    <!-- GR Panel -->
+    <div id="cfg-panel-gr">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📝 Campos de Texto — Checklist do Motorista</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+        <div class="cfg-row" id="cfg-row-gr_campo_valor_frete">
+          <div><div class="cfg-label">Valor do Frete do Motorista</div><div class="cfg-desc">Campo obrigatório no formulário GR</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_valor_frete',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_campo_valor_carga">
+          <div><div class="cfg-label">Valor da Carga</div><div class="cfg-desc">Campo obrigatório no formulário GR</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_valor_carga',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_campo_canal_contato">
+          <div><div class="cfg-label">Canal de Contato do Motorista</div><div class="cfg-desc">Como o motorista foi contatado</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_canal_contato',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_campo_referencias">
+          <div><div class="cfg-label">Referências (Profissional, Pessoal, Proprietário)</div><div class="cfg-desc">Três campos de referência do motorista</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_referencias',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_campo_pagamento">
+          <div><div class="cfg-label">Forma de Pagamento (Adiantamento / Saldo)</div><div class="cfg-desc">Checkboxes de pagamento no checklist</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_pagamento',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_campo_prazo_saldo">
+          <div><div class="cfg-label">Prazo do Saldo</div><div class="cfg-desc">Radios de prazo (5/7/8+ dias)</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_prazo_saldo',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_campo_recolhimento">
+          <div><div class="cfg-label">Recolhimento (PF / PJ)</div><div class="cfg-desc">Tipo de recolhimento previdenciário</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_recolhimento',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_campo_excecoes">
+          <div><div class="cfg-label">Campos de Exceção e Assinatura</div><div class="cfg-desc">Exceção de pagamento, prazo e responsável</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_excecoes',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_campo_pedagio">
+          <div><div class="cfg-label">Pedágio / TAG</div><div class="cfg-desc">Valor do pedágio e dados da administradora</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_pedagio',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+      </div>
+
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📎 Anexos Obrigatórios — Documentos do Motorista</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div class="cfg-row" id="cfg-row-gr_anexo_cnh">
+          <div><div class="cfg-label">CNH do Motorista</div><div class="cfg-desc">Habilitação obrigatória no cadastro</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_cnh',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_anexo_antt">
+          <div><div class="cfg-label">Registro na ANTT</div><div class="cfg-desc">Documento ANTT obrigatório</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_antt',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_anexo_doc_caminhao">
+          <div><div class="cfg-label">Documento do Caminhão/Carretas</div><div class="cfg-desc">CRLV ou equivalente</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_doc_caminhao',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_anexo_residencia">
+          <div><div class="cfg-label">Comprovante de Residência</div><div class="cfg-desc">Conta de luz, água ou similar</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_residencia',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_anexo_foto_caminhao">
+          <div><div class="cfg-label">Foto do Caminhão / Carretas</div><div class="cfg-desc">Foto com placas visíveis</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_foto_caminhao',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_anexo_selfie_cnh">
+          <div><div class="cfg-label">Selfie Segurando a CNH</div><div class="cfg-desc">Foto do motorista com a CNH na mão</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_selfie_cnh',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_anexo_selfie_placa">
+          <div><div class="cfg-label">Selfie ao Lado do Veículo (placa)</div><div class="cfg-desc">Motorista ao lado do veículo mostrando a placa</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_selfie_placa',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_anexo_lonas">
+          <div><div class="cfg-label">Fotos das Lonas</div><div class="cfg-desc">Fotos das lonas utilizadas na carga</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_lonas',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_anexo_checklist_ger">
+          <div><div class="cfg-label">Checklist da Gerenciadora</div><div class="cfg-desc">PDF/imagem do checklist da gerenciadora de risco</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_checklist_ger',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logístico Panel -->
+    <div id="cfg-panel-log" style="display:none;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📎 Anexos — Logístico</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div class="cfg-row" id="cfg-row-log_anexo_nf">
+          <div><div class="cfg-label">Nota Fiscal (NF)</div><div class="cfg-desc">Upload do XML ou PDF da NF para enviar ao Fiscal</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('log_anexo_nf',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-log_anexo_fotos_carg">
+          <div><div class="cfg-label">Fotos do Carregamento</div><div class="cfg-desc">Fotos obrigatórias antes de enviar ao Financeiro</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('log_anexo_fotos_carg',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-log_anexo_canhoto">
+          <div><div class="cfg-label">Canhoto de Entrega</div><div class="cfg-desc">Upload do canhoto assinado na entrega</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('log_anexo_canhoto',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Financeiro Panel -->
+    <div id="cfg-panel-fin" style="display:none;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📝 Campos — Financeiro</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div class="cfg-row" id="cfg-row-fin_campo_data_pgto">
+          <div><div class="cfg-label">Data de Pagamento do Adiantamento</div><div class="cfg-desc">Campo de data obrigatório ao aprovar adiantamento</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('fin_campo_data_pgto',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+        <div class="cfg-row" id="cfg-row-fin_anexo_comprovante">
+          <div><div class="cfg-label">Comprovante de Pagamento (PDF)</div><div class="cfg-desc">Upload do comprovante ao aprovar adiantamento/saldo</div></div>
+          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('fin_anexo_comprovante',this.checked)"><span class="cfg-slider"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <button onclick="cfgResetar()" style="background:rgba(239,68,68,0.08);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:8px 18px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">
+        🔄 Restaurar padrões
+      </button>
+      <span style="font-size:11px;color:var(--green);" id="cfg-salvo-msg"></span>
+    </div>
+  </div>
+
   <!-- Alterar Minha Senha -->
   <div class="card">
     <div class="form-title"><span></span> Alterar Senha</div>
@@ -2549,6 +2751,79 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 <div class="toast" id="toast"></div>
 
 <script>
+// ╔══════════════════════════════════════════════════════════╗
+// ║        SISTEMA DE CONFIGURAÇÕES — JM BRASIL              ║
+// ║  Controlado pelo Administrativo na aba Segurança         ║
+// ╚══════════════════════════════════════════════════════════╝
+const CFG_KEY = 'jmbrasil_cfg_v1';
+
+const CFG_DEFAULT = {
+  // ── GR / Cadastro de Motorista ──────────────────────────
+  gr_campo_valor_frete:      true,
+  gr_campo_valor_carga:      true,
+  gr_campo_canal_contato:    true,
+  gr_campo_referencias:      true,
+  gr_campo_recolhimento:     true,
+  gr_campo_prazo_saldo:      true,
+  gr_campo_pagamento:        true,
+  gr_campo_excecoes:         true,
+  gr_campo_pedagio:          true,
+  gr_anexo_cnh:              true,
+  gr_anexo_antt:             true,
+  gr_anexo_doc_caminhao:     true,
+  gr_anexo_residencia:       true,
+  gr_anexo_foto_caminhao:    true,
+  gr_anexo_selfie_cnh:       true,
+  gr_anexo_selfie_placa:     true,
+  gr_anexo_lonas:            true,
+  gr_anexo_checklist_ger:    true,
+  // ── Logístico — Nota Fiscal ─────────────────────────────
+  log_anexo_nf:              true,
+  // ── Logístico — Fotos do Carregamento ───────────────────
+  log_anexo_fotos_carg:      true,
+  // ── Logístico — Canhoto ─────────────────────────────────
+  log_anexo_canhoto:         true,
+  // ── Financeiro — Comprovante Adiantamento ───────────────
+  fin_anexo_comprovante:     true,
+  fin_campo_data_pgto:       true,
+};
+
+let CFG = {};
+
+function cfgLoad() {
+  try {
+    const raw = localStorage.getItem(CFG_KEY);
+    CFG = raw ? { ...CFG_DEFAULT, ...JSON.parse(raw) } : { ...CFG_DEFAULT };
+  } catch(e) { CFG = { ...CFG_DEFAULT }; }
+}
+
+function cfgSave() {
+  try { localStorage.setItem(CFG_KEY, JSON.stringify(CFG)); } catch(e) {}
+}
+
+function cfgGet(key) {
+  return CFG.hasOwnProperty(key) ? CFG[key] : true;
+}
+
+// Botão substituto quando anexo está desativado
+function cfgBtnSubstituto(label, onConfirm) {
+  return `<button type="button" onclick="cfgConfirmarSemAnexo('${label}', ${onConfirm})"
+    style="display:flex;align-items:center;gap:6px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);
+    border-radius:6px;padding:6px 14px;cursor:pointer;font-size:12px;color:var(--green);white-space:nowrap;">
+    ✅ Confirmar sem anexo
+  </button>`;
+}
+
+function cfgConfirmarSemAnexo(label, callbackStr) {
+  if (confirm(`Confirmar "${label}" sem anexar documento?\n\nEsta etapa será marcada como concluída sem arquivo.`)) {
+    if (typeof callbackStr === 'function') callbackStr();
+    else if (typeof callbackStr === 'string') eval(callbackStr);
+  }
+}
+
+cfgLoad();
+// ────────────────────────────────────────────────────────────
+
 let cotacoes = [];
 let cotacaoAtualId = null;
 let cotacaoAtualDados = null;
@@ -2714,6 +2989,7 @@ async function fazerLogin() {
   await carregarPerfilUsuario(user.id);
   registrarLog('login', 'Login realizado', `Email: ${user.email}`);
   document.getElementById('login-screen').style.display = 'none';
+  cfgInicializar();
 }
 
 async function fazerLogout() {
@@ -5117,7 +5393,197 @@ function renderLogs(lista) {
 }
 
 // ============ SEGURANÇA ============
+// ══════════════════════════════════════════════════════════
+//  FUNÇÕES DO PAINEL DE CONFIGURAÇÕES
+// ══════════════════════════════════════════════════════════
+
+let _cfgTabAtual = 'gr';
+
+function cfgTab(tab) {
+  _cfgTabAtual = tab;
+  ['gr','log','fin'].forEach(t => {
+    const panel = document.getElementById('cfg-panel-' + t);
+    const btn   = document.getElementById('cfg-tab-' + t);
+    if (!panel || !btn) return;
+    const ativo = t === tab;
+    panel.style.display = ativo ? '' : 'none';
+    btn.style.background   = ativo ? 'var(--accent)' : 'transparent';
+    btn.style.color        = ativo ? '#fff' : 'var(--muted)';
+    btn.style.borderColor  = ativo ? 'var(--accent)' : 'var(--border)';
+  });
+}
+
+function cfgRenderPanel() {
+  // Popula todos os checkboxes com o estado atual de CFG
+  Object.keys(CFG_DEFAULT).forEach(key => {
+    const row = document.getElementById('cfg-row-' + key);
+    if (!row) return;
+    const chk = row.querySelector('input[type="checkbox"]');
+    if (chk) {
+      chk.checked = cfgGet(key);
+      row.dataset.off = cfgGet(key) ? 'false' : 'true';
+    }
+  });
+  cfgTab(_cfgTabAtual);
+}
+
+function cfgToggle(key, value) {
+  CFG[key] = value;
+  cfgSave();
+  // Feedback visual na row
+  const row = document.getElementById('cfg-row-' + key);
+  if (row) row.dataset.off = value ? 'false' : 'true';
+  // Aplica no DOM imediatamente
+  cfgAplicarDom(key, value);
+  // Msg de salvo
+  const msg = document.getElementById('cfg-salvo-msg');
+  if (msg) { msg.textContent = '✅ Salvo'; setTimeout(() => { msg.textContent = ''; }, 1800); }
+}
+
+function cfgResetar() {
+  if (!confirm('Restaurar todas as configurações para o padrão?\nTodos os campos e anexos voltarão a ser obrigatórios.')) return;
+  CFG = { ...CFG_DEFAULT };
+  cfgSave();
+  cfgRenderPanel();
+  cfgAplicarTodos();
+  showToast('✅ Configurações restauradas ao padrão', 'success');
+}
+
+// ── Aplica UMA chave específica no DOM ────────────────────
+function cfgAplicarDom(key, value) {
+  // GR — campos de texto
+  if (key === 'gr_campo_valor_frete')   cfgToggleCampo('gr-ck-valor-frete', value, 'Valor do Frete do Motorista');
+  if (key === 'gr_campo_valor_carga')   cfgToggleCampo('gr-ck-valor-carga', value, 'Valor da Carga');
+  if (key === 'gr_campo_canal_contato') cfgToggleCampo('gr-ck-canal', value, 'Canal de Contato');
+  if (key === 'gr_campo_pedagio') {
+    cfgToggleSection('gr-secao-pedagio', value);
+  }
+  if (key === 'gr_campo_referencias') {
+    cfgToggleCampo('gr-ck-ref-prof', value, 'Referências Profissionais');
+    cfgToggleCampo('gr-ck-ref-pessoal', value, 'Referências Pessoais');
+    cfgToggleCampo('gr-ck-proprietario', value, 'Contato do Proprietário');
+    cfgToggleSection('gr-secao-referencias', value);
+  }
+  if (key === 'gr_campo_pagamento')     cfgToggleSection('gr-secao-pagamento', value);
+  if (key === 'gr_campo_prazo_saldo')   cfgToggleSection('gr-secao-prazo', value);
+  if (key === 'gr_campo_recolhimento')  cfgToggleSection('gr-secao-recolhimento', value);
+  if (key === 'gr_campo_excecoes')      cfgToggleSection('gr-secao-excecoes', value);
+  // GR — anexos
+  if (key === 'gr_anexo_cnh')           cfgToggleAnexo('gr-secao-anexo-cnh', value, 'gr_anexo_cnh');
+  if (key === 'gr_anexo_antt')          cfgToggleAnexo('gr-secao-anexo-antt', value, 'gr_anexo_antt');
+  if (key === 'gr_anexo_doc_caminhao')  cfgToggleAnexo('gr-secao-anexo-doc-caminhao', value, 'gr_anexo_doc_caminhao');
+  if (key === 'gr_anexo_residencia')    cfgToggleAnexo('gr-secao-anexo-residencia', value, 'gr_anexo_residencia');
+  if (key === 'gr_anexo_foto_caminhao') cfgToggleAnexo('gr-secao-anexo-foto-caminhao', value, 'gr_anexo_foto_caminhao');
+  if (key === 'gr_anexo_selfie_cnh')    cfgToggleAnexo('gr-secao-anexo-selfie-cnh', value, 'gr_anexo_selfie_cnh');
+  if (key === 'gr_anexo_selfie_placa')  cfgToggleAnexo('gr-secao-anexo-selfie-placa', value, 'gr_anexo_selfie_placa');
+  if (key === 'gr_anexo_lonas')         cfgToggleAnexo('gr-secao-anexo-lonas', value, 'gr_anexo_lonas');
+  if (key === 'gr_anexo_checklist_ger') cfgToggleAnexo('gr-secao-checklist-ger', value, 'gr_anexo_checklist_ger');
+  // Logístico
+  if (key === 'log_anexo_nf')           cfgToggleAnexoLog('log-secao-nf-upload', value, 'log_anexo_nf', 'confirmarAnexoNFSemArquivo()');
+  if (key === 'log_anexo_fotos_carg')   cfgToggleAnexoLog('log-secao-fotos-upload', value, 'log_anexo_fotos_carg', 'confirmarFotosSemArquivo()');
+  if (key === 'log_anexo_canhoto')      cfgToggleAnexoLog('log-secao-canhoto-upload', value, 'log_anexo_canhoto', 'confirmarCanhotoSemArquivo()');
+  // Financeiro
+  if (key === 'fin_campo_data_pgto')    cfgToggleSection('fin-secao-data-pgto', value);
+  if (key === 'fin_anexo_comprovante')  cfgToggleAnexo('fin-secao-comprovante', value, 'fin_anexo_comprovante');
+}
+
+function cfgAplicarTodos() {
+  Object.keys(CFG).forEach(key => cfgAplicarDom(key, CFG[key]));
+}
+
+// ── Helpers de toggle DOM ─────────────────────────────────
+function cfgToggleSection(sectionId, show) {
+  const el = document.getElementById(sectionId);
+  if (el) el.style.display = show ? '' : 'none';
+}
+
+function cfgToggleCampo(inputId, required, label) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  const fg = el.closest('.form-group') || el.parentElement;
+  if (!required) {
+    el.removeAttribute('required');
+    if (fg) fg.style.opacity = '0.45';
+  } else {
+    if (fg) fg.style.opacity = '';
+  }
+}
+
+function cfgToggleAnexo(sectionId, show, cfgKey) {
+  const sec = document.getElementById(sectionId);
+  if (!sec) return;
+  const uploadArea = sec.querySelector('.cfg-upload-area');
+  const btnSub     = sec.querySelector('.cfg-btn-sub');
+  if (uploadArea) uploadArea.style.display = show ? '' : 'none';
+  if (btnSub)     btnSub.style.display     = show ? 'none' : '';
+}
+
+function cfgToggleAnexoLog(sectionId, show, cfgKey, callbackStr) {
+  const sec = document.getElementById(sectionId);
+  if (!sec) return;
+  const uploadArea = sec.querySelector('.cfg-upload-area');
+  const btnSub     = sec.querySelector('.cfg-btn-sub');
+  if (uploadArea) uploadArea.style.display = show ? '' : 'none';
+  if (btnSub)     btnSub.style.display     = show ? 'none' : '';
+}
+
+// ── Chamado no init do sistema após login ─────────────────
+function cfgInicializar() {
+  cfgLoad();
+  // Aguarda DOM estar pronto
+  setTimeout(() => cfgAplicarTodos(), 300);
+}
+
+// Confirmar sem anexo — funções específicas para cada etapa
+async function confirmarAnexoNFSemArquivo() {
+  if (!confirm('Confirmar etapa da Nota Fiscal sem anexar arquivo?\n\nO motorista será enviado ao Fiscal sem o documento de NF.')) return;
+  try {
+    const motoristaId = logisticoMotoristaSelecionadoId;
+    const loteMotLista = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${motoristaId}`) || [];
+    await supabaseRequest('PATCH', `motoristas?id=eq.${motoristaId}`, { status: 'aguardando_emissao_doc' });
+    if (loteMotLista.length) {
+      await Promise.all(loteMotLista.map(reg =>
+        supabaseRequest('PATCH', `lote_motoristas?id=eq.${reg.id}`, { status: 'aguardando_emissao_doc' })
+      ));
+    }
+    registrarLog('logistico', 'NF confirmada sem anexo (cfg desativado)', `Motorista: #${motoristaId}`);
+    showToast('✅ Etapa confirmada. Motorista enviado ao Fiscal.', 'success');
+    fecharModalLogisticoNF();
+    await carregarLogistico();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function confirmarFotosSemArquivo() {
+  if (!confirm('Confirmar etapa de Fotos do Carregamento sem anexar foto?\n\nO motorista será enviado ao Financeiro sem registro fotográfico.')) return;
+  try {
+    const loteMotId = logisticoMotoristaSelecionadoId;
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${loteMotId}`, { status: 'fotos_inseridas' });
+    const lm = await supabaseRequest('GET', `lote_motoristas?id=eq.${loteMotId}`);
+    const motId = lm?.[0]?.motorista_id;
+    if (motId) await supabaseRequest('PATCH', `motoristas?id=eq.${motId}`, { status: 'fotos_inseridas' });
+    registrarLog('logistico', 'Fotos confirmadas sem anexo (cfg desativado)', `LoteMot: #${loteMotId}`);
+    showToast('✅ Etapa confirmada. Motorista enviado ao Financeiro.', 'success');
+    fecharModalLogisticoFotos();
+    await carregarLogistico();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function confirmarCanhotoSemArquivo() {
+  if (!confirm('Confirmar canhoto sem anexar arquivo?\n\nA entrega será registrada como concluída sem imagem do canhoto.')) return;
+  try {
+    const id = logisticoMotoristaSelecionadoId;
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'manifesto_encerrado' });
+    registrarLog('logistico', 'Canhoto confirmado sem anexo (cfg desativado)', `LoteMot: #${id}`);
+    showToast('✅ Canhoto confirmado. Manifesto encerrado.', 'success');
+    await carregarLogistico();
+  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
 async function carregarSeguranca() {
+  // Mostra painel de config apenas para administrativo
+  const cardCfg = document.getElementById('card-cfg-sistema');
+  if (cardCfg) cardCfg.style.display = (setorAtual === 'administrativo') ? '' : 'none';
+  cfgRenderPanel();
   try {
     const perfis = await supabaseRequest('GET', 'usuarios_perfil?order=criado_em.desc') || [];
     document.getElementById('seg-total').textContent = perfis.length;
@@ -5895,9 +6361,10 @@ function fecharModalLogisticoNF() {
 
 async function confirmarAnexoNF() {
   const input = document.getElementById('log-nf-arquivo');
-  if (!input || !input.files.length) {
+  if (cfgGet('log_anexo_nf') && (!input || !input.files.length)) {
     showToast('Anexe a Nota Fiscal antes de confirmar', 'error'); return;
   }
+  if (!cfgGet('log_anexo_nf')) { await confirmarAnexoNFSemArquivo(); return; }
   try {
     document.getElementById('mlog-nf-arquivo-status').textContent = 'Fazendo upload...';
     const motoristaId = logisticoMotoristaSelecionadoId;
@@ -5977,9 +6444,10 @@ function fecharModalLogisticoFotos() {
 async function confirmarFotosCarregamento() {
   if (window._confirmandoFotos) return;
   const input = document.getElementById('log-fotos-arquivo');
-  if (!input || !input.files.length) {
+  if (cfgGet('log_anexo_fotos_carg') && (!input || !input.files.length)) {
     showToast('Insira ao menos uma foto do carregamento', 'error'); return;
   }
+  if (!cfgGet('log_anexo_fotos_carg')) { await confirmarFotosSemArquivo(); return; }
   const btnConfirmar = document.querySelector('#modal-logistico-fotos-overlay .btn-primary[onclick*="confirmarFotos"]') || document.querySelector('button[onclick="confirmarFotosCarregamento()"]');
   try {
     window._confirmandoFotos = true;
@@ -6421,22 +6889,27 @@ async function abrirModalFinFotos(id) {
     }
   }
 
-  // Ações de aprovação dentro do modal
+  // Ações de aprovação dentro do modal — respeitam configurações CFG
   const acoes = document.getElementById('mfin-acoes');
+  const mostrarData = cfgGet('fin_campo_data_pgto');
+  const mostrarComp = cfgGet('fin_anexo_comprovante');
   acoes.innerHTML = `
     <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:12px;">Ação — Adiantamento</div>
     <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;">
-      <div style="display:flex;flex-direction:column;gap:4px;">
+      <div id="fin-secao-data-pgto" style="display:flex;flex-direction:column;gap:4px;${mostrarData ? '' : 'display:none;'}">
         <label style="font-size:11px;color:var(--muted);text-transform:uppercase;">Data de Pagamento</label>
         <input type="date" id="mfin-adiantamento-data" style="font-size:13px;padding:8px 12px;width:auto;">
       </div>
       <button onclick="aprovarAdiantamentoModal()" style="background:var(--green);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding:10px 22px;cursor:pointer;display:flex;align-items:center;gap:6px;">✅ Aprovar Adiantamento</button>
       <button onclick="reprovarFinanceiroModal()" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:10px 18px;cursor:pointer;">❌ Reprovar</button>
     </div>
-    <div style="background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:12px 14px;">
-      <div style="font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">📎 Comprovantes de Pagamento (PDF) — opcional</div>
-      <div id="mfin-pdfs-container" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
-      <button type="button" onclick="mfinAdicionarPDF()" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px dashed rgba(59,130,246,0.4);border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;width:100%;">+ Anexar PDF</button>
+    <div id="fin-secao-comprovante" style="${mostrarComp ? '' : 'display:none;'}background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:12px 14px;">
+      <div class="cfg-upload-area">
+        <div style="font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">📎 Comprovantes de Pagamento (PDF) — opcional</div>
+        <div id="mfin-pdfs-container" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+        <button type="button" onclick="mfinAdicionarPDF()" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px dashed rgba(59,130,246,0.4);border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;width:100%;">+ Anexar PDF</button>
+      </div>
+      <button type="button" class="cfg-btn-sub cfg-btn-substituto" style="display:none;margin-top:8px;" onclick="cfgConfirmarSemAnexo('Comprovante', null)">✅ Confirmar sem comprovante</button>
     </div>`;
   // Inicializa com um campo PDF opcional
   window._mfinPdfCount = 0;
@@ -6448,7 +6921,7 @@ async function abrirModalFinFotos(id) {
 async function aprovarAdiantamentoModal() {
   if (window._aprovandoAdiantamento) return;
   const dt = document.getElementById('mfin-adiantamento-data')?.value;
-  if (!dt) { showToast('Informe a data de pagamento do adiantamento', 'error'); return; }
+  if (cfgGet('fin_campo_data_pgto') && !dt) { showToast('Informe a data de pagamento do adiantamento', 'error'); return; }
   const btnAprovar = document.querySelector('button[onclick="aprovarAdiantamentoModal()"]');
   try {
     window._aprovandoAdiantamento = true;
@@ -7045,17 +7518,19 @@ async function salvarMotoristaGR() {
     return;
   }
 
-  // Validação de campos obrigatórios
+  // Validação de campos obrigatórios — respeitando configurações
   const camposObrigatorios = [
     { id: 'gr-placa',    label: 'Placa do Veículo' },
     { id: 'gr-contato',  label: 'Contato / Telefone' },
     { id: 'gr-cpf',      label: 'CPF' },
-    { id: 'gr-ck-valor-frete', label: 'Valor do Frete do Motorista' }, { id: 'gr-ck-valor-carga', label: 'Valor da Carga' },
-    { id: 'gr-ck-valor-carga', label: 'Valor da Carga' },
-    { id: 'gr-ck-canal', label: 'Canal de Contato do Motorista' },
-    { id: 'gr-ck-ref-prof', label: 'Referências Profissionais' },
-    { id: 'gr-ck-ref-pessoal', label: 'Referências Pessoais' },
-    { id: 'gr-ck-proprietario', label: 'Contato do Proprietário' },
+    ...(cfgGet('gr_campo_valor_frete') ? [{ id: 'gr-ck-valor-frete', label: 'Valor do Frete do Motorista' }] : []),
+    ...(cfgGet('gr_campo_valor_carga') ? [{ id: 'gr-ck-valor-carga', label: 'Valor da Carga' }] : []),
+    ...(cfgGet('gr_campo_canal_contato') ? [{ id: 'gr-ck-canal', label: 'Canal de Contato do Motorista' }] : []),
+    ...(cfgGet('gr_campo_referencias') ? [
+      { id: 'gr-ck-ref-prof', label: 'Referências Profissionais' },
+      { id: 'gr-ck-ref-pessoal', label: 'Referências Pessoais' },
+      { id: 'gr-ck-proprietario', label: 'Contato do Proprietário' },
+    ] : []),
   ];
   for (const campo of camposObrigatorios) {
     const el = document.getElementById(campo.id);
@@ -7113,16 +7588,16 @@ async function salvarMotoristaGR() {
     if (df.value < di.value) { showToast('A data final não pode ser anterior à data de início', 'error'); return; }
   }
 
-  // Validação de anexos obrigatórios
+  // Validação de anexos obrigatórios — respeitando configurações
   const anexosObrigatorios = [
-    { id: 'gr-arq-cnh',          label: 'CNH do motorista' },
-    { id: 'gr-arq-antt',         label: 'Registro na ANTT' },
-    { id: 'gr-arq-doc-caminhao', label: 'Documento do Caminhão' },
-    { id: 'gr-arq-residencia',   label: 'Comprovante de Residência' },
-    { id: 'gr-arq-foto-caminhao',label: 'Foto do Caminhão' },
-    { id: 'gr-arq-selfie-cnh',   label: 'Selfie com CNH' },
-    { id: 'gr-arq-selfie-placa', label: 'Selfie ao lado do veículo (placa)' },
-    { id: 'gr-arq-lonas',        label: 'Fotos das Lonas' },
+    ...(cfgGet('gr_anexo_cnh')           ? [{ id: 'gr-arq-cnh',           label: 'CNH do motorista' }] : []),
+    ...(cfgGet('gr_anexo_antt')          ? [{ id: 'gr-arq-antt',          label: 'Registro na ANTT' }] : []),
+    ...(cfgGet('gr_anexo_doc_caminhao')  ? [{ id: 'gr-arq-doc-caminhao',  label: 'Documento do Caminhão' }] : []),
+    ...(cfgGet('gr_anexo_residencia')    ? [{ id: 'gr-arq-residencia',     label: 'Comprovante de Residência' }] : []),
+    ...(cfgGet('gr_anexo_foto_caminhao') ? [{ id: 'gr-arq-foto-caminhao', label: 'Foto do Caminhão' }] : []),
+    ...(cfgGet('gr_anexo_selfie_cnh')    ? [{ id: 'gr-arq-selfie-cnh',    label: 'Selfie com CNH' }] : []),
+    ...(cfgGet('gr_anexo_selfie_placa')  ? [{ id: 'gr-arq-selfie-placa',  label: 'Selfie ao lado do veículo (placa)' }] : []),
+    ...(cfgGet('gr_anexo_lonas')         ? [{ id: 'gr-arq-lonas',         label: 'Fotos das Lonas' }] : []),
   ];
   for (const anexo of anexosObrigatorios) {
     const input = document.getElementById(anexo.id);
