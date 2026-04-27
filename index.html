@@ -404,6 +404,14 @@ td{padding:14px;color:var(--text);}
 .cfg-toggle input:checked + .cfg-slider{background:rgba(34,197,94,0.6);}
 .cfg-toggle input:checked + .cfg-slider::before{transform:translateX(20px);}
 .cfg-row[data-off="true"]{ opacity:1; }
+.cfg-toggles-wrap{display:flex;align-items:center;gap:16px;flex-shrink:0;}
+.cfg-toggle-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.cfg-toggle-col-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--muted);white-space:nowrap;}
+.cfg-toggle-req .cfg-slider{background:rgba(249,115,22,0.3);}
+.cfg-toggle-req input:checked + .cfg-slider{background:rgba(249,115,22,0.7);}
+.cfg-section-header{display:grid;grid-template-columns:1fr auto;align-items:center;padding:0 14px 6px;margin-bottom:2px;}
+.cfg-section-header-labels{display:flex;gap:16px;}
+.cfg-section-header-label{width:44px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--muted);}
 .cfg-btn-substituto{display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.35);border-radius:8px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:600;color:var(--green);white-space:nowrap;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
 .cfg-btn-substituto:hover{background:rgba(34,197,94,0.18);}
 </style>
@@ -2579,10 +2587,12 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
        Visível apenas para o setor Administrativo
        ════════════════════════════════════════════════════ -->
   <div class="card" id="card-cfg-sistema" style="margin-bottom:20px;display:none;">
-    <div class="form-title" style="margin-bottom:0;">
-      <span>⚙️</span>
-      <span>Configurações do Sistema</span>
-      <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:8px;">— campos e anexos obrigatórios por setor</span>
+    <div class="form-title">
+      <div style="width:4px;height:20px;background:var(--accent);border-radius:2px;flex-shrink:0;"></div>
+      <div style="display:flex;flex-direction:column;gap:1px;">
+        <span style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;line-height:1.2;">Configurações do Sistema</span>
+        <span style="font-size:11px;font-weight:400;color:var(--muted);">campos e anexos obrigatórios por setor</span>
+      </div>
     </div>
     <p style="font-size:12px;color:var(--muted);margin:10px 0 20px;line-height:1.6;">
       Ative ou desative campos e anexos em cada etapa do fluxo. Quando um campo ou anexo está <strong>desativado</strong>, ele some completamente do formulário. Para anexos do Logístico que bloqueiam o fluxo (NF, Fotos, Canhoto), um botão de confirmação simples substitui o upload. As configurações são salvas automaticamente.
@@ -2606,117 +2616,196 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
     <!-- GR Panel -->
     <div id="cfg-panel-gr">
+      <!-- Header labels -->
+      <div class="cfg-section-header">
+        <div></div>
+        <div class="cfg-section-header-labels">
+          <div class="cfg-section-header-label">Mostrar</div>
+          <div class="cfg-section-header-label" style="color:rgba(249,115,22,0.8);">Obrigatório</div>
+        </div>
+      </div>
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📝 Campos de Texto — Checklist do Motorista</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
         <div class="cfg-row" id="cfg-row-gr_campo_valor_frete">
-          <div><div class="cfg-label">Valor do Frete do Motorista</div><div class="cfg-desc">Campo obrigatório no formulário GR</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_valor_frete',this.checked)"><span class="cfg-slider"></span></label>
+          <div><div class="cfg-label">Valor do Frete do Motorista</div><div class="cfg-desc">Campo no formulário GR</div></div>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_campo_valor_frete" onchange="cfgToggle('gr_campo_valor_frete',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_campo_valor_frete_req" onchange="cfgToggleReq('gr_campo_valor_frete',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-gr_campo_valor_carga">
-          <div><div class="cfg-label">Valor da Carga</div><div class="cfg-desc">Campo obrigatório no formulário GR</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_valor_carga',this.checked)"><span class="cfg-slider"></span></label>
+          <div><div class="cfg-label">Valor da Carga</div><div class="cfg-desc">Campo no formulário GR</div></div>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_campo_valor_carga" onchange="cfgToggle('gr_campo_valor_carga',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_campo_valor_carga_req" onchange="cfgToggleReq('gr_campo_valor_carga',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-gr_campo_canal_contato">
           <div><div class="cfg-label">Canal de Contato do Motorista</div><div class="cfg-desc">Como o motorista foi contatado</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_canal_contato',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_campo_canal_contato" onchange="cfgToggle('gr_campo_canal_contato',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_campo_canal_contato_req" onchange="cfgToggleReq('gr_campo_canal_contato',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-gr_campo_referencias">
           <div><div class="cfg-label">Referências (Profissional, Pessoal, Proprietário)</div><div class="cfg-desc">Três campos de referência do motorista</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_referencias',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_campo_referencias" onchange="cfgToggle('gr_campo_referencias',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_campo_referencias_req" onchange="cfgToggleReq('gr_campo_referencias',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-gr_campo_pagamento">
           <div><div class="cfg-label">Forma de Pagamento (Adiantamento / Saldo)</div><div class="cfg-desc">Checkboxes de pagamento no checklist</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_pagamento',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_campo_pagamento" onchange="cfgToggle('gr_campo_pagamento',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_campo_pagamento_req" onchange="cfgToggleReq('gr_campo_pagamento',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-gr_campo_prazo_saldo">
           <div><div class="cfg-label">Prazo do Saldo</div><div class="cfg-desc">Radios de prazo (5/7/8+ dias)</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_prazo_saldo',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_campo_prazo_saldo" onchange="cfgToggle('gr_campo_prazo_saldo',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_campo_prazo_saldo_req" onchange="cfgToggleReq('gr_campo_prazo_saldo',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-gr_campo_recolhimento">
           <div><div class="cfg-label">Recolhimento (PF / PJ)</div><div class="cfg-desc">Tipo de recolhimento previdenciário</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_recolhimento',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_campo_recolhimento" onchange="cfgToggle('gr_campo_recolhimento',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_campo_recolhimento_req" onchange="cfgToggleReq('gr_campo_recolhimento',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-gr_campo_excecoes">
           <div><div class="cfg-label">Campos de Exceção e Assinatura</div><div class="cfg-desc">Exceção de pagamento, prazo e responsável</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_excecoes',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_campo_excecoes" onchange="cfgToggle('gr_campo_excecoes',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_campo_excecoes_req" onchange="cfgToggleReq('gr_campo_excecoes',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-gr_campo_pedagio">
           <div><div class="cfg-label">Pedágio / TAG</div><div class="cfg-desc">Valor do pedágio e dados da administradora</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_campo_pedagio',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_campo_pedagio" onchange="cfgToggle('gr_campo_pedagio',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_campo_pedagio_req" onchange="cfgToggleReq('gr_campo_pedagio',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
       </div>
 
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📎 Anexos Obrigatórios — Documentos do Motorista</div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📎 Anexos — Documentos do Motorista</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         <div class="cfg-row" id="cfg-row-gr_anexo_cnh">
-          <div><div class="cfg-label">CNH do Motorista</div><div class="cfg-desc">Habilitação obrigatória no cadastro</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_cnh',this.checked)"><span class="cfg-slider"></span></label>
+          <div><div class="cfg-label">CNH do Motorista</div><div class="cfg-desc">Habilitação no cadastro</div></div>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_anexo_cnh" onchange="cfgToggle('gr_anexo_cnh',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_anexo_cnh_req" onchange="cfgToggleReq('gr_anexo_cnh',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-gr_anexo_antt">
-          <div><div class="cfg-label">Registro na ANTT</div><div class="cfg-desc">Documento ANTT obrigatório</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_antt',this.checked)"><span class="cfg-slider"></span></label>
+          <div><div class="cfg-label">Registro na ANTT</div><div class="cfg-desc">Documento ANTT</div></div>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_anexo_antt" onchange="cfgToggle('gr_anexo_antt',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_anexo_antt_req" onchange="cfgToggleReq('gr_anexo_antt',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-gr_anexo_doc_caminhao">
           <div><div class="cfg-label">Documento do Caminhão/Carretas</div><div class="cfg-desc">CRLV ou equivalente</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_doc_caminhao',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_anexo_doc_caminhao" onchange="cfgToggle('gr_anexo_doc_caminhao',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_anexo_doc_caminhao_req" onchange="cfgToggleReq('gr_anexo_doc_caminhao',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-gr_anexo_residencia">
           <div><div class="cfg-label">Comprovante de Residência</div><div class="cfg-desc">Conta de luz, água ou similar</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_residencia',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_anexo_residencia" onchange="cfgToggle('gr_anexo_residencia',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_anexo_residencia_req" onchange="cfgToggleReq('gr_anexo_residencia',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-gr_anexo_foto_caminhao">
           <div><div class="cfg-label">Foto do Caminhão / Carretas</div><div class="cfg-desc">Foto com placas visíveis</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_foto_caminhao',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_anexo_foto_caminhao" onchange="cfgToggle('gr_anexo_foto_caminhao',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_anexo_foto_caminhao_req" onchange="cfgToggleReq('gr_anexo_foto_caminhao',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-gr_anexo_selfie_cnh">
           <div><div class="cfg-label">Selfie Segurando a CNH</div><div class="cfg-desc">Foto do motorista com a CNH na mão</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_selfie_cnh',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_anexo_selfie_cnh" onchange="cfgToggle('gr_anexo_selfie_cnh',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_anexo_selfie_cnh_req" onchange="cfgToggleReq('gr_anexo_selfie_cnh',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-gr_anexo_selfie_placa">
           <div><div class="cfg-label">Selfie ao Lado do Veículo (placa)</div><div class="cfg-desc">Motorista ao lado do veículo mostrando a placa</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_selfie_placa',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_anexo_selfie_placa" onchange="cfgToggle('gr_anexo_selfie_placa',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_anexo_selfie_placa_req" onchange="cfgToggleReq('gr_anexo_selfie_placa',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-gr_anexo_lonas">
           <div><div class="cfg-label">Fotos das Lonas</div><div class="cfg-desc">Fotos das lonas utilizadas na carga</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_lonas',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_anexo_lonas" onchange="cfgToggle('gr_anexo_lonas',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_anexo_lonas_req" onchange="cfgToggleReq('gr_anexo_lonas',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-gr_anexo_checklist_ger">
           <div><div class="cfg-label">Checklist da Gerenciadora</div><div class="cfg-desc">PDF/imagem do checklist da gerenciadora de risco</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('gr_anexo_checklist_ger',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_anexo_checklist_ger" onchange="cfgToggle('gr_anexo_checklist_ger',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_anexo_checklist_ger_req" onchange="cfgToggleReq('gr_anexo_checklist_ger',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Logístico Panel -->
     <div id="cfg-panel-log" style="display:none;">
+      <div class="cfg-section-header"><div></div><div class="cfg-section-header-labels"><div class="cfg-section-header-label">Mostrar</div><div class="cfg-section-header-label" style="color:rgba(249,115,22,0.8);">Obrigatório</div></div></div>
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📎 Anexos — Logístico</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         <div class="cfg-row" id="cfg-row-log_anexo_nf">
           <div><div class="cfg-label">Nota Fiscal (NF)</div><div class="cfg-desc">Upload do XML ou PDF da NF para enviar ao Fiscal</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('log_anexo_nf',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-log_anexo_nf" onchange="cfgToggle('log_anexo_nf',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-log_anexo_nf_req" onchange="cfgToggleReq('log_anexo_nf',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-log_anexo_fotos_carg">
-          <div><div class="cfg-label">Fotos do Carregamento</div><div class="cfg-desc">Fotos obrigatórias antes de enviar ao Financeiro</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('log_anexo_fotos_carg',this.checked)"><span class="cfg-slider"></span></label>
+          <div><div class="cfg-label">Fotos do Carregamento</div><div class="cfg-desc">Fotos antes de enviar ao Financeiro</div></div>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-log_anexo_fotos_carg" onchange="cfgToggle('log_anexo_fotos_carg',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-log_anexo_fotos_carg_req" onchange="cfgToggleReq('log_anexo_fotos_carg',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-log_anexo_canhoto">
           <div><div class="cfg-label">Canhoto de Entrega</div><div class="cfg-desc">Upload do canhoto assinado na entrega</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('log_anexo_canhoto',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-log_anexo_canhoto" onchange="cfgToggle('log_anexo_canhoto',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-log_anexo_canhoto_req" onchange="cfgToggleReq('log_anexo_canhoto',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Financeiro Panel -->
     <div id="cfg-panel-fin" style="display:none;">
+      <div class="cfg-section-header"><div></div><div class="cfg-section-header-labels"><div class="cfg-section-header-label">Mostrar</div><div class="cfg-section-header-label" style="color:rgba(249,115,22,0.8);">Obrigatório</div></div></div>
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📝 Campos — Financeiro</div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         <div class="cfg-row" id="cfg-row-fin_campo_data_pgto">
-          <div><div class="cfg-label">Data de Pagamento do Adiantamento</div><div class="cfg-desc">Campo de data obrigatório ao aprovar adiantamento</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('fin_campo_data_pgto',this.checked)"><span class="cfg-slider"></span></label>
+          <div><div class="cfg-label">Data de Pagamento do Adiantamento</div><div class="cfg-desc">Campo de data ao aprovar adiantamento</div></div>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-fin_campo_data_pgto" onchange="cfgToggle('fin_campo_data_pgto',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-fin_campo_data_pgto_req" onchange="cfgToggleReq('fin_campo_data_pgto',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
         <div class="cfg-row" id="cfg-row-fin_anexo_comprovante">
           <div><div class="cfg-label">Comprovante de Pagamento (PDF)</div><div class="cfg-desc">Upload do comprovante ao aprovar adiantamento/saldo</div></div>
-          <label class="cfg-toggle"><input type="checkbox" onchange="cfgToggle('fin_anexo_comprovante',this.checked)"><span class="cfg-slider"></span></label>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-fin_anexo_comprovante" onchange="cfgToggle('fin_anexo_comprovante',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-fin_anexo_comprovante_req" onchange="cfgToggleReq('fin_anexo_comprovante',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
         </div>
       </div>
     </div>
@@ -2759,33 +2848,31 @@ const CFG_KEY = 'jmbrasil_cfg_v1';
 
 const CFG_DEFAULT = {
   // ── GR / Cadastro de Motorista ──────────────────────────
-  gr_campo_valor_frete:      true,
-  gr_campo_valor_carga:      true,
-  gr_campo_canal_contato:    true,
-  gr_campo_referencias:      true,
-  gr_campo_recolhimento:     true,
-  gr_campo_prazo_saldo:      true,
-  gr_campo_pagamento:        true,
-  gr_campo_excecoes:         true,
-  gr_campo_pedagio:          true,
-  gr_anexo_cnh:              true,
-  gr_anexo_antt:             true,
-  gr_anexo_doc_caminhao:     true,
-  gr_anexo_residencia:       true,
-  gr_anexo_foto_caminhao:    true,
-  gr_anexo_selfie_cnh:       true,
-  gr_anexo_selfie_placa:     true,
-  gr_anexo_lonas:            true,
-  gr_anexo_checklist_ger:    true,
-  // ── Logístico — Nota Fiscal ─────────────────────────────
-  log_anexo_nf:              true,
-  // ── Logístico — Fotos do Carregamento ───────────────────
-  log_anexo_fotos_carg:      true,
-  // ── Logístico — Canhoto ─────────────────────────────────
-  log_anexo_canhoto:         true,
-  // ── Financeiro — Comprovante Adiantamento ───────────────
-  fin_anexo_comprovante:     true,
-  fin_campo_data_pgto:       true,
+  gr_campo_valor_frete:          true,  gr_campo_valor_frete_req:          true,
+  gr_campo_valor_carga:          true,  gr_campo_valor_carga_req:          true,
+  gr_campo_canal_contato:        true,  gr_campo_canal_contato_req:        false,
+  gr_campo_referencias:          true,  gr_campo_referencias_req:          false,
+  gr_campo_recolhimento:         true,  gr_campo_recolhimento_req:         false,
+  gr_campo_prazo_saldo:          true,  gr_campo_prazo_saldo_req:          false,
+  gr_campo_pagamento:            true,  gr_campo_pagamento_req:            false,
+  gr_campo_excecoes:             true,  gr_campo_excecoes_req:             false,
+  gr_campo_pedagio:              true,  gr_campo_pedagio_req:              false,
+  gr_anexo_cnh:                  true,  gr_anexo_cnh_req:                  true,
+  gr_anexo_antt:                 true,  gr_anexo_antt_req:                 true,
+  gr_anexo_doc_caminhao:         true,  gr_anexo_doc_caminhao_req:         true,
+  gr_anexo_residencia:           true,  gr_anexo_residencia_req:           true,
+  gr_anexo_foto_caminhao:        true,  gr_anexo_foto_caminhao_req:        true,
+  gr_anexo_selfie_cnh:           true,  gr_anexo_selfie_cnh_req:           true,
+  gr_anexo_selfie_placa:         true,  gr_anexo_selfie_placa_req:         true,
+  gr_anexo_lonas:                true,  gr_anexo_lonas_req:                true,
+  gr_anexo_checklist_ger:        true,  gr_anexo_checklist_ger_req:        true,
+  // ── Logístico ───────────────────────────────────────────
+  log_anexo_nf:                  true,  log_anexo_nf_req:                  true,
+  log_anexo_fotos_carg:          true,  log_anexo_fotos_carg_req:          true,
+  log_anexo_canhoto:             true,  log_anexo_canhoto_req:             true,
+  // ── Financeiro ──────────────────────────────────────────
+  fin_anexo_comprovante:         true,  fin_anexo_comprovante_req:         false,
+  fin_campo_data_pgto:           true,  fin_campo_data_pgto_req:           true,
 };
 
 let CFG = {};
@@ -5416,15 +5503,27 @@ function cfgTab(tab) {
 function cfgRenderPanel() {
   // Popula todos os checkboxes com o estado atual de CFG
   Object.keys(CFG_DEFAULT).forEach(key => {
-    const row = document.getElementById('cfg-row-' + key);
-    if (!row) return;
-    const chk = row.querySelector('input[type="checkbox"]');
-    if (chk) {
-      chk.checked = cfgGet(key);
-      row.dataset.off = cfgGet(key) ? 'false' : 'true';
+    const chk = document.getElementById('chk-' + key);
+    if (chk) chk.checked = cfgGet(key);
+    // Atualiza visual da row (apenas keys principais, não _req)
+    if (!key.endsWith('_req')) {
+      const row = document.getElementById('cfg-row-' + key);
+      if (row) row.dataset.off = cfgGet(key) ? 'false' : 'true';
+      // Se desativado, desabilita o toggle de obrigatório
+      const reqChk = document.getElementById('chk-' + key + '_req');
+      if (reqChk) reqChk.disabled = !cfgGet(key);
     }
   });
   cfgTab(_cfgTabAtual);
+}
+
+function cfgToggleReq(key, value) {
+  const reqKey = key + '_req';
+  CFG[reqKey] = value;
+  cfgSave();
+  cfgAplicarDom(reqKey, value);
+  const msg = document.getElementById('cfg-salvo-msg');
+  if (msg) { msg.textContent = '✅ Salvo'; setTimeout(() => { msg.textContent = ''; }, 1800); }
 }
 
 function cfgToggle(key, value) {
@@ -5433,6 +5532,12 @@ function cfgToggle(key, value) {
   // Feedback visual na row
   const row = document.getElementById('cfg-row-' + key);
   if (row) row.dataset.off = value ? 'false' : 'true';
+  // Se desativado, desabilita e desmarca o toggle de obrigatório
+  const reqChk = document.getElementById('chk-' + key + '_req');
+  if (reqChk) {
+    reqChk.disabled = !value;
+    if (!value) { reqChk.checked = false; CFG[key + '_req'] = false; }
+  }
   // Aplica no DOM imediatamente
   cfgAplicarDom(key, value);
   // Msg de salvo
@@ -5451,8 +5556,12 @@ function cfgResetar() {
 
 // ── Aplica UMA chave específica no DOM ────────────────────
 function cfgAplicarDom(key, value) {
-  // GR — campos de texto
-  if (key === 'gr_campo_valor_frete')   cfgToggleCampo('gr-ck-valor-frete', value, 'Valor do Frete do Motorista');
+  // ── _req keys: atualiza obrigatoriedade no DOM ───────────
+  if (key.endsWith('_req')) {
+    const baseKey = key.replace('_req', '');
+    cfgAplicarObrigatoriedade(baseKey, value);
+    return;
+  }   cfgToggleCampo('gr-ck-valor-frete', value, 'Valor do Frete do Motorista');
   if (key === 'gr_campo_valor_carga')   cfgToggleCampo('gr-ck-valor-carga', value, 'Valor da Carga');
   if (key === 'gr_campo_canal_contato') cfgToggleCampo('gr-ck-canal', value, 'Canal de Contato');
   if (key === 'gr_campo_pedagio') {
@@ -5485,6 +5594,42 @@ function cfgAplicarDom(key, value) {
   // Financeiro
   if (key === 'fin_campo_data_pgto')    cfgToggleSection('fin-secao-data-pgto', value);
   if (key === 'fin_anexo_comprovante')  cfgToggleAnexo('fin-secao-comprovante', value, 'fin_anexo_comprovante');
+}
+
+function cfgAplicarObrigatoriedade(baseKey, required) {
+  // Mapa de baseKey → inputIds que devem ter required atualizado
+  const mapaReq = {
+    gr_campo_valor_frete:    ['gr-ck-valor-frete'],
+    gr_campo_valor_carga:    ['gr-ck-valor-carga'],
+    gr_campo_canal_contato:  ['gr-ck-canal'],
+    gr_campo_referencias:    ['gr-ck-ref-prof','gr-ck-ref-pessoal','gr-ck-proprietario'],
+    gr_campo_pagamento:      [],
+    gr_campo_prazo_saldo:    [],
+    gr_campo_recolhimento:   [],
+    gr_campo_excecoes:       [],
+    gr_campo_pedagio:        [],
+    gr_anexo_cnh:            ['gr-arq-cnh'],
+    gr_anexo_antt:           ['gr-arq-antt'],
+    gr_anexo_doc_caminhao:   ['gr-arq-doc-caminhao'],
+    gr_anexo_residencia:     ['gr-arq-residencia'],
+    gr_anexo_foto_caminhao:  ['gr-arq-foto-caminhao'],
+    gr_anexo_selfie_cnh:     ['gr-arq-selfie-cnh'],
+    gr_anexo_selfie_placa:   ['gr-arq-selfie-placa'],
+    gr_anexo_lonas:          ['gr-arq-lonas'],
+    gr_anexo_checklist_ger:  ['gr-checklist-ger'],
+    log_anexo_nf:            ['log-arq-nf'],
+    log_anexo_fotos_carg:    [],
+    log_anexo_canhoto:       ['log-canhoto-0'],
+    fin_campo_data_pgto:     ['mfin-adiantamento-data'],
+    fin_anexo_comprovante:   [],
+  };
+  const ids = mapaReq[baseKey] || [];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (required) el.setAttribute('required', '');
+    else el.removeAttribute('required');
+  });
 }
 
 function cfgAplicarTodos() {
