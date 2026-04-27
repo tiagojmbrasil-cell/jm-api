@@ -403,7 +403,7 @@ td{padding:14px;color:var(--text);}
 .cfg-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:0.25s;box-shadow:0 1px 4px rgba(0,0,0,0.3);}
 .cfg-toggle input:checked + .cfg-slider{background:rgba(34,197,94,0.6);}
 .cfg-toggle input:checked + .cfg-slider::before{transform:translateX(20px);}
-.cfg-row[data-off="true"]{opacity:0.55;}
+.cfg-row[data-off="true"]{ opacity:1; }
 .cfg-btn-substituto{display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.35);border-radius:8px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:600;color:var(--green);white-space:nowrap;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
 .cfg-btn-substituto:hover{background:rgba(34,197,94,0.18);}
 </style>
@@ -2585,7 +2585,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:8px;">— campos e anexos obrigatórios por setor</span>
     </div>
     <p style="font-size:12px;color:var(--muted);margin:10px 0 20px;line-height:1.6;">
-      Ative ou desative campos e exigência de anexos em cada etapa do fluxo. Quando um anexo está <strong>desativado</strong>, um botão de confirmação simples substitui o upload. As configurações são salvas automaticamente.
+      Ative ou desative campos e anexos em cada etapa do fluxo. Quando um campo ou anexo está <strong>desativado</strong>, ele some completamente do formulário. Para anexos do Logístico que bloqueiam o fluxo (NF, Fotos, Canhoto), um botão de confirmação simples substitui o upload. As configurações são salvas automaticamente.
     </p>
 
     <!-- Tabs internas -->
@@ -5501,26 +5501,23 @@ function cfgToggleCampo(inputId, required, label) {
   const el = document.getElementById(inputId);
   if (!el) return;
   const fg = el.closest('.form-group') || el.parentElement;
-  if (!required) {
-    el.removeAttribute('required');
-    if (fg) fg.style.opacity = '0.45';
-  } else {
-    if (fg) fg.style.opacity = '';
-  }
+  // Quando desativado: some completamente. Quando ativo: volta a aparecer.
+  if (fg) fg.style.display = required ? '' : 'none';
+  if (required) el.setAttribute('required', '');
+  else el.removeAttribute('required');
 }
 
 function cfgToggleAnexo(sectionId, show, cfgKey) {
   const sec = document.getElementById(sectionId);
   if (!sec) return;
-  const uploadArea = sec.querySelector('.cfg-upload-area');
-  const btnSub     = sec.querySelector('.cfg-btn-sub');
-  if (uploadArea) uploadArea.style.display = show ? '' : 'none';
-  if (btnSub)     btnSub.style.display     = show ? 'none' : '';
+  // Anexos GR não bloqueiam fluxo — some a seção inteira quando desativado
+  sec.style.display = show ? '' : 'none';
 }
 
 function cfgToggleAnexoLog(sectionId, show, cfgKey, callbackStr) {
   const sec = document.getElementById(sectionId);
   if (!sec) return;
+  // Anexos logísticos BLOQUEIAM o fluxo — quando desativado mostra botão de confirmação
   const uploadArea = sec.querySelector('.cfg-upload-area');
   const btnSub     = sec.querySelector('.cfg-btn-sub');
   if (uploadArea) uploadArea.style.display = show ? '' : 'none';
