@@ -378,23 +378,6 @@ td{padding:14px;color:var(--text);}
 .autocomplete-item:hover,.autocomplete-item.active{background:rgba(249,115,22,0.15);}
 .logs-table-wrap{width:100%;}
 
-/* ===== PAINEL DE CONFIGURAÇÕES ===== */
-.config-section { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:14px; }
-.config-section-title { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
-.config-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); gap:16px; }
-.config-row:last-child { border-bottom:none; padding-bottom:0; }
-.config-row-info { flex:1; }
-.config-row-label { font-size:13px; font-weight:600; margin-bottom:2px; }
-.config-row-desc { font-size:11px; color:var(--muted); }
-.toggle-wrap { position:relative; width:44px; height:24px; flex-shrink:0; }
-.toggle-wrap input { opacity:0; width:0; height:0; position:absolute; }
-.toggle-slider { position:absolute; inset:0; background:rgba(239,68,68,0.3); border-radius:24px; cursor:pointer; transition:0.2s; }
-.toggle-slider:before { content:""; position:absolute; height:18px; width:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:0.2s; }
-.toggle-wrap input:checked + .toggle-slider { background:rgba(34,197,94,0.7); }
-.toggle-wrap input:checked + .toggle-slider:before { transform:translateX(20px); }
-.config-save-bar { display:flex; align-items:center; justify-content:space-between; background:var(--surface2); border-radius:10px; padding:12px 16px; margin-top:4px; }
-
-
 .rel-aba-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:8px 16px;border-radius:8px;cursor:pointer;transition:all 0.15s;}
 .rel-aba-btn:hover{color:var(--text);border-color:var(--muted2);}
 .rel-aba-btn.active{background:rgba(249,115,22,0.12);border-color:var(--accent);color:var(--accent);font-weight:700;}
@@ -851,14 +834,14 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <label>Quem é o pagador?</label>
         <input type="text" id="l-pagador-outro" placeholder="Informe o nome do pagador">
       </div>
-      <div id="l-secao-cte" class="form-group full" style="grid-column:1/-1;margin-top:8px;border-top:1px solid var(--border);padding-top:16px;">
+      <div class="form-group full" style="grid-column:1/-1;margin-top:8px;border-top:1px solid var(--border);padding-top:16px;">
         <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📄 Dados do CTe</div>
       </div>
       <div class="form-group full">
         <label>Emissor do CTe</label>
         <input type="text" id="l-emissor-cte" placeholder="Ex: Transportadora XYZ Ltda / Nome do emissor">
       </div>
-      <div id="l-secao-recebedor" class="form-group full" style="grid-column:1/-1;margin-top:8px;border-top:1px solid var(--border);padding-top:16px;">
+      <div class="form-group full" style="grid-column:1/-1;margin-top:8px;border-top:1px solid var(--border);padding-top:16px;">
         <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📬 Cliente Recebedor da Mercadoria</div>
       </div>
       <div class="form-group">
@@ -1261,14 +1244,14 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <label>Quem é o pagador?</label>
         <input type="text" id="el-pagador-outro" placeholder="Informe o nome do pagador">
       </div>
-      <div id="el-secao-cte" class="form-group full" style="grid-column:1/-1;margin-top:8px;border-top:1px solid var(--border);padding-top:16px;">
+      <div class="form-group full" style="grid-column:1/-1;margin-top:8px;border-top:1px solid var(--border);padding-top:16px;">
         <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📄 Dados do CTe</div>
       </div>
       <div class="form-group full">
         <label>Emissor do CTe</label>
         <input type="text" id="el-emissor-cte" placeholder="Ex: Transportadora XYZ Ltda / Nome do emissor">
       </div>
-      <div id="el-secao-recebedor" class="form-group full" style="grid-column:1/-1;margin-top:8px;border-top:1px solid var(--border);padding-top:16px;">
+      <div class="form-group full" style="grid-column:1/-1;margin-top:8px;border-top:1px solid var(--border);padding-top:16px;">
         <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📬 Cliente Recebedor da Mercadoria</div>
       </div>
       <div class="form-group">
@@ -2247,7 +2230,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
     <!-- Galeria de fotos -->
     <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:10px;">📎 Arquivos Anexados</div>
-    <div id="mfin-comp-adiant-upload"><div id="mfin-fotos-container" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+    <div id="mfin-fotos-container" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
       <div style="text-align:center;padding:24px;color:var(--muted);">Carregando fotos...</div>
     </div>
 
@@ -2436,117 +2419,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 <!-- SEGURANÇA -->
 <div class="page" id="page-seguranca">
-
-  <!-- ===== PAINEL DE CONFIGURAÇÕES DO SISTEMA ===== -->
-  <div id="painel-config-sistema" style="display:none;margin-bottom:24px;">
-    <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:4px;">⚙️ Configurações do Sistema</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:18px;">Ative ou desative campos e funcionalidades. Alterações são salvas automaticamente.</div>
-
-    <!-- FLUXO DE PROCESSO -->
-    <div class="config-section">
-      <div class="config-section-title">🔄 Fluxo de Processo — Anexos</div>
-
-      <div class="config-row">
-        <div class="config-row-info">
-          <div class="config-row-label">📄 Nota Fiscal (NF) — Logístico</div>
-          <div class="config-row-desc">Exigir upload da NF antes de enviar ao Fiscal. Desativado: botão de confirmação simples.</div>
-        </div>
-        <label class="toggle-wrap"><input type="checkbox" id="cfg-anexo-nf" onchange="salvarConfig()"><span class="toggle-slider"></span></label>
-      </div>
-
-      <div class="config-row">
-        <div class="config-row-info">
-          <div class="config-row-label">📷 Fotos do Carregamento — Logístico</div>
-          <div class="config-row-desc">Exigir fotos antes de enviar ao Financeiro. Desativado: confirmação simples.</div>
-        </div>
-        <label class="toggle-wrap"><input type="checkbox" id="cfg-anexo-fotos-carg" onchange="salvarConfig()"><span class="toggle-slider"></span></label>
-      </div>
-
-      <div class="config-row">
-        <div class="config-row-info">
-          <div class="config-row-label">💵 Comprovante de Adiantamento — Financeiro</div>
-          <div class="config-row-desc">Exigir comprovante PDF ao aprovar adiantamento. Desativado: aprovação direta.</div>
-        </div>
-        <label class="toggle-wrap"><input type="checkbox" id="cfg-anexo-comp-adiant" onchange="salvarConfig()"><span class="toggle-slider"></span></label>
-      </div>
-
-      <div class="config-row">
-        <div class="config-row-info">
-          <div class="config-row-label">💵 Comprovante de Saldo — Financeiro</div>
-          <div class="config-row-desc">Exigir comprovante PDF ao marcar saldo pago. Desativado: confirmação simples.</div>
-        </div>
-        <label class="toggle-wrap"><input type="checkbox" id="cfg-anexo-comp-saldo" onchange="salvarConfig()"><span class="toggle-slider"></span></label>
-      </div>
-
-    </div>
-
-    <!-- CHECKLIST DO MOTORISTA -->
-    <div class="config-section">
-      <div class="config-section-title">🚛 Checklist do Motorista — GR</div>
-
-      <div class="config-row">
-        <div class="config-row-info">
-          <div class="config-row-label">📋 Checklist de Documentos (CNH, ANTT, etc.)</div>
-          <div class="config-row-desc">Exigir upload dos documentos na inclusão do motorista. Desativado: campos de checklist ocultados.</div>
-        </div>
-        <label class="toggle-wrap"><input type="checkbox" id="cfg-checklist-docs" onchange="salvarConfig()"><span class="toggle-slider"></span></label>
-      </div>
-
-      <div class="config-row">
-        <div class="config-row-info">
-          <div class="config-row-label">🖼️ Fotos de Verificação (selfie, veículo, lonas)</div>
-          <div class="config-row-desc">Exigir fotos de verificação na inclusão. Desativado: seção de fotos ocultada.</div>
-        </div>
-        <label class="toggle-wrap"><input type="checkbox" id="cfg-checklist-fotos" onchange="salvarConfig()"><span class="toggle-slider"></span></label>
-      </div>
-
-    </div>
-
-    <!-- CAMPOS DO SISTEMA -->
-    <div class="config-section">
-      <div class="config-section-title">📝 Campos dos Formulários</div>
-
-      <div class="config-row">
-        <div class="config-row-info">
-          <div class="config-row-label">🏷️ TAG de Pedágio (motorista)</div>
-          <div class="config-row-desc">Mostrar campos de TAG de pedágio e administradora na inclusão do motorista.</div>
-        </div>
-        <label class="toggle-wrap"><input type="checkbox" id="cfg-campo-pedagio" onchange="salvarConfig()"><span class="toggle-slider"></span></label>
-      </div>
-
-      <div class="config-row">
-        <div class="config-row-info">
-          <div class="config-row-label">📬 Dados do Recebedor (lote)</div>
-          <div class="config-row-desc">Mostrar campos de recebedor da mercadoria no formulário de lote.</div>
-        </div>
-        <label class="toggle-wrap"><input type="checkbox" id="cfg-campo-recebedor" onchange="salvarConfig()"><span class="toggle-slider"></span></label>
-      </div>
-
-      <div class="config-row">
-        <div class="config-row-info">
-          <div class="config-row-label">📄 Emissor do CTe (lote)</div>
-          <div class="config-row-desc">Mostrar campo de emissor do CTe no formulário de lote.</div>
-        </div>
-        <label class="toggle-wrap"><input type="checkbox" id="cfg-campo-cte" onchange="salvarConfig()"><span class="toggle-slider"></span></label>
-      </div>
-
-      <div class="config-row">
-        <div class="config-row-info">
-          <div class="config-row-label">🔖 Motivo do Não Fechamento (cotação)</div>
-          <div class="config-row-desc">Mostrar campo de motivo ao reprovar cotação.</div>
-        </div>
-        <label class="toggle-wrap"><input type="checkbox" id="cfg-campo-motivo-cot" onchange="salvarConfig()"><span class="toggle-slider"></span></label>
-      </div>
-
-    </div>
-
-    <div class="config-save-bar">
-      <span style="font-size:12px;color:var(--muted);" id="config-saved-status">✅ Configurações salvas automaticamente</span>
-      <button onclick="resetarConfig()" class="btn-secondary" style="font-size:12px;padding:6px 14px;">↩️ Restaurar padrões</button>
-    </div>
-  </div>
-
-
   <div class="stats" style="grid-template-columns:repeat(3,1fr)">
     <div class="stat total"><div class="stat-label">Total Usuários</div><div class="stat-value" id="seg-total">—</div></div>
     <div class="stat aprovadas"><div class="stat-label">Ativos</div><div class="stat-value" id="seg-ativos">—</div></div>
@@ -2882,14 +2754,7 @@ function showPage(name) {
   if (name === 'fiscal') carregarFiscal();
   if (name === 'financeiro') carregarFinanceiro();
   if (name === 'relatorios') inicializarRelatorios();
-  if (name === 'seguranca') {
-    carregarSeguranca(); carregarLogs();
-    // Exibe painel config apenas para administrativo
-    const painelCfg = document.getElementById('painel-config-sistema');
-    if (painelCfg) painelCfg.style.display = (setorAtual === 'administrativo') ? '' : 'none';
-    carregarConfigUI();
-    aplicarConfig();
-  }
+  if (name === 'seguranca') { carregarSeguranca(); carregarLogs(); }
   if (name === 'dashboard-cliente') carregarDashboardCliente();
   if (name === 'nova') { carregarClientesSelect('f-cliente'); resetForm(); }
 
@@ -6029,24 +5894,6 @@ function fecharModalLogisticoNF() {
 }
 
 async function confirmarAnexoNF() {
-  // Verifica se anexo está ativo na config
-  if (!cfg('cfg-anexo-nf')) {
-    if (!confirm('Confirmar envio da NF ao Fiscal sem anexar arquivo?')) return;
-    // Fluxo sem upload
-    try {
-      const motoristaId = logisticoMotoristaSelecionadoId;
-      await supabaseRequest('PATCH', `motoristas?id=eq.${motoristaId}`, { status: 'aguardando_emissao_doc' });
-      const loteMotLista = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${motoristaId}`) || [];
-      for (const reg of loteMotLista) {
-        await supabaseRequest('PATCH', `lote_motoristas?id=eq.${reg.id}`, { status: 'aguardando_emissao_doc' });
-      }
-      registrarLog('logistico', 'NF confirmada (sem anexo) — enviado ao Fiscal', `ID: #${motoristaId}`);
-      showToast('✅ Confirmado! Motorista enviado ao Fiscal.', 'success');
-      fecharModalLogisticoNF();
-      await carregarLogistico();
-    } catch(e) { showToast('Erro: ' + e.message, 'error'); }
-    return;
-  }
   const input = document.getElementById('log-nf-arquivo');
   if (!input || !input.files.length) {
     showToast('Anexe a Nota Fiscal antes de confirmar', 'error'); return;
@@ -6129,21 +5976,6 @@ function fecharModalLogisticoFotos() {
 
 async function confirmarFotosCarregamento() {
   if (window._confirmandoFotos) return;
-  if (!cfg('cfg-anexo-fotos-carg')) {
-    if (!confirm('Confirmar envio ao Financeiro sem anexar fotos do carregamento?')) return;
-    try {
-      const loteMotId = logisticoMotoristaSelecionadoId;
-      const motAtual = await supabaseRequest('GET', `lote_motoristas?id=eq.${loteMotId}`) || [];
-      const motoristaId = motAtual[0]?.motorista_id;
-      await supabaseRequest('PATCH', `lote_motoristas?id=eq.${loteMotId}`, { status: 'fotos_inseridas' });
-      if (motoristaId) await supabaseRequest('PATCH', `motoristas?id=eq.${motoristaId}`, { status: 'fotos_inseridas' });
-      registrarLog('logistico', 'Fotos confirmadas (sem upload) — enviado ao Financeiro', `ID: #${loteMotId}`);
-      showToast('✅ Confirmado! Motorista enviado ao Financeiro.', 'success');
-      fecharModalLogisticoFotos();
-      await carregarLogistico();
-    } catch(e) { showToast('Erro: ' + e.message, 'error'); }
-    return;
-  }
   const input = document.getElementById('log-fotos-arquivo');
   if (!input || !input.files.length) {
     showToast('Insira ao menos uma foto do carregamento', 'error'); return;
@@ -6849,10 +6681,7 @@ async function salvarDataSaldo(id) {
 }
 
 async function marcarSaldoPago(id) {
-  const msg = cfg('cfg-anexo-comp-saldo')
-    ? 'Confirmar saldo pago? Certifique-se de ter o comprovante em mãos.'
-    : 'Confirmar: saldo pago?';
-  if (!confirm(msg)) return;
+  if (!confirm('Confirmar: saldo pago?')) return;
   try {
     await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'saldo_pago' });
     registrarLog('financeiro', 'Saldo pago', `ID: #${id}`);
@@ -8421,119 +8250,6 @@ function parseMoeda(val) {
   const limpo = String(val).replace(/[R$\s.]/g, '').replace(',', '.');
   const n = parseFloat(limpo);
   return isNaN(n) ? null : n;
-}
-
-
-// ============================================================
-// CONFIGURAÇÕES DO SISTEMA
-// ============================================================
-const CONFIG_KEY = 'jmbrasil_sys_config';
-
-const CONFIG_DEFAULTS = {
-  'cfg-anexo-nf': true,
-  'cfg-anexo-fotos-carg': true,
-  'cfg-anexo-comp-adiant': true,
-  'cfg-anexo-comp-saldo': true,
-  'cfg-checklist-docs': true,
-  'cfg-checklist-fotos': true,
-  'cfg-campo-pedagio': true,
-  'cfg-campo-recebedor': true,
-  'cfg-campo-cte': true,
-  'cfg-campo-motivo-cot': true,
-};
-
-function getConfig() {
-  try {
-    const saved = localStorage.getItem(CONFIG_KEY);
-    return saved ? { ...CONFIG_DEFAULTS, ...JSON.parse(saved) } : { ...CONFIG_DEFAULTS };
-  } catch(e) { return { ...CONFIG_DEFAULTS }; }
-}
-
-function cfg(key) {
-  return getConfig()[key] !== false;
-}
-
-function salvarConfig() {
-  const vals = {};
-  Object.keys(CONFIG_DEFAULTS).forEach(k => {
-    const el = document.getElementById(k);
-    if (el) vals[k] = el.checked;
-  });
-  localStorage.setItem(CONFIG_KEY, JSON.stringify(vals));
-  aplicarConfig();
-  const st = document.getElementById('config-saved-status');
-  if (st) { st.textContent = '✅ Salvo às ' + new Date().toLocaleTimeString('pt-BR'); }
-}
-
-function resetarConfig() {
-  if (!confirm('Restaurar todas as configurações para o padrão?')) return;
-  localStorage.removeItem(CONFIG_KEY);
-  carregarConfigUI();
-  aplicarConfig();
-}
-
-function carregarConfigUI() {
-  const c = getConfig();
-  Object.keys(CONFIG_DEFAULTS).forEach(k => {
-    const el = document.getElementById(k);
-    if (el) el.checked = c[k] !== false;
-  });
-}
-
-function aplicarConfig() {
-  const c = getConfig();
-
-  // Seção TAG de pedágio no GR
-  const tagSection = document.getElementById('gr-secao-pedagio');
-  if (tagSection) tagSection.style.display = c['cfg-campo-pedagio'] ? '' : 'none';
-
-  // Seção checklist documentos no GR
-  const ckDocs = document.getElementById('gr-secao-checklist-docs');
-  if (ckDocs) ckDocs.style.display = c['cfg-checklist-docs'] ? '' : 'none';
-
-  // Seção fotos verificação no GR
-  const ckFotos = document.getElementById('gr-secao-checklist-fotos');
-  if (ckFotos) ckFotos.style.display = c['cfg-checklist-fotos'] ? '' : 'none';
-
-  // Seção recebedor no lote
-  ['l-secao-recebedor','el-secao-recebedor'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = c['cfg-campo-recebedor'] ? '' : 'none';
-  });
-
-  // Seção CTe no lote
-  ['l-secao-cte','el-secao-cte'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = c['cfg-campo-cte'] ? '' : 'none';
-  });
-
-  // Seção motivo cotação
-  const motivoCot = document.getElementById('f-secao-motivo');
-  if (motivoCot) motivoCot.style.display = c['cfg-campo-motivo-cot'] ? '' : 'none';
-
-  // Modais de upload NF — toggle upload vs botão simples
-  const nfUpload = document.getElementById('mlog-nf-upload-area');
-  const nfSimples = document.getElementById('mlog-nf-btn-simples');
-  if (nfUpload) nfUpload.style.display = c['cfg-anexo-nf'] ? '' : 'none';
-  if (nfSimples) nfSimples.style.display = c['cfg-anexo-nf'] ? 'none' : '';
-
-  // Modais de upload Fotos Carregamento — toggle upload vs botão simples
-  const fotosUpload = document.getElementById('mlog-fotos-upload-area');
-  const fotosSimples = document.getElementById('mlog-fotos-btn-simples');
-  if (fotosUpload) fotosUpload.style.display = c['cfg-anexo-fotos-carg'] ? '' : 'none';
-  if (fotosSimples) fotosSimples.style.display = c['cfg-anexo-fotos-carg'] ? 'none' : '';
-
-  // Comprovante adiantamento
-  const compAdiantUpload = document.getElementById('mfin-comp-adiant-upload');
-  const compAdiantSimples = document.getElementById('mfin-comp-adiant-simples');
-  if (compAdiantUpload) compAdiantUpload.style.display = c['cfg-anexo-comp-adiant'] ? '' : 'none';
-  if (compAdiantSimples) compAdiantSimples.style.display = c['cfg-anexo-comp-adiant'] ? 'none' : '';
-
-  // Comprovante saldo
-  const compSaldoUpload = document.getElementById('mfin-comp-saldo-upload');
-  const compSaldoSimples = document.getElementById('mfin-comp-saldo-simples');
-  if (compSaldoUpload) compSaldoUpload.style.display = c['cfg-anexo-comp-saldo'] ? '' : 'none';
-  if (compSaldoSimples) compSaldoSimples.style.display = c['cfg-anexo-comp-saldo'] ? 'none' : '';
 }
 
 // INIT
