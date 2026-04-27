@@ -1407,6 +1407,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     <input type="hidden" id="gr-tipo-motorista" value="">
 
     <!-- DADOS BANCÁRIOS — OBRIGATÓRIO SEMPRE -->
+    <div id="gr-secao-dados-bancarios">
     <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">🏦 Dados Bancários <span style="color:var(--red)">*</span> <span style="font-size:11px;font-weight:400;color:var(--muted);text-transform:none;">(obrigatório para emissão do CIOT)</span></div>
     <div class="form-grid" style="grid-template-columns:1fr 1fr;">
       <div class="form-group"><label>Nome do Titular <span style="color:var(--red)">*</span></label><input type="text" id="gr-nome-titular" placeholder="Nome completo do titular" required></div>
@@ -1418,9 +1419,11 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <select id="gr-tipo-conta" required><option value="">Selecione...</option><option value="corrente">Corrente</option><option value="poupanca">Poupança</option></select>
       </div>
     </div>
+    </div>
     <input type="hidden" id="gr-tipo-pagamento" value="conta_bancaria">
 
     <!-- CHAVE PIX — TAMBÉM OBRIGATÓRIO -->
+    <div id="gr-secao-pix">
     <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">⚡ Chave PIX <span style="color:var(--red)">*</span></div>
     <div class="form-grid" style="grid-template-columns:1fr 1fr;">
       <div class="form-group"><label>Tipo de Chave PIX <span style="color:var(--red)">*</span></label>
@@ -1434,6 +1437,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         </select>
       </div>
       <div class="form-group"><label>Chave PIX <span style="color:var(--red)">*</span></label><input type="text" id="gr-pix" placeholder="Digite a chave PIX" required></div>
+    </div>
     </div>
 
     <!-- PEDÁGIO -->
@@ -2624,6 +2628,25 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
           <div class="cfg-section-header-label" style="color:rgba(249,115,22,0.8);">Obrigatório</div>
         </div>
       </div>
+
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">🏦 Cadastro — Dados Bancários e PIX</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+        <div class="cfg-row" id="cfg-row-gr_campo_dados_bancarios">
+          <div><div class="cfg-label">Dados Bancários</div><div class="cfg-desc">Nome titular, CPF/CNPJ, banco, agência, conta e tipo</div></div>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_campo_dados_bancarios" onchange="cfgToggle('gr_campo_dados_bancarios',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_campo_dados_bancarios_req" onchange="cfgToggleReq('gr_campo_dados_bancarios',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_campo_pix">
+          <div><div class="cfg-label">Chave PIX</div><div class="cfg-desc">Tipo de chave PIX e chave do motorista</div></div>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_campo_pix" onchange="cfgToggle('gr_campo_pix',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_campo_pix_req" onchange="cfgToggleReq('gr_campo_pix',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
+        </div>
+      </div>
+
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📝 Campos de Texto — Checklist do Motorista</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
         <div class="cfg-row" id="cfg-row-gr_campo_valor_frete">
@@ -2873,6 +2896,8 @@ const CFG_DEFAULT = {
   gr_campo_pedagio:              true,  gr_campo_pedagio_req:              false,
   gr_campo_peso_saida:           true,  gr_campo_peso_saida_req:           false,
   gr_campo_datas_viagem:         true,  gr_campo_datas_viagem_req:         false,
+  gr_campo_dados_bancarios:      true,  gr_campo_dados_bancarios_req:      true,
+  gr_campo_pix:                  true,  gr_campo_pix_req:                  true,
   gr_anexo_cnh:                  true,  gr_anexo_cnh_req:                  true,
   gr_anexo_antt:                 true,  gr_anexo_antt_req:                 true,
   gr_anexo_doc_caminhao:         true,  gr_anexo_doc_caminhao_req:         true,
@@ -5578,6 +5603,8 @@ function cfgAplicarDom(key, value) {
     cfgAplicarObrigatoriedade(baseKey, value);
     return;
   }
+  if (key === 'gr_campo_dados_bancarios') cfgToggleSection('gr-secao-dados-bancarios', value);
+  if (key === 'gr_campo_pix')             cfgToggleSection('gr-secao-pix', value);
   if (key === 'gr_campo_valor_frete')   cfgToggleCampo('gr-ck-valor-frete', value, 'Valor do Frete do Motorista');
   if (key === 'gr_campo_valor_carga')   cfgToggleCampo('gr-ck-valor-carga', value, 'Valor da Carga');
   if (key === 'gr_campo_canal_contato') cfgToggleCampo('gr-ck-canal', value, 'Canal de Contato');
@@ -5629,6 +5656,8 @@ function cfgAplicarObrigatoriedade(baseKey, required) {
     gr_campo_pedagio:        [],
     gr_campo_peso_saida:     ['gr-peso-saida'],
     gr_campo_datas_viagem:   ['gr-data-inicio-viagem','gr-data-fim-viagem'],
+    gr_campo_dados_bancarios:['gr-nome-titular','gr-cpf-titular','gr-banco','gr-agencia','gr-conta','gr-tipo-conta'],
+    gr_campo_pix:            ['gr-tipo-pix','gr-pix'],
     gr_anexo_cnh:            ['gr-arq-cnh'],
     gr_anexo_antt:           ['gr-arq-antt'],
     gr_anexo_doc_caminhao:   ['gr-arq-doc-caminhao'],
