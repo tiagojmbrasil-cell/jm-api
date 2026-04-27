@@ -3677,11 +3677,11 @@ async function salvarStatusCarga(loteMotId, novoStatus) {
 }
 
 async function uploadAnexo(file, motoristaId, tipo) {
-  const ext = file.name.split('.').pop();
+  const fileComprimido = await comprimirImagem(file);
+  const ext = fileComprimido.name.split('.').pop();
   const path = `${motoristaId}/${tipo}_${Date.now()}.${ext}`;
-  const { data, error } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
+  const { data, error } = await sb.storage.from('motoristas-docs').upload(path, fileComprimido, { upsert: true });
   if (error) throw new Error('Erro upload ' + tipo + ': ' + error.message);
-  // Salva só o path — URL assinada gerada na hora de visualizar
   return { tipo, nome: file.name, path: path };
 }
 
@@ -3745,11 +3745,15 @@ async function adicionarMotorista() {
   // Captura nome do auxiliar logado (prioriza nome da tabela usuarios_perfil)
   const nomeAuxiliar = window._nomeUsuarioPerfil || userAtual?.user_metadata?.nome || userAtual?.email || 'Desconhecido';
 
+  const btnAdicionar = document.querySelector('#modal-motoristas-overlay .btn-primary[onclick*="adicionarMotorista"]') ||
+                       document.querySelector('button[onclick="adicionarMotorista()"]');
+  if (btnAdicionar) { btnAdicionar.disabled = true; btnAdicionar.textContent = '⏳ Salvando...'; }
+  mostrarProgressoUpload(0, 1, 'Salvando motorista no lote...');
   try {
     // Busca dados completos do motorista aprovado
     const motoristaDados = await supabaseRequest('GET', `motoristas?id=eq.${motoristaId}`) || [];
     const m = motoristaDados[0];
-    if (!m) { showToast('Motorista não encontrado', 'error'); return; }
+    if (!m) { ocultarProgressoUpload(); if (btnAdicionar) { btnAdicionar.disabled = false; btnAdicionar.textContent = '+ Adicionar ao Lote'; } showToast('Motorista não encontrado', 'error'); return; }
 
     // Se o motorista já tem um status avançado no fluxo, usa esse — senão começa em em_negociacao
     const statusAvancados = [
@@ -3786,6 +3790,9 @@ async function adicionarMotorista() {
       auxiliar_operacao: nomeAuxiliar,
     });
 
+    mostrarProgressoUpload(1, 1, 'Concluído!');
+    await new Promise(r => setTimeout(r, 400));
+    ocultarProgressoUpload();
     registrarLog('motorista', 'Motorista adicionado ao lote', `Nome: ${m.nome||'—'}, Lote: ${loteAtualId}, Status: ${statusInicial}, Auxiliar: ${nomeAuxiliar}`);
     showToast('✅ Motorista adicionado ao lote!', 'success');
     document.getElementById('nm-peso').value = '';
@@ -3793,9 +3800,14 @@ async function adicionarMotorista() {
     document.getElementById('nm-data-fim').value = '';
     document.getElementById('nm-motorista-selecionado-id').value = '';
     document.getElementById('nm-motorista-selecionado-info').style.display = 'none';
+    if (btnAdicionar) { btnAdicionar.disabled = false; btnAdicionar.textContent = '+ Adicionar ao Lote'; }
     await carregarMotoristas();
     await carregarMotoristasAprovadosParaLote();
-  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+  } catch(e) {
+    ocultarProgressoUpload();
+    if (btnAdicionar) { btnAdicionar.disabled = false; btnAdicionar.textContent = '+ Adicionar ao Lote'; }
+    showToast('Erro: ' + e.message, 'error');
+  }
 }
 
 async function removerMotorista(id) {
@@ -7139,7 +7151,10 @@ async function salvarMotoristaGR() {
     contato_proprietario: document.getElementById('gr-ck-proprietario').value || null,
   };
 
+  const btnGR = document.querySelector('#modal-cadastro-motorista-overlay .btn-primary');
+  if (btnGR) { btnGR.disabled = true; btnGR.textContent = '⏳ Salvando...'; }
   try {
+    mostrarProgressoUpload(0, 1, 'Cadastrando motorista...');
     const resultado = await supabaseRequest('POST', 'motoristas', {
       nome,
       placa: document.getElementById('gr-placa').value || null,
@@ -7211,8 +7226,20 @@ async function salvarMotoristaGR() {
         uploadTasks.push(uploadAnexoGR(file, motoristaId, 'antt_extra'));
       }
 
-      // Executa todos os uploads ao mesmo tempo
-      const resultados = await Promise.all(uploadTasks);
+      // Executa uploads com barra de progresso
+      const btnSalvar = document.querySelector('#modal-cadastro-motorista-overlay .btn-primary');
+      if (btnSalvar) { btnSalvar.disabled = true; btnSalvar.textContent = '⏳ Enviando...'; }
+      mostrarProgressoUpload(0, uploadTasks.length, 'Comprimindo e enviando documentos...');
+      let concluidos = 0;
+      const resultados = await Promise.all(uploadTasks.map(async (task) => {
+        const res = await task;
+        concluidos++;
+        const nomes = ['CNH', 'ANTT', 'Doc. Caminhão', 'Comp. Residência', 'Selfie CNH', 'Selfie Placa', 'Lonas', 'Foto Caminhão'];
+        mostrarProgressoUpload(concluidos, uploadTasks.length, nomes[concluidos - 1] || 'Documento ' + concluidos);
+        return res;
+      }));
+      ocultarProgressoUpload();
+      if (btnSalvar) { btnSalvar.disabled = false; btnSalvar.textContent = '💾 Incluir Motorista'; }
       const anexos = resultados.filter(Boolean);
 
       if (anexos.length > 0) {
@@ -7220,7 +7247,11 @@ async function salvarMotoristaGR() {
       }
     }
 
+    mostrarProgressoUpload(1, 1, 'Concluído!');
+    await new Promise(r => setTimeout(r, 400));
+    ocultarProgressoUpload();
     showToast('✅ Motorista cadastrado! Aguardando análise GR.', 'success');
+    if (btnGR) { btnGR.disabled = false; btnGR.textContent = '💾 Incluir Motorista'; }
     limparAnexosFormularioCadastroMotoristaGR();
     fecharCadastroMotoristaGR();
     carregarGR();
@@ -7232,14 +7263,92 @@ async function salvarMotoristaGR() {
     } else {
       _grLoteIdOrigem = null;
     }
-  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+  } catch(e) {
+    ocultarProgressoUpload();
+    if (btnGR) { btnGR.disabled = false; btnGR.textContent = '💾 Incluir Motorista'; }
+    showToast('Erro: ' + e.message, 'error');
+  }
+}
+
+// ============================================================
+// COMPRESSÃO DE IMAGENS — automática antes de qualquer upload
+// Qualidade: 85% | Resolução máxima: 1920px | PDFs: não comprime
+// ============================================================
+async function comprimirImagem(file) {
+  // PDFs e arquivos não-imagem passam direto sem alteração
+  if (!file.type.startsWith('image/')) return file;
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX = 1920;
+      let { width, height } = img;
+      // Redimensiona se necessário mantendo proporção
+      if (width > MAX || height > MAX) {
+        if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+        else { width = Math.round(width * MAX / height); height = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(blob => {
+        if (!blob || blob.size >= file.size) {
+          // Se comprimido for maior que o original (raro), usa o original
+          resolve(file);
+        } else {
+          resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
+        }
+      }, 'image/jpeg', 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
+// ============================================================
+// BARRA DE PROGRESSO DE UPLOAD
+// ============================================================
+function mostrarProgressoUpload(atual, total, label) {
+  let overlay = document.getElementById('upload-progress-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'upload-progress-overlay';
+    overlay.style.cssText = `
+      position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;
+      display:flex;align-items:center;justify-content:center;
+    `;
+    overlay.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px 36px;min-width:320px;max-width:420px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+        <div style="font-size:32px;margin-bottom:12px;">📤</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;" id="upload-progress-title">Enviando documentos...</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:20px;" id="upload-progress-label"></div>
+        <div style="background:var(--surface2);border-radius:999px;height:10px;overflow:hidden;margin-bottom:10px;">
+          <div id="upload-progress-bar" style="height:100%;background:linear-gradient(90deg,var(--accent),#f97316);border-radius:999px;transition:width 0.3s ease;width:0%;"></div>
+        </div>
+        <div style="font-size:13px;color:var(--accent);font-weight:700;" id="upload-progress-count"></div>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+  overlay.style.display = 'flex';
+  const pct = total > 0 ? Math.round((atual / total) * 100) : 0;
+  document.getElementById('upload-progress-bar').style.width = pct + '%';
+  document.getElementById('upload-progress-label').textContent = label || '';
+  document.getElementById('upload-progress-count').textContent = `${atual} de ${total} arquivos enviados`;
+}
+
+function ocultarProgressoUpload() {
+  const overlay = document.getElementById('upload-progress-overlay');
+  if (overlay) overlay.style.display = 'none';
 }
 
 async function uploadAnexoGR(file, motoristaId, tipo) {
   try {
-    const ext = file.name.split('.').pop();
+    const fileComprimido = await comprimirImagem(file);
+    const ext = fileComprimido.name.split('.').pop();
     const path = `motoristas/${motoristaId}/${tipo}_${Date.now()}.${ext}`;
-    const { error } = await sb.storage.from('motoristas-docs').upload(path, file, { upsert: true });
+    const { error } = await sb.storage.from('motoristas-docs').upload(path, fileComprimido, { upsert: true });
     if (error) throw error;
     return { tipo, nome: file.name, path };
   } catch(e) { console.error('Erro upload:', e); return null; }
@@ -8444,9 +8553,10 @@ async function salvarEdicaoMotorista() {
     }
   }
 
+  const btnEditar = document.querySelector('#modal-editar-motorista-overlay .btn-primary');
+  if (btnEditar) { btnEditar.disabled = true; btnEditar.textContent = '⏳ Salvando...'; }
+  mostrarProgressoUpload(0, 1, 'Salvando alterações...');
   try {
-    const dados = {
-      nome: document.getElementById('em-nome').value || null,
       placa: document.getElementById('em-placa').value || null,
       contato: document.getElementById('em-contato').value || null,
       cpf: document.getElementById('em-cpf').value || null,
@@ -8520,6 +8630,8 @@ async function salvarEdicaoMotorista() {
 
     await supabaseRequest('PATCH', `${tabela}?id=eq.${motoristaEditandoId}`, dados);
 
+    ocultarProgressoUpload();
+
     // Salva campos de carga/checklist no lote_motoristas vinculado
     const lmId = window._em_lote_mot_id;
     const valorFrete = parseFloat(document.getElementById('em-valor-frete').value) || null;
@@ -8550,10 +8662,16 @@ async function salvarEdicaoMotorista() {
     }
 
     showToast('✅ Motorista atualizado!', 'success');
+    ocultarProgressoUpload();
+    if (btnEditar) { btnEditar.disabled = false; btnEditar.textContent = '💾 Salvar Alterações'; }
     limparAnexosFormularioEditarMotorista();
     fecharEditarMotorista();
     await carregarMotoristasPagina();
-  } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+  } catch(e) {
+    ocultarProgressoUpload();
+    if (btnEditar) { btnEditar.disabled = false; btnEditar.textContent = '💾 Salvar Alterações'; }
+    showToast('Erro: ' + e.message, 'error');
+  }
 }
 
 // ============ ANEXOS — botões limpos ============
