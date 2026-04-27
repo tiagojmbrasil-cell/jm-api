@@ -1640,7 +1640,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         <span style="font-size:13px;color:var(--muted);">ton</span>
       </div>
       <!-- Datas da viagem — aparecem junto com o peso quando vem do lote -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+      <div id="gr-secao-datas-viagem" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
         <div>
           <label style="font-size:12px;font-weight:600;color:var(--green);display:block;margin-bottom:5px;">📅 Data Início da Viagem <span style="color:var(--red);">*</span></label>
           <input type="date" id="gr-data-inicio-viagem" style="width:100%;font-size:13px;padding:8px 10px;">
@@ -1733,7 +1733,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:14px;">🔍 Decisão GR</div>
 
       <!-- Checklist da Gerenciadora — OBRIGATÓRIO para aprovar -->
-      <div style="background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.25);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+      <div id="gr-secao-checklist-ger" style="background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.25);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
         <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;">📋 Checklist da Gerenciadora <span style="color:var(--red)">*</span> <span style="font-weight:400;color:var(--muted);font-size:11px;">(1º obrigatório)</span></div>
         <!-- Primeiro checklist — obrigatório -->
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
@@ -2590,8 +2590,8 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     <div class="form-title">
       <div style="width:4px;height:20px;background:var(--accent);border-radius:2px;flex-shrink:0;"></div>
       <div style="display:flex;flex-direction:column;gap:1px;">
-        <span style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;line-height:1.2;">Configurações do Sistema</span>
-        <span style="font-size:11px;font-weight:400;color:var(--muted);">campos e anexos obrigatórios por setor</span>
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;line-height:1.2;">Configurações do Sistema</div>
+        <div style="font-size:11px;font-weight:400;color:var(--muted);">campos e anexos obrigatórios por setor</div>
       </div>
     </div>
     <p style="font-size:12px;color:var(--muted);margin:10px 0 20px;line-height:1.6;">
@@ -5585,14 +5585,7 @@ function cfgAplicarDom(key, value) {
     cfgToggleSection('gr-secao-pedagio', value);
   }
   if (key === 'gr_campo_peso_saida')    cfgToggleSection('gr-peso-lote-row', value);
-  if (key === 'gr_campo_datas_viagem') {
-    const di = document.getElementById('gr-data-inicio-viagem');
-    const df = document.getElementById('gr-data-fim-viagem');
-    const wDi = di ? (di.closest('.form-group') || di.parentElement) : null;
-    const wDf = df ? (df.closest('.form-group') || df.parentElement) : null;
-    if (wDi) wDi.style.display = value ? '' : 'none';
-    if (wDf) wDf.style.display = value ? '' : 'none';
-  }
+  if (key === 'gr_campo_datas_viagem')  cfgToggleSection('gr-secao-datas-viagem', value);
   if (key === 'gr_campo_referencias') {
     cfgToggleCampo('gr-ck-ref-prof', value, 'Referências Profissionais');
     cfgToggleCampo('gr-ck-ref-pessoal', value, 'Referências Pessoais');
