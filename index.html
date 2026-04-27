@@ -8557,6 +8557,8 @@ async function salvarEdicaoMotorista() {
   if (btnEditar) { btnEditar.disabled = true; btnEditar.textContent = '⏳ Salvando...'; }
   mostrarProgressoUpload(0, 1, 'Salvando alterações...');
   try {
+    const dados = {
+      nome: document.getElementById('em-nome').value || null,
       placa: document.getElementById('em-placa').value || null,
       contato: document.getElementById('em-contato').value || null,
       cpf: document.getElementById('em-cpf').value || null,
