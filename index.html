@@ -2689,6 +2689,20 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
             <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_campo_pedagio_req" onchange="cfgToggleReq('gr_campo_pedagio',this.checked)"><span class="cfg-slider"></span></label></div>
           </div>
         </div>
+        <div class="cfg-row" id="cfg-row-gr_campo_peso_saida">
+          <div><div class="cfg-label">Peso Saída no Lote</div><div class="cfg-desc">Toneladas de saída vinculadas ao lote</div></div>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_campo_peso_saida" onchange="cfgToggle('gr_campo_peso_saida',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_campo_peso_saida_req" onchange="cfgToggleReq('gr_campo_peso_saida',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
+        </div>
+        <div class="cfg-row" id="cfg-row-gr_campo_datas_viagem">
+          <div><div class="cfg-label">Data Início / Fim da Viagem</div><div class="cfg-desc">Datas de início e fim da viagem do motorista</div></div>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-gr_campo_datas_viagem" onchange="cfgToggle('gr_campo_datas_viagem',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-gr_campo_datas_viagem_req" onchange="cfgToggleReq('gr_campo_datas_viagem',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
+        </div>
       </div>
 
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📎 Anexos — Documentos do Motorista</div>
@@ -2857,6 +2871,8 @@ const CFG_DEFAULT = {
   gr_campo_pagamento:            true,  gr_campo_pagamento_req:            false,
   gr_campo_excecoes:             true,  gr_campo_excecoes_req:             false,
   gr_campo_pedagio:              true,  gr_campo_pedagio_req:              false,
+  gr_campo_peso_saida:           true,  gr_campo_peso_saida_req:           false,
+  gr_campo_datas_viagem:         true,  gr_campo_datas_viagem_req:         false,
   gr_anexo_cnh:                  true,  gr_anexo_cnh_req:                  true,
   gr_anexo_antt:                 true,  gr_anexo_antt_req:                 true,
   gr_anexo_doc_caminhao:         true,  gr_anexo_doc_caminhao_req:         true,
@@ -5561,11 +5577,21 @@ function cfgAplicarDom(key, value) {
     const baseKey = key.replace('_req', '');
     cfgAplicarObrigatoriedade(baseKey, value);
     return;
-  }   cfgToggleCampo('gr-ck-valor-frete', value, 'Valor do Frete do Motorista');
+  }
+  if (key === 'gr_campo_valor_frete')   cfgToggleCampo('gr-ck-valor-frete', value, 'Valor do Frete do Motorista');
   if (key === 'gr_campo_valor_carga')   cfgToggleCampo('gr-ck-valor-carga', value, 'Valor da Carga');
   if (key === 'gr_campo_canal_contato') cfgToggleCampo('gr-ck-canal', value, 'Canal de Contato');
   if (key === 'gr_campo_pedagio') {
     cfgToggleSection('gr-secao-pedagio', value);
+  }
+  if (key === 'gr_campo_peso_saida')    cfgToggleSection('gr-peso-lote-row', value);
+  if (key === 'gr_campo_datas_viagem') {
+    const di = document.getElementById('gr-data-inicio-viagem');
+    const df = document.getElementById('gr-data-fim-viagem');
+    const wDi = di ? (di.closest('.form-group') || di.parentElement) : null;
+    const wDf = df ? (df.closest('.form-group') || df.parentElement) : null;
+    if (wDi) wDi.style.display = value ? '' : 'none';
+    if (wDf) wDf.style.display = value ? '' : 'none';
   }
   if (key === 'gr_campo_referencias') {
     cfgToggleCampo('gr-ck-ref-prof', value, 'Referências Profissionais');
@@ -5608,6 +5634,8 @@ function cfgAplicarObrigatoriedade(baseKey, required) {
     gr_campo_recolhimento:   [],
     gr_campo_excecoes:       [],
     gr_campo_pedagio:        [],
+    gr_campo_peso_saida:     ['gr-peso-saida'],
+    gr_campo_datas_viagem:   ['gr-data-inicio-viagem','gr-data-fim-viagem'],
     gr_anexo_cnh:            ['gr-arq-cnh'],
     gr_anexo_antt:           ['gr-arq-antt'],
     gr_anexo_doc_caminhao:   ['gr-arq-doc-caminhao'],
