@@ -2920,39 +2920,74 @@ const CFG_DEFAULT = {
 
 let CFG = {};
 
-// ── Config: carrega do Supabase (assíncrono) ──────────────
+// ── Config: localStorage local + Supabase REST direto ─────
 function cfgLoad() {
-  // Fallback imediato do localStorage enquanto busca do banco
   try {
     const raw = localStorage.getItem(CFG_KEY);
     CFG = raw ? { ...CFG_DEFAULT, ...JSON.parse(raw) } : { ...CFG_DEFAULT };
   } catch(e) { CFG = { ...CFG_DEFAULT }; }
 }
 
+// Chama o Supabase REST direto (sem passar pela API Vercel)
+async function _cfgSupabaseFetch(method, body = null) {
+  const url = SUPABASE_URL + '/rest/v1/sistema_config?id=eq.1';
+  const opts = {
+    method,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=minimal' : 'return=minimal',
+    },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  return fetch(url, opts);
+}
+
 async function cfgLoadRemoto() {
   try {
-    const rows = await supabaseRequest('GET', "sistema_config?id=eq.1&select=config_json") || [];
+    const url = SUPABASE_URL + '/rest/v1/sistema_config?id=eq.1&select=config_json';
+    const resp = await fetch(url, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+      }
+    });
+    if (!resp.ok) return;
+    const rows = await resp.json();
     if (rows && rows[0] && rows[0].config_json) {
       CFG = { ...CFG_DEFAULT, ...rows[0].config_json };
-      // Sincroniza localStorage como cache
       try { localStorage.setItem(CFG_KEY, JSON.stringify(CFG)); } catch(e) {}
     }
   } catch(e) {
-    // Se falhar, usa localStorage como fallback
-    cfgLoad();
+    console.warn('[CFG] Erro ao carregar config remoto:', e.message);
   }
 }
 
 async function cfgSave() {
-  // Salva no Supabase (compartilhado entre todos os usuários)
-  try {
-    await supabaseRequest('PATCH', 'sistema_config?id=eq.1', { config_json: CFG });
-  } catch(e) {
-    // Se não existir, cria
-    try { await supabaseRequest('POST', 'sistema_config', { id: 1, config_json: CFG }); } catch(e2) {}
-  }
-  // Também salva no localStorage como cache
+  // Salva no localStorage imediatamente
   try { localStorage.setItem(CFG_KEY, JSON.stringify(CFG)); } catch(e) {}
+  // Salva no Supabase via REST direto
+  try {
+    // Tenta PATCH primeiro
+    const patchResp = await _cfgSupabaseFetch('PATCH', { config_json: CFG });
+    if (patchResp.status === 404 || patchResp.status === 406) {
+      // Registro não existe — cria
+      const url = SUPABASE_URL + '/rest/v1/sistema_config';
+      await fetch(url, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({ id: 1, config_json: CFG })
+      });
+    }
+  } catch(e) {
+    console.warn('[CFG] Erro ao salvar config remoto:', e.message);
+  }
 }
 
 function cfgGet(key) {
