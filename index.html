@@ -654,9 +654,16 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     <div class="form-grid">
       <div class="form-group">
         <label>Cliente</label>
-        <select id="f-cliente" required>
-          <option value="">Selecione um cliente...</option>
-        </select>
+        <div style="position:relative">
+          <input type="text" id="f-cliente-input" placeholder="Digite para buscar cliente..." autocomplete="off"
+            oninput="filtrarClienteAC('f-cliente-input','f-cliente-list','f-cliente')"
+            onkeydown="navegarClienteAC(event,'f-cliente-list','f-cliente-input','f-cliente')"
+            onfocus="filtrarClienteAC('f-cliente-input','f-cliente-list','f-cliente')"
+            onblur="setTimeout(()=>document.getElementById('f-cliente-list').style.display='none',200)"
+            required>
+          <input type="hidden" id="f-cliente">
+          <div id="f-cliente-list" class="autocomplete-list" style="display:none"></div>
+        </div>
       </div>
       <div class="form-group">
         <label>Peso Total (ton)</label>
@@ -757,9 +764,16 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       </div>
       <div class="form-group">
         <label>Cliente</label>
-        <select id="l-cliente" required>
-          <option value="">Selecione um cliente...</option>
-        </select>
+        <div style="position:relative">
+          <input type="text" id="l-cliente-input" placeholder="Digite para buscar cliente..." autocomplete="off"
+            oninput="filtrarClienteAC('l-cliente-input','l-cliente-list','l-cliente')"
+            onkeydown="navegarClienteAC(event,'l-cliente-list','l-cliente-input','l-cliente')"
+            onfocus="filtrarClienteAC('l-cliente-input','l-cliente-list','l-cliente')"
+            onblur="setTimeout(()=>document.getElementById('l-cliente-list').style.display='none',200)"
+            required>
+          <input type="hidden" id="l-cliente">
+          <div id="l-cliente-list" class="autocomplete-list" style="display:none"></div>
+        </div>
       </div>
       <div class="form-group">
         <label>Produto</label>
@@ -1174,9 +1188,15 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       </div>
       <div class="form-group">
         <label>Cliente</label>
-        <select id="el-cliente">
-          <option value="">Selecione um cliente...</option>
-        </select>
+        <div style="position:relative">
+          <input type="text" id="el-cliente-input" placeholder="Digite para buscar cliente..." autocomplete="off"
+            oninput="filtrarClienteAC('el-cliente-input','el-cliente-list','el-cliente')"
+            onkeydown="navegarClienteAC(event,'el-cliente-list','el-cliente-input','el-cliente')"
+            onfocus="filtrarClienteAC('el-cliente-input','el-cliente-list','el-cliente')"
+            onblur="setTimeout(()=>document.getElementById('el-cliente-list').style.display='none',200)">
+          <input type="hidden" id="el-cliente">
+          <div id="el-cliente-list" class="autocomplete-list" style="display:none"></div>
+        </div>
       </div>
       <div class="form-group">
         <label>Produto</label>
@@ -2914,7 +2934,7 @@ const CFG_DEFAULT = {
   gr_anexo_selfie_cnh:           true,  gr_anexo_selfie_cnh_req:           true,
   gr_anexo_selfie_placa:         true,  gr_anexo_selfie_placa_req:         true,
   gr_anexo_lonas:                true,  gr_anexo_lonas_req:                true,
-  gr_anexo_checklist_ger:        true,  gr_anexo_checklist_ger_req:        true,
+  gr_anexo_checklist_ger:        false, gr_anexo_checklist_ger_req:        false,
   // ── Logístico ───────────────────────────────────────────
   log_anexo_nf:                  true,  log_anexo_nf_req:                  true,
   log_anexo_fotos_carg:          true,  log_anexo_fotos_carg_req:          true,
@@ -3554,7 +3574,7 @@ async function salvarCotacao() {
   if (_salvandoCotacao) return;
 
   // Limpa destaques anteriores
-  ['f-cliente','f-origem','f-destino','f-quantidade','f-tipo-produto','f-preco'].forEach(id => {
+  ['f-cliente-input','f-origem','f-destino','f-quantidade','f-tipo-produto','f-preco'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.classList.remove('campo-invalido'); el.previousElementSibling?.classList.remove('campo-invalido-label'); }
   });
@@ -3562,7 +3582,7 @@ async function salvarCotacao() {
   const sel = document.getElementById('f-cliente');
   const clienteNome = sel.value;
   const campos = [
-    { id:'f-cliente', val: clienteNome },
+    { id:'f-cliente-input', val: clienteNome },
     { id:'f-origem', val: document.getElementById('f-origem').value.trim() },
     { id:'f-destino', val: document.getElementById('f-destino').value.trim() },
     { id:'f-quantidade', val: document.getElementById('f-quantidade').value },
@@ -3622,8 +3642,10 @@ function resetForm() {
   ['f-origem','f-destino','f-quantidade','f-tipo-produto','f-preco'].forEach(id => {
     document.getElementById(id).value = '';
   });
-  const sel = document.getElementById('f-cliente');
-  if (sel) sel.selectedIndex = 0;
+  const clienteHidden = document.getElementById('f-cliente');
+  if (clienteHidden) clienteHidden.value = '';
+  const clienteInput = document.getElementById('f-cliente-input');
+  if (clienteInput) clienteInput.value = '';
   const lOrigem = document.getElementById('f-origem-list');
   const lDestino = document.getElementById('f-destino-list');
   if (lOrigem) lOrigem.style.display = 'none';
@@ -3731,21 +3753,22 @@ async function salvarLote() {
   if (_salvandoLote) return;
 
   // Limpa destaques anteriores
-  const camposLote = ['l-agencia','l-cliente','l-produto','l-coleta','l-origem','l-entrega','l-destino','l-tarifa-emp','l-tarifa-mot','l-peso','l-data'];
+  const camposLote = ['l-agencia','l-cliente-input','l-produto','l-coleta','l-origem','l-entrega','l-destino','l-tarifa-emp','l-tarifa-mot','l-peso','l-data'];
   camposLote.forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.classList.remove('campo-invalido'); el.previousElementSibling?.classList.remove('campo-invalido-label'); }
   });
 
   const obrigatorios = [
-    { id:'l-agencia' }, { id:'l-cliente' }, { id:'l-produto' },
+    { id:'l-agencia' }, { id:'l-cliente', highlight:'l-cliente-input' }, { id:'l-produto' },
     { id:'l-coleta' }, { id:'l-origem' }, { id:'l-entrega' }, { id:'l-destino' },
     { id:'l-tarifa-emp' }, { id:'l-tarifa-mot' }, { id:'l-peso' }, { id:'l-data' }, { id:'l-pagador' },
   ];
   const invalidos = obrigatorios.filter(c => !document.getElementById(c.id)?.value?.trim());
   if (invalidos.length) {
     invalidos.forEach(c => {
-      const el = document.getElementById(c.id);
+      const elId = c.highlight || c.id;
+      const el = document.getElementById(elId);
       if (el) { el.classList.add('campo-invalido'); el.previousElementSibling?.classList.add('campo-invalido-label'); }
     });
     showToast('Preencha todos os campos obrigatórios', 'error');
@@ -3799,6 +3822,8 @@ function resetLote() {
   document.getElementById('l-pagador').value = '';
   document.getElementById('l-pagador-outro-group').style.display = 'none';
   document.getElementById('l-data').value = new Date().toISOString().split('T')[0];
+  const lcHidden = document.getElementById('l-cliente'); if (lcHidden) lcHidden.value = '';
+  const lcInput = document.getElementById('l-cliente-input'); if (lcInput) lcInput.value = '';
 }
 
 async function carregarLotes() {
@@ -3909,12 +3934,10 @@ async function editarLote(id) {
   if (!l) return;
   loteEditandoId = id;
   document.getElementById('el-agencia').value = l.agencia || '';
-  // Seleciona cliente pelo nome no dropdown
-  const selCliente = document.getElementById('el-cliente');
-  const nomeCliente = l.cliente || '';
-  Array.from(selCliente.options).forEach(opt => {
-    if (opt.textContent.trim().toLowerCase() === nomeCliente.trim().toLowerCase()) selCliente.value = opt.value;
-  });
+  // Preenche campo de cliente (autocomplete)
+  const nomeClienteEL = l.cliente || '';
+  document.getElementById('el-cliente').value = nomeClienteEL;
+  document.getElementById('el-cliente-input').value = nomeClienteEL;
   document.getElementById('el-produto').value = l.produto || '';
   document.getElementById('el-status').value = l.status || 'liberado';
   document.getElementById('el-coleta').value = l.coleta || '';
@@ -3981,12 +4004,10 @@ async function abrirInserirInformacoes(id) {
   if (!l) return;
   loteEditandoId = id;
   document.getElementById('el-agencia').value = l.agencia || '';
-  // Seleciona cliente pelo nome no dropdown
-  const selCliente = document.getElementById('el-cliente');
-  const nomeCliente = l.cliente || '';
-  Array.from(selCliente.options).forEach(opt => {
-    if (opt.textContent.trim().toLowerCase() === nomeCliente.trim().toLowerCase()) selCliente.value = opt.value;
-  });
+  // Preenche campo de cliente (autocomplete)
+  const nomeClienteII = l.cliente || '';
+  document.getElementById('el-cliente').value = nomeClienteII;
+  document.getElementById('el-cliente-input').value = nomeClienteII;
   document.getElementById('el-produto').value = l.produto || '';
   // Força status para liberado ao completar informações
   document.getElementById('el-status').value = 'liberado';
@@ -4795,20 +4816,77 @@ async function carregarClientesSelect(selectId) {
     if (!_clientesSelectCache) {
       _clientesSelectCache = await supabaseRequest('GET', 'clientes_cadastro?order=razao_social.asc&select=id,razao_social,nome_fantasia') || [];
     }
-    const clientes = _clientesSelectCache;
-    const sel = document.getElementById(selectId);
-    const valorAtual = sel.value;
-    sel.innerHTML = '<option value="">Selecione um cliente...</option>';
-    clientes.forEach(c => {
-      const nome = c.nome_fantasia || c.razao_social;
-      const opt = document.createElement('option');
-      opt.value = nome;           // salva o NOME como value (usado em lotes.cliente que é TEXT)
-      opt.dataset.id = c.id;      // guarda o ID como data-id para uso em cotações
-      opt.textContent = nome;
-      if (nome === valorAtual || String(c.id) === String(valorAtual)) opt.selected = true;
-      sel.appendChild(opt);
-    });
+    // Se for o novo campo AC (hidden input), não precisa popular select — cache já está pronto
+    const el = document.getElementById(selectId);
+    if (!el) return;
+    if (el.tagName === 'SELECT') {
+      // fallback legado
+      const clientes = _clientesSelectCache;
+      const valorAtual = el.value;
+      el.innerHTML = '<option value="">Selecione um cliente...</option>';
+      clientes.forEach(c => {
+        const nome = c.nome_fantasia || c.razao_social;
+        const opt = document.createElement('option');
+        opt.value = nome;
+        opt.dataset.id = c.id;
+        opt.textContent = nome;
+        if (nome === valorAtual || String(c.id) === String(valorAtual)) opt.selected = true;
+        el.appendChild(opt);
+      });
+    }
+    // Para hidden input: nada a fazer, o cache está disponível para filtrarClienteAC()
   } catch(e) { console.error('Erro ao carregar clientes:', e); }
+}
+
+// ── Autocomplete de Clientes ──────────────────────────────
+function filtrarClienteAC(inputId, listaId, hiddenId) {
+  const input = document.getElementById(inputId);
+  const lista = document.getElementById(listaId);
+  const termo = input.value.trim().toLowerCase();
+  const clientes = _clientesSelectCache || [];
+  const filtrados = termo.length === 0
+    ? clientes.slice(0, 50)
+    : clientes.filter(c => {
+        const nome = (c.nome_fantasia || c.razao_social || '').toLowerCase();
+        return nome.includes(termo);
+      });
+  if (filtrados.length === 0) { lista.style.display = 'none'; return; }
+  lista.innerHTML = filtrados.map((c, i) => {
+    const nome = c.nome_fantasia || c.razao_social;
+    const destaque = nome.replace(new RegExp('(' + termo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'), '<strong>$1</strong>');
+    return `<div class="autocomplete-item" data-nome="${nome}" data-id="${c.id}" data-idx="${i}"
+      onmousedown="selecionarClienteAC('${inputId}','${listaId}','${hiddenId}','${nome.replace(/'/g,"\\'")}','${c.id}')">${destaque}</div>`;
+  }).join('');
+  lista.style.display = 'block';
+}
+function selecionarClienteAC(inputId, listaId, hiddenId, nome, id) {
+  document.getElementById(inputId).value = nome;
+  document.getElementById(hiddenId).value = nome; // salva nome como value (compatível com lotes.cliente TEXT)
+  document.getElementById(hiddenId).dataset.id = id;
+  document.getElementById(listaId).style.display = 'none';
+}
+function navegarClienteAC(event, listaId, inputId, hiddenId) {
+  const lista = document.getElementById(listaId);
+  const items = lista.querySelectorAll('.autocomplete-item');
+  const ativo = lista.querySelector('.autocomplete-item.active');
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    const next = ativo ? ativo.nextElementSibling : items[0];
+    if (ativo) ativo.classList.remove('active');
+    if (next) { next.classList.add('active'); next.scrollIntoView({ block: 'nearest' }); }
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    const prev = ativo ? ativo.previousElementSibling : items[items.length - 1];
+    if (ativo) ativo.classList.remove('active');
+    if (prev) { prev.classList.add('active'); prev.scrollIntoView({ block: 'nearest' }); }
+  } else if (event.key === 'Enter') {
+    if (ativo) {
+      event.preventDefault();
+      selecionarClienteAC(inputId, listaId, hiddenId, ativo.dataset.nome, ativo.dataset.id);
+    }
+  } else if (event.key === 'Escape') {
+    lista.style.display = 'none';
+  }
 }
 
 
