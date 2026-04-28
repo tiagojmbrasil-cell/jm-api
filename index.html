@@ -5321,9 +5321,9 @@ function mdfeAdicionarCanhoto() {
 }
 
 async function confirmarEncerramentoMDFe() {
-  // Valida canhoto obrigatório
+  // Canhoto — só obrigatório se ATIVO E OBRIGATÓRIO nas configurações
   const canhoto0 = document.getElementById('mdfe-canhoto-0');
-  if (!canhoto0 || !canhoto0.files.length) {
+  if (cfgGet('log_anexo_canhoto') && cfgGet('log_anexo_canhoto_req') && (!canhoto0 || !canhoto0.files.length)) {
     const label = document.getElementById('label-mdfe-canhoto-0');
     const status = document.getElementById('mdfe-canhoto-0-status');
     if (label) { label.style.borderColor='var(--red)'; label.style.background='rgba(239,68,68,0.1)'; label.style.color='var(--red)'; }
@@ -6856,9 +6856,9 @@ function logAdicionarCanhoto() {
 }
 
 async function confirmarEncerrarMDFeLogistico() {
-  // Valida canhoto obrigatório
+  // Canhoto — só obrigatório se ATIVO E OBRIGATÓRIO nas configurações
   const canhoto0 = document.getElementById('log-canhoto-0');
-  if (!canhoto0 || !canhoto0.files.length) {
+  if (cfgGet('log_anexo_canhoto') && cfgGet('log_anexo_canhoto_req') && (!canhoto0 || !canhoto0.files.length)) {
     const label = document.getElementById('label-log-canhoto-0');
     const status = document.getElementById('log-canhoto-0-status');
     if (label) { label.style.borderColor='var(--red)'; label.style.background='rgba(239,68,68,0.1)'; label.style.color='var(--red)'; }
@@ -8401,9 +8401,9 @@ async function salvarDecisaoGR() {
   if (decisao === 'reprovado' && !document.getElementById('mgr-motivo').value.trim()) {
     showToast('Informe o motivo da reprovação', 'error'); return;
   }
-  // Checklist da gerenciadora é OBRIGATÓRIO para aprovar
+  // Checklist da gerenciadora — só obrigatório se ATIVO E OBRIGATÓRIO nas configurações
   const checklistInput = document.getElementById('gr-checklist-ger');
-  if (decisao === 'aprovado' && (!checklistInput || !checklistInput.files.length)) {
+  if (decisao === 'aprovado' && cfgGet('gr_anexo_checklist_ger') && cfgGet('gr_anexo_checklist_ger_req') && (!checklistInput || !checklistInput.files.length)) {
     const label = document.getElementById('label-gr-checklist-ger');
     if (label) { label.style.borderColor = 'var(--red)'; label.style.background = 'rgba(239,68,68,0.1)'; label.style.color = 'var(--red)'; }
     const status = document.getElementById('gr-checklist-ger-status');
