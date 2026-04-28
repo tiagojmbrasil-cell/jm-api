@@ -7208,7 +7208,7 @@ async function aprovarAdiantamentoModal() {
       }
     }
     const pdfResultados = (await Promise.all(pdfUploadTasks)).filter(Boolean);
-    const patchData = { status: 'adiantamento_pago', financeiro_adiantamento_data: dt, financeiro_adiantamento_motivo: null };
+    const patchData = { status: 'adiantamento_pago', financeiro_adiantamento_data: dt || null, financeiro_adiantamento_motivo: null };
     // Adiciona anexos de comprovante se houver
     if (pdfResultados.length > 0) {
       const reg = (financeiroData || []).find(x => x.id === financeiroModalId);
