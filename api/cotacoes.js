@@ -28,7 +28,7 @@ async function verificarAdmin(userId) {
     .select('setor')
     .eq('id', userId)
     .single();
-  return data?.setor === 'admin';
+  return data?.setor === 'admin' || data?.setor === 'administrativo';
 }
 
 export default async function handler(req, res) {
