@@ -8585,6 +8585,11 @@ async function salvarDecisaoGR() {
         const restante = pesoTotal > 0 ? pesoTotal - totalCarregado : 999999;
         if (parseFloat(motDados.peso_saida_origem) > restante) {
           showToast(`⚠️ Aprovado, mas peso (${motDados.peso_saida_origem} ton) excede o restante do lote (${restante.toFixed(2)} ton). Vínculo não realizado — adicione manualmente.`, 'error');
+          showToast('✅ Motorista aprovado!', 'success');
+          document.getElementById('mgr-status-bar').innerHTML = badgeGR(decisao);
+          filtrarGR();
+          fecharModalGR();
+          return;
         } else {
           setProgresso('✅ Finalizando...');
           await supabaseRequest('POST', 'lote_motoristas', {
@@ -8629,9 +8634,9 @@ async function salvarDecisaoGR() {
     fecharModalGR();
   } catch(e) {
     showToast('Erro: ' + e.message, 'error');
-    if (btnSalvar) { btnSalvar.disabled = false; btnSalvar.innerHTML = textoOriginal; }
   } finally {
     window._salvandoGR = false;
+    if (btnSalvar) { btnSalvar.disabled = false; btnSalvar.innerHTML = textoOriginal; }
   }
 }
 
