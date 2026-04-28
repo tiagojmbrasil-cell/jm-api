@@ -4198,9 +4198,14 @@ async function adicionarMotorista() {
   const dataFim = document.getElementById('nm-data-fim').value;
   if (!motoristaId) { showToast('Selecione um motorista aprovado', 'error'); return; }
   if (!peso) { showToast('Informe o peso saída', 'error'); return; }
-  if (!dataInicio) { showToast('Informe a data de início da viagem', 'error'); return; }
-  if (!dataFim) { showToast('Informe a data final da viagem', 'error'); return; }
-  if (dataFim < dataInicio) { showToast('A data final não pode ser anterior à data de início', 'error'); return; }
+  // Só valida datas se o campo estiver ATIVO E OBRIGATÓRIO nas configurações
+  if (cfgGet('gr_campo_datas_viagem') && cfgGet('gr_campo_datas_viagem_req')) {
+    if (!dataInicio) { showToast('Informe a data de início da viagem', 'error'); return; }
+    if (!dataFim) { showToast('Informe a data final da viagem', 'error'); return; }
+    if (dataFim && dataInicio && dataFim < dataInicio) { showToast('A data final não pode ser anterior à data de início', 'error'); return; }
+  } else if (dataInicio && dataFim && dataFim < dataInicio) {
+    showToast('A data final não pode ser anterior à data de início', 'error'); return;
+  }
 
   const pesoTotal = parseFloat(loteAtualDados.peso_ton || 0);
   const motoristasExistentes = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,criado_em`) || [];
@@ -7845,9 +7850,15 @@ async function salvarMotoristaGR() {
     }
     const di = document.getElementById('gr-data-inicio-viagem');
     const df = document.getElementById('gr-data-fim-viagem');
-    if (!di?.value) { showToast('Informe a data de início da viagem', 'error'); di?.focus(); return; }
-    if (!df?.value) { showToast('Informe a data final da viagem', 'error'); df?.focus(); return; }
-    if (df.value < di.value) { showToast('A data final não pode ser anterior à data de início', 'error'); return; }
+    // Só valida datas se o campo estiver ATIVO E OBRIGATÓRIO nas configurações
+    if (cfgGet('gr_campo_datas_viagem') && cfgGet('gr_campo_datas_viagem_req')) {
+      if (!di?.value) { showToast('Informe a data de início da viagem', 'error'); di?.focus(); return; }
+      if (!df?.value) { showToast('Informe a data final da viagem', 'error'); df?.focus(); return; }
+      if (df.value && di.value && df.value < di.value) { showToast('A data final não pode ser anterior à data de início', 'error'); return; }
+    } else if (di?.value && df?.value && df.value < di.value) {
+      // Mesmo opcional, avisa se ambas preenchidas e inválidas
+      showToast('A data final não pode ser anterior à data de início', 'error'); return;
+    }
   }
 
   // Validação de anexos obrigatórios — respeitando configurações
