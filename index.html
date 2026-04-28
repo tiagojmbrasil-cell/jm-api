@@ -6036,37 +6036,24 @@ async function excluirUsuario(userId, nomeUsuario) {
     let session = (await sb.auth.getSession()).data.session;
     if (!session) throw new Error('Sessão expirada. Faça login novamente.');
 
-    // CORREÇÃO: A API verifica setor === 'admin', mas o sistema usa 'administrativo'
-    // Seta temporariamente para 'admin' no banco, faz refresh do JWT, chama API, restaura
-    if (setorAtual === 'administrativo') {
-      await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userAtual.id}`, { setor: 'admin' });
-    }
-
-    let tokenFinal = session.access_token;
+    // Renova o token antes de usar (sem alterar setor no banco)
     try {
       const { data: refreshed } = await sb.auth.refreshSession();
-      tokenFinal = refreshed?.session?.access_token || tokenFinal;
+      if (refreshed?.session) session = refreshed.session;
     } catch(e) {}
 
-    let hardDeleteOk = false;
-    try {
-      const resp = await fetch(API_URL + '?acao=deletar_usuario', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tokenFinal },
-        body: JSON.stringify({ userId })
-      });
-      const result = await resp.json();
-      if (resp.ok) {
-        hardDeleteOk = true;
-      } else {
-        throw new Error(result.error || 'Erro ao excluir usuário');
-      }
-    } finally {
-      // Sempre restaura o setor para 'administrativo'
-      if (setorAtual === 'administrativo') {
-        try { await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userAtual.id}`, { setor: 'administrativo' }); } catch(e) {}
-      }
-    }
+    const resp = await fetch(API_URL + '?acao=deletar_usuario', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + session.access_token,
+        // Informa o setor real via header — sem precisar alterar o banco
+        'X-Setor': setorAtual || ''
+      },
+      body: JSON.stringify({ userId })
+    });
+    const result = await resp.json();
+    if (!resp.ok) throw new Error(result.error || 'Erro ao excluir usuário');
 
     registrarLog('usuario', 'Usuário excluído', `Nome: ${nomeUsuario}`);
     showToast('✅ Usuário excluído com sucesso!', 'success');
@@ -6087,26 +6074,26 @@ async function criarUsuario() {
   try {
     let session = (await sb.auth.getSession()).data.session;
     if (!session) throw new Error('Sessão expirada. Faça login novamente.');
-    const token = session.access_token;
-    // CORREÇÃO: A API verifica setor === 'admin' — troca temporariamente
-    if (setorAtual === 'administrativo') {
-      try { await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userAtual.id}`, { setor: 'admin' }); } catch(e) {}
-      try { const { data: r } = await sb.auth.refreshSession(); if (r?.session) token = r.session.access_token; } catch(e) {}
-    }
-    let resp, result;
+
+    // Renova o token antes de usar (sem alterar setor no banco)
     try {
-      resp = await fetch(API_URL + '?acao=criar_usuario', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ email, senha, nome: nome || clienteNome, setor })
-      });
-      result = await resp.json();
-    } finally {
-      if (setorAtual === 'administrativo') {
-        try { await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${userAtual.id}`, { setor: 'administrativo' }); } catch(e) {}
-      }
-    }
+      const { data: refreshed } = await sb.auth.refreshSession();
+      if (refreshed?.session) session = refreshed.session;
+    } catch(e) {}
+
+    const resp = await fetch(API_URL + '?acao=criar_usuario', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + session.access_token,
+        // Informa o setor real via header — sem precisar alterar o banco
+        'X-Setor': setorAtual || ''
+      },
+      body: JSON.stringify({ email, senha, nome: nome || clienteNome, setor })
+    });
+    const result = await resp.json();
     if (!resp.ok) throw new Error(result.error || 'Erro ao criar usuário');
+
     // Se for cliente, salva cliente_nome e cliente_id no perfil
     if (setor === 'cliente' && result.userId) {
       await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${result.userId}`, {
@@ -6151,13 +6138,41 @@ const PERMISSOES = {
   fiscal:         ['dashboard','status-lote','fiscal']
 };
 
-let setorAtual = null;
+// SEGURANÇA (Item 6): setorAtual e permissoesAtual são blindados contra
+// alteração via console do navegador. Qualquer tentativa é bloqueada e logada.
+let _setorAtual = null;
+let _permissoesAtual = {};
+let _bloqueioSetor = false; // torna-se true após o primeiro login
+Object.defineProperty(window, 'setorAtual', {
+  get() { return _setorAtual; },
+  set(v) {
+    if (_bloqueioSetor) {
+      console.error('[Segurança] Tentativa de alterar setorAtual bloqueada. Operação negada.');
+      return;
+    }
+    _setorAtual = v;
+  },
+  configurable: false
+});
+Object.defineProperty(window, 'permissoesAtual', {
+  get() { return _permissoesAtual; },
+  set(v) {
+    if (_bloqueioSetor) {
+      console.error('[Segurança] Tentativa de alterar permissoesAtual bloqueada. Operação negada.');
+      return;
+    }
+    _permissoesAtual = v;
+  },
+  configurable: false
+});
 let userAtual = null;
-let permissoesAtual = {};
 
 function aplicarPermissoes(setor, perms) {
-  setorAtual = setor;
-  permissoesAtual = perms || PERMISSOES_PADRAO[setor] || PERMISSOES_PADRAO['comercial'];
+  // Desbloqueia apenas para esta escrita interna legítima, depois reativa
+  _bloqueioSetor = false;
+  _setorAtual = setor;
+  _permissoesAtual = Object.freeze({ ...(perms || PERMISSOES_PADRAO[setor] || PERMISSOES_PADRAO['comercial']) });
+  _bloqueioSetor = true; // A partir daqui qualquer escrita externa é bloqueada
 
   const paginas = ['dashboard','nova','lista','lotes','motoristas','gr','cadastro','status-lote','clientes','logistico','fiscal','financeiro','relatorios','seguranca','dashboard-cliente'];
   const botoesNav = document.querySelectorAll('header > nav button');
