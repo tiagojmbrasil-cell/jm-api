@@ -2920,14 +2920,38 @@ const CFG_DEFAULT = {
 
 let CFG = {};
 
+// ── Config: carrega do Supabase (assíncrono) ──────────────
 function cfgLoad() {
+  // Fallback imediato do localStorage enquanto busca do banco
   try {
     const raw = localStorage.getItem(CFG_KEY);
     CFG = raw ? { ...CFG_DEFAULT, ...JSON.parse(raw) } : { ...CFG_DEFAULT };
   } catch(e) { CFG = { ...CFG_DEFAULT }; }
 }
 
-function cfgSave() {
+async function cfgLoadRemoto() {
+  try {
+    const rows = await supabaseRequest('GET', "sistema_config?id=eq.1&select=config_json") || [];
+    if (rows && rows[0] && rows[0].config_json) {
+      CFG = { ...CFG_DEFAULT, ...rows[0].config_json };
+      // Sincroniza localStorage como cache
+      try { localStorage.setItem(CFG_KEY, JSON.stringify(CFG)); } catch(e) {}
+    }
+  } catch(e) {
+    // Se falhar, usa localStorage como fallback
+    cfgLoad();
+  }
+}
+
+async function cfgSave() {
+  // Salva no Supabase (compartilhado entre todos os usuários)
+  try {
+    await supabaseRequest('PATCH', 'sistema_config?id=eq.1', { config_json: CFG });
+  } catch(e) {
+    // Se não existir, cria
+    try { await supabaseRequest('POST', 'sistema_config', { id: 1, config_json: CFG }); } catch(e2) {}
+  }
+  // Também salva no localStorage como cache
   try { localStorage.setItem(CFG_KEY, JSON.stringify(CFG)); } catch(e) {}
 }
 
@@ -3163,6 +3187,10 @@ function showPage(name) {
   if (name === 'seguranca') { carregarSeguranca(); carregarLogs(); }
   if (name === 'dashboard-cliente') carregarDashboardCliente();
   if (name === 'nova') { carregarClientesSelect('f-cliente'); resetForm(); }
+  // Recarrega configs do banco ao navegar (exceto portal cliente — sem impacto no fluxo)
+  if (name !== 'dashboard-cliente') {
+    cfgLoadRemoto().then(() => cfgAplicarTodos());
+  }
 
   // Reaplicar read-only se necessário
   if (permissoesAtual && permissoesAtual[name] === 1) {
@@ -5560,18 +5588,18 @@ function cfgRenderPanel() {
   cfgTab(_cfgTabAtual);
 }
 
-function cfgToggleReq(key, value) {
+async function cfgToggleReq(key, value) {
   const reqKey = key + '_req';
   CFG[reqKey] = value;
-  cfgSave();
+  await cfgSave();
   cfgAplicarDom(reqKey, value);
   const msg = document.getElementById('cfg-salvo-msg');
   if (msg) { msg.textContent = '✅ Salvo'; setTimeout(() => { msg.textContent = ''; }, 1800); }
 }
 
-function cfgToggle(key, value) {
+async function cfgToggle(key, value) {
   CFG[key] = value;
-  cfgSave();
+  await cfgSave();
   // Feedback visual na row
   const row = document.getElementById('cfg-row-' + key);
   if (row) row.dataset.off = value ? 'false' : 'true';
@@ -5588,10 +5616,10 @@ function cfgToggle(key, value) {
   if (msg) { msg.textContent = '✅ Salvo'; setTimeout(() => { msg.textContent = ''; }, 1800); }
 }
 
-function cfgResetar() {
+async function cfgResetar() {
   if (!confirm('Restaurar todas as configurações para o padrão?\nTodos os campos e anexos voltarão a ser obrigatórios.')) return;
   CFG = { ...CFG_DEFAULT };
-  cfgSave();
+  await cfgSave();
   cfgRenderPanel();
   cfgAplicarTodos();
   showToast('✅ Configurações restauradas ao padrão', 'success');
@@ -5722,10 +5750,11 @@ function cfgToggleAnexoLog(sectionId, show, cfgKey, callbackStr) {
 }
 
 // ── Chamado no init do sistema após login ─────────────────
-function cfgInicializar() {
-  cfgLoad();
-  // Aguarda DOM estar pronto
-  setTimeout(() => cfgAplicarTodos(), 300);
+async function cfgInicializar() {
+  cfgLoad(); // carrega cache imediato
+  setTimeout(() => cfgAplicarTodos(), 100); // aplica cache rapidamente
+  await cfgLoadRemoto(); // busca versão atualizada do banco
+  cfgAplicarTodos(); // aplica versão do banco
 }
 
 // Confirmar sem anexo — funções específicas para cada etapa
