@@ -1975,25 +1975,31 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     </div>
 
     <!-- Canhoto — 1ª obrigatório + extras opcionais -->
-    <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.25);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
+    <div id="log-secao-canhoto-upload" style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.25);border-radius:10px;padding:14px 16px;margin-bottom:20px;">
       <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:10px;">
         📋 Canhoto <span style="color:var(--red)">*</span>
         <span style="font-weight:400;color:var(--muted);font-size:11px;">(1º obrigatório)</span>
       </div>
 
-      <!-- Primeiro canhoto — obrigatório -->
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-        <label id="label-log-canhoto-0" style="display:flex;align-items:center;gap:6px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:7px 14px;cursor:pointer;font-size:13px;color:var(--green);white-space:nowrap;">
-          <span id="label-log-canhoto-0-txt">📎 Anexar Canhoto</span>
-          <input type="file" id="log-canhoto-0" accept="image/*,.pdf" style="display:none;" onchange="logCanhotoAtualizar(0)">
-        </label>
-        <button type="button" id="btn-log-canhoto-0-limpar" onclick="logCanhotoLimpar(0)" style="display:none;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:7px 10px;font-size:12px;cursor:pointer;">🗑️</button>
-        <span id="log-canhoto-0-status" style="font-size:12px;color:var(--red);font-weight:600;"></span>
+      <!-- Área de upload (some quando cfg desativado) -->
+      <div class="cfg-upload-area">
+        <!-- Primeiro canhoto — obrigatório -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+          <label id="label-log-canhoto-0" style="display:flex;align-items:center;gap:6px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:7px 14px;cursor:pointer;font-size:13px;color:var(--green);white-space:nowrap;">
+            <span id="label-log-canhoto-0-txt">📎 Anexar Canhoto</span>
+            <input type="file" id="log-canhoto-0" accept="image/*,.pdf" style="display:none;" onchange="logCanhotoAtualizar(0)">
+          </label>
+          <button type="button" id="btn-log-canhoto-0-limpar" onclick="logCanhotoLimpar(0)" style="display:none;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:7px 10px;font-size:12px;cursor:pointer;">🗑️</button>
+          <span id="log-canhoto-0-status" style="font-size:12px;color:var(--red);font-weight:600;"></span>
+        </div>
+
+        <!-- Canhotos extras -->
+        <div id="log-canhotos-extras" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+        <button type="button" onclick="logAdicionarCanhoto()" style="background:rgba(34,197,94,0.07);color:var(--green);border:1px dashed rgba(34,197,94,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outro canhoto (opcional)</button>
       </div>
 
-      <!-- Canhotos extras -->
-      <div id="log-canhotos-extras" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
-      <button type="button" onclick="logAdicionarCanhoto()" style="background:rgba(34,197,94,0.07);color:var(--green);border:1px dashed rgba(34,197,94,0.4);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;width:100%;">+ Adicionar outro canhoto (opcional)</button>
+      <!-- Botão de confirmação sem arquivo (aparece quando cfg desativado) -->
+      <button type="button" class="cfg-btn-sub" onclick="confirmarCanhotoSemArquivo()" style="display:none;background:var(--green);color:#fff;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;padding:9px 20px;cursor:pointer;width:100%;">✅ Confirmar Entrega sem Canhoto</button>
     </div>
 
     <div class="form-actions">
@@ -6869,32 +6875,34 @@ async function confirmarEncerrarMDFeLogistico() {
   if (!confirm('Encerrar MDFe e enviar ao Financeiro?\nEsta ação não pode ser desfeita.')) return;
   try {
     const id = logisticoMotoristaSelecionadoId;
-    // Coleta todos os canhotos (0 + extras)
+    // Coleta todos os canhotos (0 + extras) — só se cfg ativo
     const canhotoTasks = [];
-    const file0 = canhoto0.files[0];
-    const ext0 = file0.name.split('.').pop();
-    const path0 = `motoristas/${id}/canhoto_${Date.now()}_0.${ext0}`;
-    canhotoTasks.push(
-      sb.storage.from('motoristas-docs').upload(path0, file0, { upsert: true })
-        .then(({error}) => error ? null : { tipo: 'canhoto', nome: file0.name, path: path0 })
-    );
-    // Extras
-    const extrasContainer = document.getElementById('log-canhotos-extras');
-    if (extrasContainer) {
-      extrasContainer.querySelectorAll('[id^="log-canhoto-extra-"]').forEach(row => {
-        const match = row.id.match(/log-canhoto-extra-(\d+)/);
-        if (!match) return;
-        const input = document.getElementById(`log-canhoto-${match[1]}`);
-        if (input && input.files.length) {
-          const file = input.files[0];
-          const ext = file.name.split('.').pop();
-          const path = `motoristas/${id}/canhoto_${Date.now()}_${match[1]}.${ext}`;
-          canhotoTasks.push(
-            sb.storage.from('motoristas-docs').upload(path, file, { upsert: true })
-              .then(({error}) => error ? null : { tipo: 'canhoto', nome: file.name, path })
-          );
-        }
-      });
+    if (cfgGet('log_anexo_canhoto') && canhoto0 && canhoto0.files.length) {
+      const file0 = canhoto0.files[0];
+      const ext0 = file0.name.split('.').pop();
+      const path0 = `motoristas/${id}/canhoto_${Date.now()}_0.${ext0}`;
+      canhotoTasks.push(
+        sb.storage.from('motoristas-docs').upload(path0, file0, { upsert: true })
+          .then(({error}) => error ? null : { tipo: 'canhoto', nome: file0.name, path: path0 })
+      );
+      // Extras
+      const extrasContainer = document.getElementById('log-canhotos-extras');
+      if (extrasContainer) {
+        extrasContainer.querySelectorAll('[id^="log-canhoto-extra-"]').forEach(row => {
+          const match = row.id.match(/log-canhoto-extra-(\d+)/);
+          if (!match) return;
+          const input = document.getElementById(`log-canhoto-${match[1]}`);
+          if (input && input.files.length) {
+            const file = input.files[0];
+            const ext = file.name.split('.').pop();
+            const path = `motoristas/${id}/canhoto_${Date.now()}_${match[1]}.${ext}`;
+            canhotoTasks.push(
+              sb.storage.from('motoristas-docs').upload(path, file, { upsert: true })
+                .then(({error}) => error ? null : { tipo: 'canhoto', nome: file.name, path })
+            );
+          }
+        });
+      }
     }
     const canhotoAnexos = (await Promise.all(canhotoTasks)).filter(Boolean);
 
