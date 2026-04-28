@@ -7799,35 +7799,39 @@ async function salvarMotoristaGR() {
     }
   }
 
-  // Validação dados bancários — SEMPRE obrigatório (necessário para CIOT)
-  const bancarios = [
-    { id: 'gr-nome-titular', label: 'Nome do Titular' },
-    { id: 'gr-cpf-titular',  label: 'CPF/CNPJ do Titular' },
-    { id: 'gr-banco',        label: 'Banco' },
-    { id: 'gr-agencia',      label: 'Agência' },
-    { id: 'gr-conta',        label: 'Número da Conta' },
-    { id: 'gr-tipo-conta',   label: 'Tipo de Conta' },
-  ];
-  for (const campo of bancarios) {
-    const el = document.getElementById(campo.id);
-    if (!el || !el.value.trim()) {
-      showToast('Preencha o campo bancário: ' + campo.label, 'error');
-      el && el.focus();
-      return;
+  // Validação dados bancários — só obrigatório se estiver ativado no painel de configurações
+  if (cfgGet('gr_campo_dados_bancarios') && cfgGet('gr_campo_dados_bancarios_req')) {
+    const bancarios = [
+      { id: 'gr-nome-titular', label: 'Nome do Titular' },
+      { id: 'gr-cpf-titular',  label: 'CPF/CNPJ do Titular' },
+      { id: 'gr-banco',        label: 'Banco' },
+      { id: 'gr-agencia',      label: 'Agência' },
+      { id: 'gr-conta',        label: 'Número da Conta' },
+      { id: 'gr-tipo-conta',   label: 'Tipo de Conta' },
+    ];
+    for (const campo of bancarios) {
+      const el = document.getElementById(campo.id);
+      if (!el || !el.value.trim()) {
+        showToast('Preencha o campo bancário: ' + campo.label, 'error');
+        el && el.focus();
+        return;
+      }
     }
   }
 
-  // Validação chave PIX — SEMPRE obrigatório
-  const pixCampos = [
-    { id: 'gr-tipo-pix', label: 'Tipo de Chave PIX' },
-    { id: 'gr-pix',      label: 'Chave PIX' },
-  ];
-  for (const campo of pixCampos) {
-    const el = document.getElementById(campo.id);
-    if (!el || !el.value.trim()) {
-      showToast('Preencha o campo PIX: ' + campo.label, 'error');
-      el && el.focus();
-      return;
+  // Validação chave PIX — só obrigatório se estiver ativado no painel de configurações
+  if (cfgGet('gr_campo_pix') && cfgGet('gr_campo_pix_req')) {
+    const pixCampos = [
+      { id: 'gr-tipo-pix', label: 'Tipo de Chave PIX' },
+      { id: 'gr-pix',      label: 'Chave PIX' },
+    ];
+    for (const campo of pixCampos) {
+      const el = document.getElementById(campo.id);
+      if (!el || !el.value.trim()) {
+        showToast('Preencha o campo PIX: ' + campo.label, 'error');
+        el && el.focus();
+        return;
+      }
     }
   }
 
