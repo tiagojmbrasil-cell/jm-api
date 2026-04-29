@@ -2658,6 +2658,10 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
         style="padding:7px 16px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;">
         Financeiro
       </button>
+      <button onclick="cfgTab('fiscal')" id="cfg-tab-fiscal"
+        style="padding:7px 16px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;">
+        Fiscal
+      </button>
     </div>
 
     <!-- GR Panel -->
@@ -2889,6 +2893,21 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       </div>
     </div>
 
+    <!-- Fiscal Panel -->
+    <div id="cfg-panel-fiscal" style="display:none;">
+      <div class="cfg-section-header"><div></div><div class="cfg-section-header-labels"><div class="cfg-section-header-label">Mostrar</div><div class="cfg-section-header-label" style="color:rgba(249,115,22,0.8);">Obrigatório</div></div></div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:12px;">📋 Campos — Fiscal</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div class="cfg-row" id="cfg-row-fiscal_campo_numero_ce">
+          <div><div class="cfg-label">Número do CE</div><div class="cfg-desc">Campo obrigatório para emissão do documento fiscal</div></div>
+          <div class="cfg-toggles-wrap">
+            <div class="cfg-toggle-col"><label class="cfg-toggle"><input type="checkbox" id="chk-fiscal_campo_numero_ce" onchange="cfgToggle('fiscal_campo_numero_ce',this.checked)"><span class="cfg-slider"></span></label></div>
+            <div class="cfg-toggle-col"><label class="cfg-toggle cfg-toggle-req"><input type="checkbox" id="chk-fiscal_campo_numero_ce_req" onchange="cfgToggleReq('fiscal_campo_numero_ce',this.checked)"><span class="cfg-slider"></span></label></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
       <button onclick="cfgResetar()" style="background:rgba(239,68,68,0.08);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:8px 18px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">
         🔄 Restaurar padrões
@@ -2956,6 +2975,8 @@ const CFG_DEFAULT = {
   // ── Financeiro ──────────────────────────────────────────
   fin_anexo_comprovante:         true,  fin_anexo_comprovante_req:         false,
   fin_campo_data_pgto:           true,  fin_campo_data_pgto_req:           true,
+  // ── Fiscal ──────────────────────────────────────────────
+  fiscal_campo_numero_ce:        true,  fiscal_campo_numero_ce_req:        true,
 };
 
 let CFG = {};
@@ -5182,7 +5203,7 @@ async function abrirFiscalModal(id) {
   const ceLabelDiv = ceInput ? ceInput.closest('div[style*="margin-bottom:14px"]') : null;
   if (ceInput) { ceInput.value = ''; ceInput.style.borderColor = 'var(--border)'; }
   if (ceErro) ceErro.style.display = 'none';
-  if (ceLabelDiv) ceLabelDiv.style.display = m.status === 'aguardando_emissao_doc' ? '' : 'none';
+  if (ceLabelDiv) ceLabelDiv.style.display = (m.status === 'aguardando_emissao_doc' && cfgGet('fiscal_campo_numero_ce')) ? '' : 'none';
 
   // ---- CHECKLIST ----
   const ck = m.checklist || {};
@@ -5306,10 +5327,12 @@ async function abrirFiscalModal(id) {
 }
 
 async function emitirDocumentoFiscal() {
-  // Validar campo CE obrigatório
+  // Validar campo CE obrigatório (apenas se ativo e obrigatório nas configurações)
   const numeroCeInput = document.getElementById('mf-numero-ce');
   const numeroCe = numeroCeInput ? numeroCeInput.value.trim() : '';
-  if (!numeroCe) {
+  const ceAtivo = cfgGet('fiscal_campo_numero_ce');
+  const ceObrigatorio = cfgGet('fiscal_campo_numero_ce_req');
+  if (ceAtivo && ceObrigatorio && !numeroCe) {
     if (numeroCeInput) { numeroCeInput.style.borderColor = 'var(--red)'; numeroCeInput.focus(); }
     const erroEl = document.getElementById('mf-ce-erro');
     if (erroEl) erroEl.style.display = 'block';
@@ -5343,11 +5366,18 @@ async function emitirDocumentoFiscal() {
 
 // Chamado diretamente da tabela (sem modal aberto)
 async function emitirDocumento(loteMotId) {
-  const numeroCe = prompt('📋 Informe o número do CE (obrigatório):');
-  if (numeroCe === null) return; // cancelou
-  if (!numeroCe.trim()) {
-    showToast('⚠️ O número do CE é obrigatório para confirmar a emissão.', 'error');
-    return;
+  const ceAtivo = cfgGet('fiscal_campo_numero_ce');
+  const ceObrigatorio = cfgGet('fiscal_campo_numero_ce_req');
+  let numeroCe = '';
+  if (ceAtivo) {
+    const promptMsg = ceObrigatorio ? '📋 Informe o número do CE (obrigatório):' : '📋 Informe o número do CE (opcional):';
+    const input = prompt(promptMsg);
+    if (input === null) return; // cancelou
+    if (ceObrigatorio && !input.trim()) {
+      showToast('⚠️ O número do CE é obrigatório para confirmar a emissão.', 'error');
+      return;
+    }
+    numeroCe = input.trim();
   }
   try {
     const statusFinal = 'aguardando_fotos';
@@ -5720,7 +5750,7 @@ let _cfgTabAtual = 'gr';
 
 function cfgTab(tab) {
   _cfgTabAtual = tab;
-  ['gr','log','fin'].forEach(t => {
+  ['gr','log','fin','fiscal'].forEach(t => {
     const panel = document.getElementById('cfg-panel-' + t);
     const btn   = document.getElementById('cfg-tab-' + t);
     if (!panel || !btn) return;
