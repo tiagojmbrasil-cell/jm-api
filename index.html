@@ -3687,11 +3687,9 @@ async function salvarCotacao() {
     const origem = campos[1].val, destino = campos[2].val;
     const quantidade = campos[3].val, tipoProduto = campos[4].val, preco = campos[5].val;
 
-    // Busca cliente em clientes_cadastro (tabela referenciada pela FK de cotacoes)
-    const clientesExist = await supabaseRequest('GET', `clientes_cadastro?or=(razao_social.eq.${encodeURIComponent(clienteNome)},nome_fantasia.eq.${encodeURIComponent(clienteNome)})&select=id&limit=1`) || [];
-    let clienteId;
-    if (clientesExist.length) { clienteId = clientesExist[0].id; }
-    if (!clienteId) throw new Error('Não foi possível obter o ID do cliente. Verifique se o cliente está cadastrado.');
+    // Pega o ID diretamente do campo hidden (setado pelo autocomplete via dataset.id)
+    let clienteId = sel.dataset.id || null;
+    if (!clienteId) throw new Error('Não foi possível obter o ID do cliente. Selecione o cliente na lista.');
 
     await supabaseRequest('POST', 'cotacoes', {
       cliente_id: clienteId, origem, destino,
@@ -3777,20 +3775,9 @@ async function salvarPedidoCliente() {
     _salvandoPedidoCliente = true;
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Enviando...'; }
     // Garante que o cliente está vinculado
-    let clienteId = null;
-    if (clienteIdAtual) {
-      // Verifica se o ID existe em clientes_cadastro (fonte correta da FK)
-      const cad = await supabaseRequest('GET', `clientes_cadastro?id=eq.${clienteIdAtual}&select=id`) || [];
-      if (cad.length) {
-        clienteId = clienteIdAtual;
-      }
-    }
-    if (!clienteId && clienteNomeAtual) {
-      // Tenta buscar por razao_social ou nome_fantasia em clientes_cadastro
-      const cadNome = await supabaseRequest('GET', `clientes_cadastro?or=(razao_social.eq.${encodeURIComponent(clienteNomeAtual)},nome_fantasia.eq.${encodeURIComponent(clienteNomeAtual)})&select=id&limit=1`) || [];
-      if (cadNome.length) clienteId = cadNome[0].id;
-    }
-    if (!clienteId) throw new Error('Perfil de cliente não encontrado. Contate o administrador.');
+    // clienteIdAtual já vem do perfil (perfil.cliente_id → clientes_cadastro.id)
+    const clienteId = clienteIdAtual || null;
+    if (!clienteId) throw new Error('Perfil de cliente não vinculado. Contate o administrador.');
     const obsCompleta = `📦 Pedido enviado pelo cliente ${clienteNomeAtual || '—'}` +
       (obs ? `\n\n📝 Observações: ${obs}` : '') +
       `\n\n📍 Local de Coleta: ${localColeta}` +
@@ -6376,7 +6363,7 @@ async function criarUsuario() {
     if (setor === 'cliente' && result.userId) {
       await supabaseRequest('PATCH', `usuarios_perfil?id=eq.${result.userId}`, {
         cliente_nome: clienteNome,
-        cliente_id: parseInt(clienteId),
+        cliente_id: clienteId,
       });
     }
     registrarLog('usuario', 'Usuário criado', `Email: ${email}, Setor: ${setor}${clienteNome ? ', Cliente: ' + clienteNome : ''}`);
