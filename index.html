@@ -3819,15 +3819,12 @@ async function abrirModal(id) {
   if (motivoInput) motivoInput.value = '';
   // Extrai partes limpas da observacao_cliente para exibição no modal
   const _obsRawModal = c.observacao_cliente || '';
-  const _matchObsModal = _obsRawModal.match(/Observa[cç][oõ]es:\s*([\s\S]+?)(?:\n\n|$)/i);
+  const _matchObsModal = _obsRawModal.match(/📝 Observações:\s*([\s\S]+?)(?:\n\n📍|$)/);
   const _obsClienteLimpa = _matchObsModal ? _matchObsModal[1].trim() : '';
-  const _matchLCModal = _obsRawModal.match(/Local de Coleta:\s*([^\n]+)/i);
-  const _matchLEModal = _obsRawModal.match(/Local de Entrega:\s*([^\n]+)/i);
-  // Fallback para tipo_produto se não tiver nos locais
-  const _tpColeta = (c.tipo_produto||'').match(/Coleta:\s*([^/]+)/i);
-  const _tpEntrega = (c.tipo_produto||'').match(/Entrega:\s*(.+)/i);
-  const _localColeta = (_matchLCModal ? _matchLCModal[1].trim() : '') || (_tpColeta ? _tpColeta[1].trim() : '');
-  const _localEntrega = (_matchLEModal ? _matchLEModal[1].trim() : '') || (_tpEntrega ? _tpEntrega[1].trim() : '');
+  const _matchLCModal = _obsRawModal.match(/📍 Local de Coleta:\s*([^\n]+)/);
+  const _matchLEModal = _obsRawModal.match(/📍 Local de Entrega:\s*([^\n]+)/);
+  const _localColeta = _matchLCModal ? _matchLCModal[1].trim() : '';
+  const _localEntrega = _matchLEModal ? _matchLEModal[1].trim() : '';
 
   document.getElementById('modal-content').innerHTML = `
     ${c.observacao_cliente && c.observacao_cliente.includes('Pedido enviado pelo cliente') ? `<div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.3);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--accent);font-weight:600;">📦 Pedido enviado pelo cliente</div>` : ''}
@@ -3865,29 +3862,19 @@ async function aprovarCotacao() {
     const matchEntrega = tipoProd.match(/Entrega:\s*(.+)/i);
     if (matchColeta) coletaExtraida = matchColeta[1].trim();
     if (matchEntrega) entregaExtraida = matchEntrega[1].trim();
-    // Extrai coleta e entrega do tipo_produto (ex: "Pedido Cliente — Coleta: MOC / Entrega: BH")
-    let coletaFinal = coletaExtraida || null;
-    let entregaFinal = entregaExtraida || null;
     // Extrai observação do cliente e locais de coleta/entrega do campo observacao_cliente
     let obsCliente = '';
     let localColetaExtraida = '';
     let localEntregaExtraida = '';
     const obsRaw = cotacaoAtualDados.observacao_cliente || '';
-    // Tenta extrair obs livre do cliente (entre "Observações:" e próximo bloco ou fim)
-    const matchObs = obsRaw.match(/Observa[cç][oõ]es:\s*([\s\S]+?)(?:
-
-|$)/i);
+    // Extrai obs livre do cliente (entre "📝 Observações:" e o próximo bloco ou fim)
+    const matchObs = obsRaw.match(/📝 Observações:\s*([\s\S]+?)(?:\n\n📍|$)/);
     if (matchObs) obsCliente = matchObs[1].trim();
-    // Tenta extrair locais salvos na observacao_cliente
-    const matchLC = obsRaw.match(/Local de Coleta:\s*([^
-]+)/i);
-    const matchLE = obsRaw.match(/Local de Entrega:\s*([^
-]+)/i);
+    // Extrai locais de coleta e entrega salvos na observacao_cliente
+    const matchLC = obsRaw.match(/📍 Local de Coleta:\s*([^\n]+)/);
+    const matchLE = obsRaw.match(/📍 Local de Entrega:\s*([^\n]+)/);
     if (matchLC) localColetaExtraida = matchLC[1].trim();
     if (matchLE) localEntregaExtraida = matchLE[1].trim();
-    // Fallback: usa coleta/entrega do tipo_produto se não veio da observacao_cliente
-    if (!localColetaExtraida && coletaFinal) localColetaExtraida = coletaFinal;
-    if (!localEntregaExtraida && entregaFinal) localEntregaExtraida = entregaFinal;
     // Monta observação final do lote
     const obsBase = `Criado da cotação #${cotacaoAtualId} · Peso: ${cotacaoAtualDados.quantidade ?? '—'} ton · Preço: R$ ${Number(cotacaoAtualDados.valor_cotado||cotacaoAtualDados.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
     let obsFinal = obsBase;
