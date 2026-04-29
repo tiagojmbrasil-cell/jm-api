@@ -82,7 +82,7 @@ nav button.active{color:var(--accent);background:rgba(249,115,22,0.1);}
 .form-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:24px;display:flex;align-items:center;gap:10px;}
 .form-title span{width:4px;height:20px;background:var(--accent);border-radius:2px;display:inline-block;}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group{display:flex;flex-direction:column;gap:6px;position:relative;}
 .form-group.full{grid-column:1/-1;}
 label{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted);}
 input,select,textarea{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 14px;outline:none;transition:border-color 0.15s;width:100%;}
@@ -374,7 +374,7 @@ td{padding:14px;color:var(--text);}
   .card { padding: 12px 10px; }
   .modal { padding: 16px 12px 28px; }
 }
-.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--accent);border-top:none;border-radius:0 0 8px 8px;z-index:50;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--accent);border-top:none;border-radius:0 0 8px 8px;z-index:9999;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
 .autocomplete-item{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);transition:background 0.1s;}
 .autocomplete-item:last-child{border-bottom:none;}
 .autocomplete-item:hover,.autocomplete-item.active{background:rgba(249,115,22,0.15);}
@@ -3126,22 +3126,24 @@ let sb = null;
 const API_URL = 'https://jmbrasil.vercel.app/api/cotacoes';
 
 // Tabelas que o cliente pode LER (somente)
-const TABELAS_PERMITIDAS_CLIENTE = ['lotes', 'lote_motoristas', 'clientes_cadastro', 'usuarios_perfil'];
+const TABELAS_PERMITIDAS_CLIENTE = ['lotes', 'lote_motoristas', 'clientes_cadastro', 'usuarios_perfil', 'clientes'];
+// Tabelas que o cliente pode criar registros (POST)
+const TABELAS_ESCRITA_CLIENTE = ['cotacoes'];
 
 async function supabaseRequest(method, path, body = null) {
-  // SEGURANÇA: usuário cliente só pode fazer GET em tabelas permitidas
+  // SEGURANÇA: usuário cliente só pode GET em tabelas permitidas e POST em cotacoes (pedido)
   if (setorAtual === 'cliente') {
     const tabela = path.split('?')[0];
-    if (method !== 'GET') {
+    const podeEscrever = method === 'POST' && TABELAS_ESCRITA_CLIENTE.includes(tabela);
+    if (method !== 'GET' && !podeEscrever) {
       console.warn('[Segurança] Cliente tentou operação proibida:', method, tabela);
       throw new Error('Operação não permitida para este perfil.');
     }
-    if (!TABELAS_PERMITIDAS_CLIENTE.includes(tabela)) {
+    if (method === 'GET' && !TABELAS_PERMITIDAS_CLIENTE.includes(tabela)) {
       console.warn('[Segurança] Cliente tentou acessar tabela proibida:', tabela);
       throw new Error('Acesso não permitido a este recurso.');
     }
   }
-
   const [tabela, queryStringRaw] = path.split('?');
   const queryString = queryStringRaw || '';
 
