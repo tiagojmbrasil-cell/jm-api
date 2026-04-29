@@ -3817,6 +3817,15 @@ async function abrirModal(id) {
   if (acoes) acoes.style.display = (['comercial','administrativo'].includes(setorAtual) && c.status === 'pendente') ? '' : 'none';
   if (motivoWrap) motivoWrap.style.display = 'none';
   if (motivoInput) motivoInput.value = '';
+  // Extrai partes limpas da observacao_cliente para exibição no modal
+  const _obsRawModal = c.observacao_cliente || '';
+  const _matchObsModal = _obsRawModal.match(/📝 Observações:\s*([\s\S]+?)(?:\n\n📍|$)/);
+  const _obsClienteLimpa = _matchObsModal ? _matchObsModal[1].trim() : '';
+  const _matchLCModal = _obsRawModal.match(/📍 Local de Coleta:\s*([^\n]+)/);
+  const _matchLEModal = _obsRawModal.match(/📍 Local de Entrega:\s*([^\n]+)/);
+  const _localColeta = _matchLCModal ? _matchLCModal[1].trim() : '';
+  const _localEntrega = _matchLEModal ? _matchLEModal[1].trim() : '';
+
   document.getElementById('modal-content').innerHTML = `
     ${c.observacao_cliente && c.observacao_cliente.includes('Pedido enviado pelo cliente') ? `<div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.3);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--accent);font-weight:600;">📦 Pedido enviado pelo cliente</div>` : ''}
     <div class="detail-row"><span class="detail-label">Cliente</span><span class="detail-value">${c.cliente_nome || '—'}</span></div>
@@ -3826,7 +3835,9 @@ async function abrirModal(id) {
     <div class="detail-row"><span class="detail-label">Tipo de produto</span><span class="detail-value">${c.tipo_produto || '—'}</span></div>
     <div class="detail-row"><span class="detail-label">Preço</span><span class="detail-value" style="color:var(--accent);font-family:'Syne',sans-serif;font-size:16px">R$ ${Number(c.valor_cotado || c.preco || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>
     <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${badgeStatus(c.status)}</span></div>
-    ${c.observacao_cliente ? `<div class="detail-row" style="flex-direction:column;align-items:flex-start;gap:6px"><span class="detail-label">Observações do Cliente</span><span style="font-size:13px;color:var(--muted);line-height:1.6;white-space:pre-line">${String(c.observacao_cliente).replace(/</g,'&lt;')}</span></div>` : ''}
+    ${_localColeta ? `<div class="detail-row"><span class="detail-label">📍 Local de Coleta</span><span class="detail-value">${_localColeta.replace(/</g,'&lt;')}</span></div>` : ''}
+    ${_localEntrega ? `<div class="detail-row"><span class="detail-label">📍 Local de Entrega</span><span class="detail-value">${_localEntrega.replace(/</g,'&lt;')}</span></div>` : ''}
+    ${_obsClienteLimpa ? `<div class="detail-row" style="flex-direction:column;align-items:flex-start;gap:6px"><span class="detail-label">📝 Observações do Cliente</span><span style="font-size:13px;color:var(--muted);line-height:1.6;white-space:pre-line;background:var(--surface2);border-radius:8px;padding:10px 14px;width:100%;box-sizing:border-box;">${_obsClienteLimpa.replace(/</g,'&lt;')}</span></div>` : ''}
     ${c.motivo_nao_fechamento ? `<div class="detail-row" style="flex-direction:column;align-items:flex-start;gap:6px"><span class="detail-label">Motivo do não fechamento</span><span style="font-size:13px;color:var(--muted);line-height:1.5">${String(c.motivo_nao_fechamento).replace(/</g,'')}</span></div>` : ''}
   `;
   document.getElementById('modal-overlay').classList.add('open');
@@ -3851,14 +3862,26 @@ async function aprovarCotacao() {
     const matchEntrega = tipoProd.match(/Entrega:\s*(.+)/i);
     if (matchColeta) coletaExtraida = matchColeta[1].trim();
     if (matchEntrega) entregaExtraida = matchEntrega[1].trim();
-    // Extrai observação do cliente (remove cabeçalho gerado automaticamente, mantém só obs do usuário)
+    // Extrai observação do cliente e locais de coleta/entrega do campo observacao_cliente
     let obsCliente = '';
+    let localColetaExtraida = '';
+    let localEntregaExtraida = '';
     const obsRaw = cotacaoAtualDados.observacao_cliente || '';
-    const matchObs = obsRaw.match(/📝 Observações:\s*([\s\S]+?)\n\n📍/);
+    // Extrai obs livre do cliente (entre "📝 Observações:" e o próximo bloco ou fim)
+    const matchObs = obsRaw.match(/📝 Observações:\s*([\s\S]+?)(?:\n\n📍|$)/);
     if (matchObs) obsCliente = matchObs[1].trim();
+    // Extrai locais de coleta e entrega salvos na observacao_cliente
+    const matchLC = obsRaw.match(/📍 Local de Coleta:\s*([^\n]+)/);
+    const matchLE = obsRaw.match(/📍 Local de Entrega:\s*([^\n]+)/);
+    if (matchLC) localColetaExtraida = matchLC[1].trim();
+    if (matchLE) localEntregaExtraida = matchLE[1].trim();
     // Monta observação final do lote
     const obsBase = `Criado da cotação #${cotacaoAtualId} · Peso: ${cotacaoAtualDados.quantidade ?? '—'} ton · Preço: R$ ${Number(cotacaoAtualDados.valor_cotado||cotacaoAtualDados.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
-    const obsFinal = obsCliente ? `${obsBase}\n\n📝 Obs. Cliente: ${obsCliente}` : obsBase;
+    let obsFinal = obsBase;
+    if (localColetaExtraida || localEntregaExtraida) {
+      obsFinal += `\n\n📍 Local de Coleta: ${localColetaExtraida || '—'}\n📍 Local de Entrega: ${localEntregaExtraida || '—'}`;
+    }
+    if (obsCliente) obsFinal += `\n\n📝 Obs. Cliente: ${obsCliente}`;
     // Cria lote automaticamente com status aguardando informações
     await supabaseRequest('POST', 'lotes', {
       agencia: null,
