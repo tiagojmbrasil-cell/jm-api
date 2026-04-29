@@ -3843,21 +3843,37 @@ async function aprovarCotacao() {
   if (!cotacaoAtualId || !cotacaoAtualDados) return;
   try {
     await supabaseRequest('PATCH', `cotacoes?id=eq.${cotacaoAtualId}`, { status: 'aprovada', motivo_nao_fechamento: null });
+    // Extrai coleta e entrega do tipo_produto (ex: "Pedido Cliente — Coleta: FABRICA / Entrega: FAZENDA")
+    let coletaExtraida = null;
+    let entregaExtraida = null;
+    const tipoProd = cotacaoAtualDados.tipo_produto || '';
+    const matchColeta = tipoProd.match(/Coleta:\s*([^/]+)/i);
+    const matchEntrega = tipoProd.match(/Entrega:\s*(.+)/i);
+    if (matchColeta) coletaExtraida = matchColeta[1].trim();
+    if (matchEntrega) entregaExtraida = matchEntrega[1].trim();
+    // Extrai observação do cliente (remove cabeçalho gerado automaticamente, mantém só obs do usuário)
+    let obsCliente = '';
+    const obsRaw = cotacaoAtualDados.observacao_cliente || '';
+    const matchObs = obsRaw.match(/📝 Observações:\s*([\s\S]+?)\n\n📍/);
+    if (matchObs) obsCliente = matchObs[1].trim();
+    // Monta observação final do lote
+    const obsBase = `Criado da cotação #${cotacaoAtualId} · Peso: ${cotacaoAtualDados.quantidade ?? '—'} ton · Preço: R$ ${Number(cotacaoAtualDados.valor_cotado||cotacaoAtualDados.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+    const obsFinal = obsCliente ? `${obsBase}\n\n📝 Obs. Cliente: ${obsCliente}` : obsBase;
     // Cria lote automaticamente com status aguardando informações
     await supabaseRequest('POST', 'lotes', {
       agencia: null,
       cliente: cotacaoAtualDados.cliente_nome || null,
       produto: cotacaoAtualDados.tipo_produto || null,
       status: 'aguardando_informacoes',
-      coleta: null,
+      coleta: coletaExtraida,
       origem: cotacaoAtualDados.origem || null,
-      entrega: null,
+      entrega: entregaExtraida,
       destino: cotacaoAtualDados.destino || null,
       tarifa_empresa: null,
       tarifa_motorista: null,
       peso_ton: cotacaoAtualDados.quantidade || null,
       data_lote: null,
-      observacao: `Criado da cotação #${cotacaoAtualId} · Peso: ${cotacaoAtualDados.quantidade ?? '—'} ton · Preço: R$ ${Number(cotacaoAtualDados.valor_cotado||cotacaoAtualDados.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}`,
+      observacao: obsFinal,
     });
     const c = cotacoes.find(x => x.id === cotacaoAtualId);
     if (c) c.status = 'aprovada';
