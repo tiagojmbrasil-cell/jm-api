@@ -3687,14 +3687,11 @@ async function salvarCotacao() {
     const origem = campos[1].val, destino = campos[2].val;
     const quantidade = campos[3].val, tipoProduto = campos[4].val, preco = campos[5].val;
 
-    const clientesExist = await supabaseRequest('GET', `clientes?nome=eq.${encodeURIComponent(clienteNome)}`) || [];
+    // Busca cliente em clientes_cadastro (tabela referenciada pela FK de cotacoes)
+    const clientesExist = await supabaseRequest('GET', `clientes_cadastro?or=(razao_social.eq.${encodeURIComponent(clienteNome)},nome_fantasia.eq.${encodeURIComponent(clienteNome)})&select=id&limit=1`) || [];
     let clienteId;
     if (clientesExist.length) { clienteId = clientesExist[0].id; }
-    else {
-      const novoCliente = await supabaseRequest('POST', 'clientes', { nome: clienteNome });
-      clienteId = novoCliente?.[0]?.id;
-    }
-    if (!clienteId) throw new Error('Não foi possível obter o ID do cliente.');
+    if (!clienteId) throw new Error('Não foi possível obter o ID do cliente. Verifique se o cliente está cadastrado.');
 
     await supabaseRequest('POST', 'cotacoes', {
       cliente_id: clienteId, origem, destino,
@@ -3782,14 +3779,16 @@ async function salvarPedidoCliente() {
     // Garante que o cliente está vinculado
     let clienteId = null;
     if (clienteIdAtual) {
-      clienteId = clienteIdAtual;
-    } else if (clienteNomeAtual) {
-      const cli = await supabaseRequest('GET', `clientes?nome=eq.${encodeURIComponent(clienteNomeAtual)}`) || [];
-      if (cli.length) clienteId = cli[0].id;
-      else {
-        const novo = await supabaseRequest('POST', 'clientes', { nome: clienteNomeAtual });
-        clienteId = novo?.[0]?.id;
+      // Verifica se o ID existe em clientes_cadastro (fonte correta da FK)
+      const cad = await supabaseRequest('GET', `clientes_cadastro?id=eq.${clienteIdAtual}&select=id`) || [];
+      if (cad.length) {
+        clienteId = clienteIdAtual;
       }
+    }
+    if (!clienteId && clienteNomeAtual) {
+      // Tenta buscar por razao_social ou nome_fantasia em clientes_cadastro
+      const cadNome = await supabaseRequest('GET', `clientes_cadastro?or=(razao_social.eq.${encodeURIComponent(clienteNomeAtual)},nome_fantasia.eq.${encodeURIComponent(clienteNomeAtual)})&select=id&limit=1`) || [];
+      if (cadNome.length) clienteId = cadNome[0].id;
     }
     if (!clienteId) throw new Error('Perfil de cliente não encontrado. Contate o administrador.');
     const obsCompleta = `📦 Pedido enviado pelo cliente ${clienteNomeAtual || '—'}` +
