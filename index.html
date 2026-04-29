@@ -3782,19 +3782,23 @@ async function salvarPedidoCliente() {
       (obs ? `\n\n📝 Observações: ${obs}` : '') +
       `\n\n📍 Local de Coleta: ${localColeta}` +
       `\n📍 Local de Entrega: ${localEntrega}`;
+    // Inclui obs do cliente no tipo_produto para garantir que não se perca
+    const tipoProdutoFinal = obs
+      ? `Pedido Cliente — Coleta: ${localColeta} / Entrega: ${localEntrega} | Obs: ${obs}`
+      : `Pedido Cliente — Coleta: ${localColeta} / Entrega: ${localEntrega}`;
     await supabaseRequest('POST', 'cotacoes', {
       cliente_id: clienteId,
       origem,
       destino,
       quantidade: parseFloat(peso),
-      tipo_produto: `Pedido Cliente — Coleta: ${localColeta} / Entrega: ${localEntrega}`,
+      tipo_produto: tipoProdutoFinal,
       preco: 0,
       valor_cotado: 0,
       status: 'pendente',
       motivo_nao_fechamento: null,
       observacao_cliente: obsCompleta,
     });
-    registrarLog('cotacao', 'Pedido enviado pelo cliente', `Cliente: ${clienteNomeAtual} · ${origem} → ${destino}`);
+    registrarLog('cotacao', 'Pedido enviado pelo cliente', `Cliente: ${clienteNomeAtual} · ${origem} → ${destino}${obs ? ' · Obs: ' + obs : ''}`);
     showToast('✅ Pedido enviado com sucesso! Entraremos em contato em breve.', 'success');
     cancelarFormPedidoCliente();
     cotacoes = [];
@@ -3820,11 +3824,18 @@ async function abrirModal(id) {
   // Extrai partes limpas da observacao_cliente para exibição no modal
   const _obsRawModal = c.observacao_cliente || '';
   const _matchObsModal = _obsRawModal.match(/📝 Observações:\s*([\s\S]+?)(?:\n\n📍|$)/);
-  const _obsClienteLimpa = _matchObsModal ? _matchObsModal[1].trim() : '';
+  let _obsClienteLimpa = _matchObsModal ? _matchObsModal[1].trim() : '';
+  // Fallback: extrai obs do tipo_produto caso observacao_cliente não tenha sido salvo corretamente
+  if (!_obsClienteLimpa && c.tipo_produto && c.tipo_produto.includes('| Obs:')) {
+    const _matchObsTipo = c.tipo_produto.match(/\|\s*Obs:\s*(.+)/i);
+    if (_matchObsTipo) _obsClienteLimpa = _matchObsTipo[1].trim();
+  }
   const _matchLCModal = _obsRawModal.match(/📍 Local de Coleta:\s*([^\n]+)/);
   const _matchLEModal = _obsRawModal.match(/📍 Local de Entrega:\s*([^\n]+)/);
   const _localColeta = _matchLCModal ? _matchLCModal[1].trim() : '';
   const _localEntrega = _matchLEModal ? _matchLEModal[1].trim() : '';
+  // Tipo de produto limpo (sem o "| Obs: ..." que foi adicionado como backup)
+  const _tipoProdutoLimpo = (c.tipo_produto || '—').replace(/\s*\|\s*Obs:.*/i, '').trim();
 
   document.getElementById('modal-content').innerHTML = `
     ${c.observacao_cliente && c.observacao_cliente.includes('Pedido enviado pelo cliente') ? `<div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.3);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--accent);font-weight:600;">📦 Pedido enviado pelo cliente</div>` : ''}
@@ -3832,7 +3843,7 @@ async function abrirModal(id) {
     <div class="detail-row"><span class="detail-label">Origem</span><span class="detail-value">${c.origem || '—'}</span></div>
     <div class="detail-row"><span class="detail-label">Destino</span><span class="detail-value">${c.destino || '—'}</span></div>
     <div class="detail-row"><span class="detail-label">Peso</span><span class="detail-value">${c.quantidade ? Number(c.quantidade).toLocaleString('pt-BR') + ' ton' : '—'}</span></div>
-    <div class="detail-row"><span class="detail-label">Tipo de produto</span><span class="detail-value">${c.tipo_produto || '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Tipo de produto</span><span class="detail-value">${_tipoProdutoLimpo}</span></div>
     <div class="detail-row"><span class="detail-label">Preço</span><span class="detail-value" style="color:var(--accent);font-family:'Syne',sans-serif;font-size:16px">R$ ${Number(c.valor_cotado || c.preco || 0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>
     <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${badgeStatus(c.status)}</span></div>
     ${_localColeta ? `<div class="detail-row"><span class="detail-label">📍 Local de Coleta</span><span class="detail-value">${_localColeta.replace(/</g,'&lt;')}</span></div>` : ''}
@@ -3858,8 +3869,8 @@ async function aprovarCotacao() {
     let coletaExtraida = null;
     let entregaExtraida = null;
     const tipoProd = cotacaoAtualDados.tipo_produto || '';
-    const matchColeta = tipoProd.match(/Coleta:\s*([^/]+)/i);
-    const matchEntrega = tipoProd.match(/Entrega:\s*(.+)/i);
+    const matchColeta = tipoProd.match(/Coleta:\s*([^/|]+)/i);
+    const matchEntrega = tipoProd.match(/Entrega:\s*([^|]+)/i);
     if (matchColeta) coletaExtraida = matchColeta[1].trim();
     if (matchEntrega) entregaExtraida = matchEntrega[1].trim();
     // Extrai observação do cliente e locais de coleta/entrega do campo observacao_cliente
@@ -3870,11 +3881,18 @@ async function aprovarCotacao() {
     // Extrai obs livre do cliente (entre "📝 Observações:" e o próximo bloco ou fim)
     const matchObs = obsRaw.match(/📝 Observações:\s*([\s\S]+?)(?:\n\n📍|$)/);
     if (matchObs) obsCliente = matchObs[1].trim();
+    // Fallback: se não encontrou obs na observacao_cliente, tenta extrair do tipo_produto
+    if (!obsCliente && tipoProd.includes('| Obs:')) {
+      const matchObsTipo = tipoProd.match(/\|\s*Obs:\s*(.+)/i);
+      if (matchObsTipo) obsCliente = matchObsTipo[1].trim();
+    }
     // Extrai locais de coleta e entrega salvos na observacao_cliente
     const matchLC = obsRaw.match(/📍 Local de Coleta:\s*([^\n]+)/);
     const matchLE = obsRaw.match(/📍 Local de Entrega:\s*([^\n]+)/);
     if (matchLC) localColetaExtraida = matchLC[1].trim();
     if (matchLE) localEntregaExtraida = matchLE[1].trim();
+    // Produto limpo para o lote (sem "| Obs: ..." que é backup interno)
+    const produtoLimpo = tipoProd.replace(/\s*\|\s*Obs:.*/i, '').trim();
     // Monta observação final do lote
     const obsBase = `Criado da cotação #${cotacaoAtualId} · Peso: ${cotacaoAtualDados.quantidade ?? '—'} ton · Preço: R$ ${Number(cotacaoAtualDados.valor_cotado||cotacaoAtualDados.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
     let obsFinal = obsBase;
@@ -3886,7 +3904,7 @@ async function aprovarCotacao() {
     await supabaseRequest('POST', 'lotes', {
       agencia: null,
       cliente: cotacaoAtualDados.cliente_nome || null,
-      produto: cotacaoAtualDados.tipo_produto || null,
+      produto: produtoLimpo || null,
       status: 'aguardando_informacoes',
       coleta: coletaExtraida,
       origem: cotacaoAtualDados.origem || null,
