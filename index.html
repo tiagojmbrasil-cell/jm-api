@@ -2238,6 +2238,14 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
     <!-- Alterar status -->
     <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+      <!-- Campo Número do CE (obrigatório) -->
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted);margin-bottom:6px;">
+          📋 Número do CE <span style="color:var(--red)">*</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;">(obrigatório)</span>
+        </label>
+        <input type="text" id="mf-numero-ce" placeholder="Digite o número do CE..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 14px;outline:none;transition:border-color 0.15s;box-sizing:border-box;" oninput="document.getElementById('mf-ce-erro').style.display='none';this.style.borderColor='var(--border)';">
+        <div id="mf-ce-erro" style="display:none;color:var(--red);font-size:12px;margin-top:4px;font-weight:500;">⚠️ O número do CE é obrigatório para confirmar a emissão.</div>
+      </div>
       <!-- Botão principal de ação do Fiscal -->
       <button id="mf-btn-doc-emitido" onclick="emitirDocumentoFiscal()" style="width:100%;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;padding:14px 28px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;transition:all 0.15s;box-shadow:0 4px 14px rgba(34,197,94,0.3);">
         <span style="font-size:20px;">📄</span> Documento Emitido — Enviar ao Logístico
@@ -5159,9 +5167,16 @@ async function abrirFiscalModal(id) {
 
   document.getElementById('modal-fiscal-overlay').classList.add('open');
 
-  // Mostrar botão "Documento Emitido" apenas para status aguardando_emissao_doc
+  // Mostrar botão "Documento Emitido" e campo CE apenas para status aguardando_emissao_doc
   const btnDocEmitido = document.getElementById('mf-btn-doc-emitido');
   if (btnDocEmitido) btnDocEmitido.style.display = m.status === 'aguardando_emissao_doc' ? '' : 'none';
+  // Limpar e mostrar/esconder campo CE
+  const ceInput = document.getElementById('mf-numero-ce');
+  const ceErro = document.getElementById('mf-ce-erro');
+  const ceLabelDiv = ceInput ? ceInput.closest('div[style*="margin-bottom:14px"]') : null;
+  if (ceInput) { ceInput.value = ''; ceInput.style.borderColor = 'var(--border)'; }
+  if (ceErro) ceErro.style.display = 'none';
+  if (ceLabelDiv) ceLabelDiv.style.display = m.status === 'aguardando_emissao_doc' ? '' : 'none';
 
   // ---- CHECKLIST ----
   const ck = m.checklist || {};
@@ -5285,12 +5300,21 @@ async function abrirFiscalModal(id) {
 }
 
 async function emitirDocumentoFiscal() {
+  // Validar campo CE obrigatório
+  const numeroCeInput = document.getElementById('mf-numero-ce');
+  const numeroCe = numeroCeInput ? numeroCeInput.value.trim() : '';
+  if (!numeroCe) {
+    if (numeroCeInput) { numeroCeInput.style.borderColor = 'var(--red)'; numeroCeInput.focus(); }
+    const erroEl = document.getElementById('mf-ce-erro');
+    if (erroEl) erroEl.style.display = 'block';
+    return;
+  }
   try {
     const btn = document.getElementById('mf-btn-doc-emitido');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Processando...'; }
     const statusFinal = 'aguardando_fotos';
-    // PATCH principal em lote_motoristas (fonte que o logístico lê)
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: statusFinal });
+    // PATCH principal em lote_motoristas (fonte que o logístico lê) — salva o número do CE
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: statusFinal, numero_ce: numeroCe });
     // Sincroniza tabela motoristas pelo motorista_id
     const loteMotReg = fiscalData.find(x => x.id === motoristFiscalId);
     if (loteMotReg?.motorista_id) {
@@ -5298,8 +5322,8 @@ async function emitirDocumentoFiscal() {
     }
     // Atualiza memória local
     const m = fiscalData.find(x => x.id === motoristFiscalId);
-    if (m) { m.status = statusFinal; }
-    registrarLog('fiscal', 'Documento emitido — enviado ao Logístico para fotos', `LoteMot: #${motoristFiscalId}`);
+    if (m) { m.status = statusFinal; m.numero_ce = numeroCe; }
+    registrarLog('fiscal', `Documento emitido — CE: ${numeroCe} — enviado ao Logístico para fotos`, `LoteMot: #${motoristFiscalId}`);
     showToast('✅ Documento emitido! Motorista enviado ao Logístico para fotos do carregamento.', 'success');
     fecharModalFiscalBtn();
     // Recarrega para garantir que a tabela reflita o novo status
@@ -5313,15 +5337,21 @@ async function emitirDocumentoFiscal() {
 
 // Chamado diretamente da tabela (sem modal aberto)
 async function emitirDocumento(loteMotId) {
+  const numeroCe = prompt('📋 Informe o número do CE (obrigatório):');
+  if (numeroCe === null) return; // cancelou
+  if (!numeroCe.trim()) {
+    showToast('⚠️ O número do CE é obrigatório para confirmar a emissão.', 'error');
+    return;
+  }
   try {
     const statusFinal = 'aguardando_fotos';
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${loteMotId}`, { status: statusFinal });
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${loteMotId}`, { status: statusFinal, numero_ce: numeroCe.trim() });
     // Sincroniza tabela motoristas
     const reg = fiscalData.find(x => x.id === loteMotId);
     if (reg?.motorista_id) {
       await supabaseRequest('PATCH', `motoristas?id=eq.${reg.motorista_id}`, { status: statusFinal });
     }
-    registrarLog('fiscal', 'Documento emitido — enviado ao Logístico para fotos', `LoteMot: #${loteMotId}`);
+    registrarLog('fiscal', `Documento emitido — CE: ${numeroCe.trim()} — enviado ao Logístico para fotos`, `LoteMot: #${loteMotId}`);
     showToast('✅ Documento emitido! Motorista enviado ao Logístico para fotos do carregamento.', 'success');
     await carregarFiscal();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
