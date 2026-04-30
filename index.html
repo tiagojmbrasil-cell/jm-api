@@ -8895,8 +8895,19 @@ async function salvarDecisaoGR() {
       if (motDados?.lote_id_origem && motDados?.peso_saida_origem) {
         setProgresso('⚖️ Verificando peso do lote...');
         // Verifica se há peso disponível no lote
-        const loteMotExist = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${motDados.lote_id_origem}`) || [];
-        const loteInfo = await supabaseRequest('GET', `lotes?id=eq.${motDados.lote_id_origem}&select=id,peso_ton`) || [];
+        const [loteMotExist, loteInfo] = await Promise.all([
+          supabaseRequest('GET', `lote_motoristas?lote_id=eq.${motDados.lote_id_origem}`).then(r => r || []),
+          supabaseRequest('GET', `lotes?id=eq.${motDados.lote_id_origem}&select=id,peso_ton`).then(r => r || [])
+        ]);
+        // Verifica se o lote ainda existe antes de tentar vincular
+        if (!loteInfo[0]) {
+          showToast(`⚠️ Aprovado, mas o lote #${motDados.lote_id_origem} não existe mais. Adicione manualmente.`, 'error');
+          showToast('✅ Motorista aprovado!', 'success');
+          document.getElementById('mgr-status-bar').innerHTML = badgeGR(decisao);
+          filtrarGR();
+          fecharModalGR();
+          return;
+        }
         const pesoTotal = parseFloat(loteInfo[0]?.peso_ton || 0);
         const totalCarregado = loteMotExist.reduce((s, m) => s + parseFloat(m.peso_saida || 0), 0);
         const restante = pesoTotal > 0 ? pesoTotal - totalCarregado : 999999;
