@@ -8504,7 +8504,7 @@ async function uploadAnexoGR(file, motoristaId, tipo) {
 async function carregarGR() {
   try {
     document.getElementById('gr-table').innerHTML = '<div class="loading">Carregando...</div>';
-    grData = await supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500&select=id,nome,placa,cpf,contato,status,gr_status,gr_motivo,tipo_motorista,lote_id_origem,peso_saida_origem,criado_em') || [];
+    grData = await supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500&select=id,nome,placa,cpf,contato,status,gr_status,gr_motivo,tipo_motorista,lote_id_origem,peso_saida_origem,auxiliar_operacao_origem,criado_em') || [];
     filtrarGR();
   } catch(e) {
     document.getElementById('gr-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
@@ -8583,7 +8583,7 @@ async function abrirModalGR(id) {
   const _fmtD = d => d ? d.split('-').reverse().join('/') : '—';
   document.getElementById('mgr-data-inicio').textContent = _fmtD(m.data_inicio_viagem);
   document.getElementById('mgr-data-fim').textContent = _fmtD(m.data_fim_viagem);
-  document.getElementById('mgr-auxiliar-operacao').textContent = m.auxiliar_operacao || '—';
+  document.getElementById('mgr-auxiliar-operacao').textContent = m.auxiliar_operacao_origem || m.auxiliar_operacao || '—';
   document.getElementById('mgr-lote').textContent = '—';
   document.getElementById('mgr-cliente').textContent = '—';
   document.getElementById('mgr-produto').textContent = '—';
