@@ -4585,10 +4585,23 @@ async function carregarMotoristasPagina() {
         ...m,
         status: statusFinal,
         _lote_id: loteReg?.lote_id || null,
+        _lote_mot_id: loteReg?.id || null,
+        _lote_reg: loteReg || null,
         data_inicio_viagem: loteReg?.data_inicio_viagem || null,
         data_fim_viagem: loteReg?.data_fim_viagem || null,
         auxiliar_operacao: loteReg?.auxiliar_operacao || null,
         financeiro_saldo_data: loteReg?.financeiro_saldo_data || null,
+        // dados bancários do lote_motoristas (mais atuais)
+        nome_titular: loteReg?.nome_titular || m.nome_titular || null,
+        cpf_titular: loteReg?.cpf_titular || m.cpf_titular || null,
+        banco: loteReg?.banco || m.banco || null,
+        agencia: loteReg?.agencia || m.agencia || null,
+        numero_conta: loteReg?.numero_conta || m.numero_conta || null,
+        tipo_conta: loteReg?.tipo_conta || m.tipo_conta || null,
+        tipo_chave_pix: loteReg?.tipo_chave_pix || m.tipo_chave_pix || null,
+        chave_pix: loteReg?.chave_pix || m.chave_pix || null,
+        tipo_pagamento: loteReg?.tipo_pagamento || m.tipo_pagamento || null,
+        peso_saida: loteReg?.peso_saida || m.peso_saida_origem || null,
       };
     });
     filtrarMotoristasPagina();
@@ -9563,24 +9576,17 @@ async function removerAnexoEditarPorIndice(idx) {
 }
 
 async function abrirEditarMotorista(id) {
-  // Dispara as duas buscas em paralelo para ganhar velocidade
-  const [fromMotoristas, fromLote] = await Promise.all([
-    supabaseRequest('GET', `motoristas?id=eq.${id}`).catch(() => []),
-    supabaseRequest('GET', `lote_motoristas?id=eq.${id}`).catch(() => [])
-  ]);
+  // Usa o cache já em memória — zero chamadas ao banco para abrir o modal
+  const cached = motoristasPageData.find(m => m.id === id);
 
-  let m = null;
-  if (fromMotoristas && fromMotoristas.length) {
-    m = fromMotoristas[0];
-    motoristaEditandoTabela = 'motoristas';
-  } else if (fromLote && fromLote.length) {
-    m = fromLote[0];
-    motoristaEditandoTabela = 'lote_motoristas';
-  }
-  if (!m) return;
   motoristaEditandoId = id;
+  motoristaEditandoTabela = 'motoristas';
 
-  // Preenche campos básicos imediatamente
+  // Preenche com cache (instantâneo) ou fallback para dados vazios
+  const m = cached || {};
+  const loteReg = m._lote_reg || {};
+  const ckLM = loteReg.checklist || {};
+
   document.getElementById('em-nome').value = m.nome || '';
   document.getElementById('em-placa').value = m.placa || '';
   document.getElementById('em-contato').value = m.contato || '';
@@ -9595,59 +9601,56 @@ async function abrirEditarMotorista(id) {
   document.getElementById('em-tipo-pix').value = m.tipo_chave_pix || '';
   document.getElementById('em-pix').value = m.chave_pix || '';
   selecionarTipoPagamentoEditar(m.tipo_pagamento || 'conta_bancaria');
+  document.getElementById('em-valor-frete').value = ckLM.valor_frete_motorista || '';
+  document.getElementById('em-valor-carga').value = ckLM.valor_carga || '';
+  document.getElementById('em-canal-contato').value = ckLM.canal_contato || '';
+  document.getElementById('em-prazo-saldo').value = ckLM.prazo_saldo || '';
 
-  // Abre o modal imediatamente — não espera o checklist
+  window._em_lote_mot_id = m._lote_mot_id || null;
+
+  // Abre o modal instantaneamente
+  const secaoAnexos = document.getElementById('em-secao-anexos');
+  motoristaEditandoAnexos = JSON.parse(JSON.stringify(m.anexos || []));
+  limparAnexosFormularioEditarMotorista();
+  if (secaoAnexos) secaoAnexos.style.display = '';
   aplicarCfgModalEdicaoMotorista();
   document.getElementById('modal-editar-motorista-overlay').classList.add('open');
 
-  // Carrega checklist e anexos em paralelo após abrir
-  let loteMotId = null;
-  const secaoAnexos = document.getElementById('em-secao-anexos');
+  // Renderiza anexos em background (não bloqueia a abertura do modal)
+  renderAnexosEditarMotorista().then(() => atualizarTodosIndicadoresDoc()).catch(() => {});
 
-  if (motoristaEditandoTabela === 'lote_motoristas') {
-    loteMotId = id;
-    const ckLM = m.checklist || {};
-    document.getElementById('em-valor-frete').value = ckLM.valor_frete_motorista || '';
-    document.getElementById('em-valor-carga').value = ckLM.valor_carga || '';
-    document.getElementById('em-canal-contato').value = ckLM.canal_contato || '';
-    document.getElementById('em-prazo-saldo').value = ckLM.prazo_saldo || '';
-    document.getElementById('em-peso').value = m.peso_saida || '';
-    motoristaEditandoAnexos = null;
-    limparAnexosFormularioEditarMotorista();
-    if (secaoAnexos) secaoAnexos.style.display = 'none';
-  } else {
-    // Busca lote_motoristas vinculado para pegar checklist
-    try {
-      const lmList = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${id}&order=criado_em.desc&limit=1&select=id,checklist,peso_saida`) || [];
-      const lm = lmList[0];
-      if (lm) {
-        loteMotId = lm.id;
-        const ckLM = lm.checklist || {};
-        document.getElementById('em-valor-frete').value = ckLM.valor_frete_motorista || '';
-        document.getElementById('em-valor-carga').value = ckLM.valor_carga || '';
-        document.getElementById('em-canal-contato').value = ckLM.canal_contato || '';
-        document.getElementById('em-prazo-saldo').value = ckLM.prazo_saldo || '';
-        if (!document.getElementById('em-peso').value) document.getElementById('em-peso').value = lm.peso_saida || '';
-      } else {
-        document.getElementById('em-valor-frete').value = '';
-        document.getElementById('em-valor-carga').value = '';
-        document.getElementById('em-canal-contato').value = '';
-        document.getElementById('em-prazo-saldo').value = '';
-      }
-    } catch(e) {
-      document.getElementById('em-valor-frete').value = '';
-      document.getElementById('em-valor-carga').value = '';
-      document.getElementById('em-canal-contato').value = '';
-      document.getElementById('em-prazo-saldo').value = '';
-    }
-    motoristaEditandoAnexos = JSON.parse(JSON.stringify(m.anexos || []));
-    limparAnexosFormularioEditarMotorista();
-    if (secaoAnexos) secaoAnexos.style.display = '';
+  // Se não havia cache, busca no banco em background e atualiza os campos
+  if (!cached) {
+    const [fromMotoristas, fromLote] = await Promise.all([
+      supabaseRequest('GET', `motoristas?id=eq.${id}`).catch(() => []),
+      supabaseRequest('GET', `lote_motoristas?id=eq.${id}`).catch(() => [])
+    ]);
+    const rec = (fromMotoristas && fromMotoristas.length) ? fromMotoristas[0]
+              : (fromLote && fromLote.length) ? fromLote[0] : null;
+    if (!rec) return;
+    const ck = rec.checklist || {};
+    document.getElementById('em-nome').value = rec.nome || '';
+    document.getElementById('em-placa').value = rec.placa || '';
+    document.getElementById('em-contato').value = rec.contato || '';
+    document.getElementById('em-cpf').value = rec.cpf || '';
+    document.getElementById('em-peso').value = rec.peso_saida || '';
+    document.getElementById('em-nome-titular').value = rec.nome_titular || '';
+    document.getElementById('em-cpf-titular').value = rec.cpf_titular || '';
+    document.getElementById('em-banco').value = rec.banco || '';
+    document.getElementById('em-agencia').value = rec.agencia || '';
+    document.getElementById('em-conta').value = rec.numero_conta || '';
+    document.getElementById('em-tipo-conta').value = rec.tipo_conta || '';
+    document.getElementById('em-tipo-pix').value = rec.tipo_chave_pix || '';
+    document.getElementById('em-pix').value = rec.chave_pix || '';
+    selecionarTipoPagamentoEditar(rec.tipo_pagamento || 'conta_bancaria');
+    document.getElementById('em-valor-frete').value = ck.valor_frete_motorista || '';
+    document.getElementById('em-valor-carga').value = ck.valor_carga || '';
+    document.getElementById('em-canal-contato').value = ck.canal_contato || '';
+    document.getElementById('em-prazo-saldo').value = ck.prazo_saldo || '';
+    motoristaEditandoAnexos = JSON.parse(JSON.stringify(rec.anexos || []));
     await renderAnexosEditarMotorista();
     atualizarTodosIndicadoresDoc();
   }
-
-  window._em_lote_mot_id = loteMotId;
 }
 
 function aplicarCfgModalEdicaoMotorista() {
