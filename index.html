@@ -4829,74 +4829,67 @@ async function buscarCNPJ() {
   if (cnpj.length !== 14) { status.textContent = '⚠️ CNPJ deve ter 14 dígitos'; status.style.color='var(--red)'; return; }
   status.textContent = '🔍 Buscando...'; status.style.color='var(--muted)';
 
-  // Helper: fetch com timeout
-  async function fetchTimeout(url, ms = 8000) {
+  // Helper: fetch com timeout reduzido
+  async function fetchTimeout(url, ms = 5000) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), ms);
     try { return await fetch(url, { signal: ctrl.signal }); }
     finally { clearTimeout(timer); }
   }
 
+  // Normaliza resposta de cada API para formato único
+  async function tentarBrasilAPI() {
+    const res = await fetchTimeout(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
+    if (!res.ok) throw new Error('BrasilAPI falhou');
+    return await res.json();
+  }
+
+  async function tentarReceitaWS() {
+    const res = await fetchTimeout(`https://receitaws.com.br/v1/cnpj/${cnpj}`);
+    if (!res.ok) throw new Error('ReceitaWS falhou');
+    const d2 = await res.json();
+    if (d2.status === 'ERROR') throw new Error('ReceitaWS: CNPJ inválido');
+    return {
+      razao_social: d2.nome,
+      nome_fantasia: d2.fantasia,
+      cep: d2.cep?.replace(/\D/g,''),
+      logradouro: d2.logradouro,
+      numero: d2.numero,
+      bairro: d2.bairro,
+      complemento: d2.complemento,
+      municipio: d2.municipio,
+      uf: d2.uf,
+      email: d2.email,
+      ddd_telefone_1: d2.telefone?.replace(/\D/g,''),
+      data_inicio_atividade: d2.abertura ? d2.abertura.split('/').reverse().join('-') : '',
+    };
+  }
+
+  async function tentarCNPJws() {
+    const res = await fetchTimeout(`https://publica.cnpj.ws/cnpj/${cnpj}`);
+    if (!res.ok) throw new Error('CNPJ.ws falhou');
+    const d3 = await res.json();
+    const end = d3.estabelecimento || {};
+    const tel = end.ddd1 && end.telefone1 ? end.ddd1 + end.telefone1 : '';
+    return {
+      razao_social: d3.razao_social,
+      nome_fantasia: end.nome_fantasia || d3.razao_social,
+      cep: end.cep?.replace(/\D/g,''),
+      logradouro: [end.tipo_logradouro, end.logradouro].filter(Boolean).join(' '),
+      numero: end.numero,
+      bairro: end.bairro,
+      complemento: end.complemento,
+      municipio: end.cidade?.ibge_id ? end.cidade?.nome : end.cidade,
+      uf: end.estado?.sigla,
+      email: end.email,
+      ddd_telefone_1: tel,
+      data_inicio_atividade: end.data_inicio_atividade || '',
+    };
+  }
+
   try {
-    let d = null;
-
-    // 1ª tentativa: BrasilAPI
-    try {
-      const res = await fetchTimeout(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
-      if (res.ok) d = await res.json();
-    } catch(e) { /* tenta próxima */ }
-
-    // 2ª tentativa: ReceitaWS
-    if (!d) {
-      try {
-        const res2 = await fetchTimeout(`https://receitaws.com.br/v1/cnpj/${cnpj}`);
-        if (res2.ok) {
-          const d2 = await res2.json();
-          if (d2.status !== 'ERROR') {
-            d = {
-              razao_social: d2.nome,
-              nome_fantasia: d2.fantasia,
-              cep: d2.cep?.replace(/\D/g,''),
-              logradouro: d2.logradouro,
-              numero: d2.numero,
-              bairro: d2.bairro,
-              complemento: d2.complemento,
-              municipio: d2.municipio,
-              uf: d2.uf,
-              email: d2.email,
-              ddd_telefone_1: d2.telefone?.replace(/\D/g,''),
-              data_inicio_atividade: d2.abertura ? d2.abertura.split('/').reverse().join('-') : '',
-            };
-          }
-        }
-      } catch(e2) { /* tenta próxima */ }
-    }
-
-    // 3ª tentativa: publica.cnpj.ws
-    if (!d) {
-      try {
-        const res3 = await fetchTimeout(`https://publica.cnpj.ws/cnpj/${cnpj}`);
-        if (res3.ok) {
-          const d3 = await res3.json();
-          const end = d3.estabelecimento || {};
-          const tel = end.ddd1 && end.telefone1 ? end.ddd1 + end.telefone1 : '';
-          d = {
-            razao_social: d3.razao_social,
-            nome_fantasia: end.nome_fantasia || d3.razao_social,
-            cep: end.cep?.replace(/\D/g,''),
-            logradouro: [end.tipo_logradouro, end.logradouro].filter(Boolean).join(' '),
-            numero: end.numero,
-            bairro: end.bairro,
-            complemento: end.complemento,
-            municipio: end.cidade?.ibge_id ? end.cidade?.nome : end.cidade,
-            uf: end.estado?.sigla,
-            email: end.email,
-            ddd_telefone_1: tel,
-            data_inicio_atividade: end.data_inicio_atividade || '',
-          };
-        }
-      } catch(e3) { /* todas falharam */ }
-    }
+    // Dispara as 3 APIs em paralelo — usa a primeira que responder com sucesso
+    const d = await Promise.any([tentarBrasilAPI(), tentarReceitaWS(), tentarCNPJws()]);
 
     if (!d) throw new Error('CNPJ não encontrado em nenhuma base');
 
