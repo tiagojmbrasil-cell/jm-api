@@ -9563,19 +9563,24 @@ async function removerAnexoEditarPorIndice(idx) {
 }
 
 async function abrirEditarMotorista(id) {
-  // Busca primeiro na tabela motoristas, depois em lote_motoristas
+  // Dispara as duas buscas em paralelo para ganhar velocidade
+  const [fromMotoristas, fromLote] = await Promise.all([
+    supabaseRequest('GET', `motoristas?id=eq.${id}`).catch(() => []),
+    supabaseRequest('GET', `lote_motoristas?id=eq.${id}`).catch(() => [])
+  ]);
+
   let m = null;
-  const fromMotoristas = await supabaseRequest('GET', `motoristas?id=eq.${id}`) || [];
-  if (fromMotoristas.length) {
+  if (fromMotoristas && fromMotoristas.length) {
     m = fromMotoristas[0];
     motoristaEditandoTabela = 'motoristas';
-  } else {
-    const fromLote = await supabaseRequest('GET', `lote_motoristas?id=eq.${id}`) || [];
-    if (fromLote.length) { m = fromLote[0]; motoristaEditandoTabela = 'lote_motoristas'; }
+  } else if (fromLote && fromLote.length) {
+    m = fromLote[0];
+    motoristaEditandoTabela = 'lote_motoristas';
   }
   if (!m) return;
   motoristaEditandoId = id;
 
+  // Preenche campos básicos imediatamente
   document.getElementById('em-nome').value = m.nome || '';
   document.getElementById('em-placa').value = m.placa || '';
   document.getElementById('em-contato').value = m.contato || '';
@@ -9591,9 +9596,14 @@ async function abrirEditarMotorista(id) {
   document.getElementById('em-pix').value = m.chave_pix || '';
   selecionarTipoPagamentoEditar(m.tipo_pagamento || 'conta_bancaria');
 
-  // Carrega dados de carga/checklist do lote_motoristas mais recente
-  const ck = m.checklist || {};
+  // Abre o modal imediatamente — não espera o checklist
+  aplicarCfgModalEdicaoMotorista();
+  document.getElementById('modal-editar-motorista-overlay').classList.add('open');
+
+  // Carrega checklist e anexos em paralelo após abrir
   let loteMotId = null;
+  const secaoAnexos = document.getElementById('em-secao-anexos');
+
   if (motoristaEditandoTabela === 'lote_motoristas') {
     loteMotId = id;
     const ckLM = m.checklist || {};
@@ -9602,10 +9612,13 @@ async function abrirEditarMotorista(id) {
     document.getElementById('em-canal-contato').value = ckLM.canal_contato || '';
     document.getElementById('em-prazo-saldo').value = ckLM.prazo_saldo || '';
     document.getElementById('em-peso').value = m.peso_saida || '';
+    motoristaEditandoAnexos = null;
+    limparAnexosFormularioEditarMotorista();
+    if (secaoAnexos) secaoAnexos.style.display = 'none';
   } else {
-    // tabela motoristas — busca lote_motoristas vinculado para pegar checklist
+    // Busca lote_motoristas vinculado para pegar checklist
     try {
-      const lmList = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${id}&order=criado_em.desc&limit=1`) || [];
+      const lmList = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${id}&order=criado_em.desc&limit=1&select=id,checklist,peso_saida`) || [];
       const lm = lmList[0];
       if (lm) {
         loteMotId = lm.id;
@@ -9627,24 +9640,14 @@ async function abrirEditarMotorista(id) {
       document.getElementById('em-canal-contato').value = '';
       document.getElementById('em-prazo-saldo').value = '';
     }
-  }
-  window._em_lote_mot_id = loteMotId;
-
-  const secaoAnexos = document.getElementById('em-secao-anexos');
-  if (motoristaEditandoTabela === 'motoristas') {
     motoristaEditandoAnexos = JSON.parse(JSON.stringify(m.anexos || []));
     limparAnexosFormularioEditarMotorista();
     if (secaoAnexos) secaoAnexos.style.display = '';
     await renderAnexosEditarMotorista();
     atualizarTodosIndicadoresDoc();
-  } else {
-    motoristaEditandoAnexos = null;
-    limparAnexosFormularioEditarMotorista();
-    if (secaoAnexos) secaoAnexos.style.display = 'none';
   }
 
-  aplicarCfgModalEdicaoMotorista();
-  document.getElementById('modal-editar-motorista-overlay').classList.add('open');
+  window._em_lote_mot_id = loteMotId;
 }
 
 function aplicarCfgModalEdicaoMotorista() {
@@ -9687,6 +9690,12 @@ function aplicarCfgModalEdicaoMotorista() {
   if (divBotoesPayment) divBotoesPayment.style.display = (dadosBancariosAtivo || pixAtivo) ? '' : 'none';
   if (!dadosBancariosAtivo) { const el = document.getElementById('em-campos-conta'); if (el) el.style.display = 'none'; }
   if (!pixAtivo)            { const el = document.getElementById('em-campos-pix');   if (el) el.style.display = 'none'; }
+
+  // Título "Dados da Carga" — oculta junto com a seção
+  show('em-titulo-carga', algumCampoAtivo);
+
+  // Título "Dados Bancários" — oculta se ambos desativados
+  show('em-titulo-bancario', dadosBancariosAtivo || pixAtivo);
 
   // Documentos / Anexos
   show('em-doc-row-cnh',           cfgGet('gr_anexo_cnh'));
@@ -10213,7 +10222,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
       <div class="form-group"><label>CPF</label><input type="text" id="em-cpf" placeholder="000.000.000-00"></div>
       <div class="form-group"><label>Peso Saída (ton)</label><input type="number" id="em-peso" placeholder="Ex: 40" step="0.1" min="0"></div>
     </div>
-    <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">Dados da Carga</div>
+    <div id="em-titulo-carga" style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">Dados da Carga</div>
     <div id="em-secao-carga" style="background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:4px;">
       <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px;">
         <div class="form-group"><label>Valor Frete Motorista (R$)</label><input type="number" id="em-valor-frete" placeholder="Ex: 5000.00" step="0.01" min="0"></div>
@@ -10229,7 +10238,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
         </div>
       </div>
     </div>
-    <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">Dados Bancários</div>
+    <div id="em-titulo-bancario" style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">Dados Bancários</div>
     <div style="display:flex;gap:8px;margin-bottom:14px;">
       <button type="button" id="em-btn-conta" onclick="selecionarTipoPagamentoEditar('conta_bancaria')" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:rgba(249,115,22,0.12);color:var(--accent);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">🏦 Conta Bancária</button>
       <button type="button" id="em-btn-pix" onclick="selecionarTipoPagamentoEditar('chave_pix')" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">⚡ Chave PIX</button>
