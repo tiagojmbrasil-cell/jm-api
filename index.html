@@ -9643,7 +9643,60 @@ async function abrirEditarMotorista(id) {
     if (secaoAnexos) secaoAnexos.style.display = 'none';
   }
 
+  aplicarCfgModalEdicaoMotorista();
   document.getElementById('modal-editar-motorista-overlay').classList.add('open');
+}
+
+function aplicarCfgModalEdicaoMotorista() {
+  const show = (id, visible) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = visible ? '' : 'none';
+  };
+
+  // Campos individuais dentro da seção de carga
+  const valorFreteEl = document.getElementById('em-valor-frete')?.closest('.form-group');
+  if (valorFreteEl) valorFreteEl.style.display = cfgGet('gr_campo_valor_frete') ? '' : 'none';
+
+  const valorCargaEl = document.getElementById('em-valor-carga')?.closest('.form-group');
+  if (valorCargaEl) valorCargaEl.style.display = cfgGet('gr_campo_valor_carga') ? '' : 'none';
+
+  const canalContatoEl = document.getElementById('em-canal-contato')?.closest('.form-group');
+  if (canalContatoEl) canalContatoEl.style.display = cfgGet('gr_campo_canal_contato') ? '' : 'none';
+
+  const prazoSaldoEl = document.getElementById('em-prazo-saldo')?.closest('.form-group');
+  if (prazoSaldoEl) prazoSaldoEl.style.display = cfgGet('gr_campo_prazo_saldo') ? '' : 'none';
+
+  // Oculta seção inteira "Dados da Carga" se todos os campos estiverem desativados
+  const algumCampoAtivo = cfgGet('gr_campo_valor_frete') || cfgGet('gr_campo_valor_carga') || cfgGet('gr_campo_canal_contato') || cfgGet('gr_campo_prazo_saldo');
+  show('em-secao-carga', algumCampoAtivo);
+
+  // Botões de seleção conta/pix
+  const dadosBancariosAtivo = cfgGet('gr_campo_dados_bancarios');
+  const pixAtivo = cfgGet('gr_campo_pix');
+  const btnConta = document.getElementById('em-btn-conta');
+  const btnPix   = document.getElementById('em-btn-pix');
+  if (btnConta) btnConta.style.display = dadosBancariosAtivo ? '' : 'none';
+  if (btnPix)   btnPix.style.display   = pixAtivo            ? '' : 'none';
+
+  // Força seleção se apenas um tipo está ativo
+  if (dadosBancariosAtivo && !pixAtivo) selecionarTipoPagamentoEditar('conta_bancaria');
+  if (!dadosBancariosAtivo && pixAtivo) selecionarTipoPagamentoEditar('chave_pix');
+
+  // Oculta a área toda de pagamento se ambos estiverem desativados
+  const divBotoesPayment = btnConta?.parentElement;
+  if (divBotoesPayment) divBotoesPayment.style.display = (dadosBancariosAtivo || pixAtivo) ? '' : 'none';
+  if (!dadosBancariosAtivo) { const el = document.getElementById('em-campos-conta'); if (el) el.style.display = 'none'; }
+  if (!pixAtivo)            { const el = document.getElementById('em-campos-pix');   if (el) el.style.display = 'none'; }
+
+  // Documentos / Anexos
+  show('em-doc-row-cnh',           cfgGet('gr_anexo_cnh'));
+  show('em-doc-row-antt',          cfgGet('gr_anexo_antt'));
+  show('em-doc-row-doc_caminhao',  cfgGet('gr_anexo_doc_caminhao'));
+  show('em-doc-row-residencia',    cfgGet('gr_anexo_residencia'));
+  show('em-doc-row-foto_caminhao', cfgGet('gr_anexo_foto_caminhao'));
+  show('em-doc-row-selfie_cnh',    cfgGet('gr_anexo_selfie_cnh'));
+  show('em-doc-row-selfie_placa',  cfgGet('gr_anexo_selfie_placa'));
+  show('em-doc-row-lonas',         cfgGet('gr_anexo_lonas'));
 }
 
 function fecharEditarMotorista() {
