@@ -4954,8 +4954,23 @@ async function salvarCliente() {
       showToast('✅ Cliente atualizado!', 'success');
       clienteEditandoId = null;
     } else {
+      // Verificação de duplicidade por CNPJ e Razão Social
+      const duplicadosCNPJ = cnpj
+        ? await supabaseRequest('GET', `clientes_cadastro?cnpj=eq.${encodeURIComponent(cnpj)}&select=id,razao_social,cnpj`) || []
+        : [];
+      if (duplicadosCNPJ.length > 0) {
+        showToast(`⚠️ Já existe um cliente com este CNPJ: "${duplicadosCNPJ[0].razao_social || duplicadosCNPJ[0].cnpj}"`, 'error');
+        return;
+      }
+      const duplicadosRazao = razao
+        ? await supabaseRequest('GET', `clientes_cadastro?razao_social=ilike.${encodeURIComponent(razao)}&select=id,razao_social,cnpj`) || []
+        : [];
+      if (duplicadosRazao.length > 0) {
+        showToast(`⚠️ Já existe um cliente com esta Razão Social: "${duplicadosRazao[0].razao_social}"`, 'error');
+        return;
+      }
       await supabaseRequest('POST', 'clientes_cadastro', dados);
-      registrarLog('cliente', 'Cliente cadastrado', `Nome: ${dados?.nome||'—'}`);
+      registrarLog('cliente', 'Cliente cadastrado', `Nome: ${dados?.razao_social||dados?.nome_fantasia||'—'}`);
       showToast('✅ Cliente salvo!', 'success');
     }
     resetCliente();
