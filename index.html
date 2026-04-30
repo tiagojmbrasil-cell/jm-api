@@ -4637,7 +4637,10 @@ function renderMotoristasPagina(dados) {
           <td style="font-size:12px">${m.cpf || '—'}</td>
           <td style="font-size:12px">${m.placa || '—'}</td>
           <td style="font-size:12px">${m.contato || '—'}</td>
-          <td>${badgeMotorista(m.status || 'aguardando_gr')}</td>
+          <td>
+            ${badgeMotorista(m.status || 'aguardando_gr')}
+            ${m.status === 'saldo_agendado' && m.financeiro_saldo_data ? `<div style="font-size:11px;color:#3b82f6;margin-top:4px;font-weight:600;">📅 Pgto: ${m.financeiro_saldo_data.split('-').reverse().join('/')}</div>` : ''}
+          </td>
           <td>${badgeGR(m.gr_status || 'pendente')}</td>
           <td style="font-size:12px;color:${m.gr_motivo ? '#ef4444' : 'var(--muted)'};max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${m.gr_motivo || ''}">${m.gr_motivo || '—'}</td>
           <td>${badgeTipoPagamento(m.tipo_pagamento)}</td>
