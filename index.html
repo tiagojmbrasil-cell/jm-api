@@ -6184,7 +6184,19 @@ async function confirmarAnexoNFSemArquivo() {
   if (!confirm('Confirmar etapa da Nota Fiscal sem anexar arquivo?\n\nO motorista será enviado ao Fiscal sem o documento de NF.')) return;
   try {
     const motoristaId = logisticoMotoristaSelecionadoId;
-    const loteMotLista = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${motoristaId}`) || [];
+
+    // Busca prioritariamente pelo lote atual, com fallback robusto
+    let loteMotLista = [];
+    if (logisticoMotoristaLoteId) {
+      loteMotLista = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${logisticoMotoristaLoteId}&motorista_id=eq.${motoristaId}`) || [];
+    }
+    if (!loteMotLista.length) {
+      const todosMot = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${motoristaId}&order=criado_em.desc`) || [];
+      const statusAtivos = ['aguardando_nf', 'liberado_carregar', 'aguardando_emissao_doc'];
+      loteMotLista = todosMot.filter(r => statusAtivos.includes(r.status || ''));
+      if (!loteMotLista.length && todosMot.length) loteMotLista = [todosMot[0]];
+    }
+
     await supabaseRequest('PATCH', `motoristas?id=eq.${motoristaId}`, { status: 'aguardando_emissao_doc' });
     if (loteMotLista.length) {
       await Promise.all(loteMotLista.map(reg =>
@@ -6685,6 +6697,10 @@ async function marcarCadastroRealizado(id) {
     window._marcandoCadastro = true;
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; }
     await supabaseRequest('PATCH', `motoristas?id=eq.${id}`, { status: 'aguardando_nf' });
+    // Sincroniza lote_motoristas para manter consistência
+    const lmList = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${id}&order=criado_em.desc`) || [];
+    const ativo = lmList.find(r => ['liberado_carregar','aguardando_cadastro','aguardando_nf'].includes(r.status || '')) || lmList[0];
+    if (ativo) await supabaseRequest('PATCH', `lote_motoristas?id=eq.${ativo.id}`, { status: 'aguardando_nf' });
     registrarLog('motorista', 'Cadastro realizado — enviado ao Logístico para NF', `Motorista: #${id}`);
     showToast('✅ Cadastro realizado! Motorista enviado ao Logístico para NF.', 'success');
     await carregarCadastro();
@@ -6790,6 +6806,10 @@ async function marcarCadastroRealizadoModal() {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; }
   try {
     await supabaseRequest('PATCH', `motoristas?id=eq.${id}`, { status: 'aguardando_nf' });
+    // Sincroniza lote_motoristas para manter consistência
+    const lmList = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${id}&order=criado_em.desc`) || [];
+    const ativo = lmList.find(r => ['liberado_carregar','aguardando_cadastro','aguardando_nf'].includes(r.status || '')) || lmList[0];
+    if (ativo) await supabaseRequest('PATCH', `lote_motoristas?id=eq.${ativo.id}`, { status: 'aguardando_nf' });
     registrarLog('motorista', 'Cadastro realizado — enviado ao Logístico para NF', `Motorista: #${id}`);
     showToast('✅ Cadastro realizado! Motorista enviado ao Logístico para NF.', 'success');
     fecharCadastroVerMotorista();
@@ -6899,7 +6919,9 @@ function renderLogistico(dados) {
           let acao = '—';
           if (m._etapa === 'nf') {
             etapaLabel = '📄 Anexar NF';
-            acao = `<button class="btn-primary" style="padding:6px 12px;font-size:12px;" onclick="abrirModalLogisticoNF(${m.id}, '${(m.nome||'').replace(/'/g,"\\'")}', '${m.placa||''}', '${m.cpf||''}', ${m.lote_id||'null'}, '${m._origem}')">📄 Anexar NF</button>`;
+            // Para motoristas da tabela 'motoristas', o lote de origem fica em lote_id_origem
+            const _loteIdNF = m.lote_id || m.lote_id_origem || 'null';
+            acao = `<button class="btn-primary" style="padding:6px 12px;font-size:12px;" onclick="abrirModalLogisticoNF(${m.id}, '${(m.nome||'').replace(/'/g,"\\'")}', '${m.placa||''}', '${m.cpf||''}', ${_loteIdNF}, '${m._origem}')">📄 Anexar NF</button>`;
           } else if (m._etapa === 'fotos') {
             etapaLabel = '📸 Fotos Carregamento';
             acao = `<button class="btn-primary" style="padding:6px 12px;font-size:12px;background:var(--green);" onclick="abrirModalLogisticoFotos(${m.id}, '${(m.nome||'').replace(/'/g,"\\'")}', '${m.placa||''}', '${m.cpf||''}', ${m.lote_id||'null'}, '${m._origem}', '${(m.numero_ce||'').replace(/'/g,"\\'")}')">📸 Inserir Fotos</button>`;
@@ -7063,12 +7085,18 @@ async function confirmarAnexoNF() {
       anexos: anexosMotorista,
     });
 
-    // Atualiza lote_motoristas
-    // Filtra pelo lote atual se disponível, senão busca por motorista_id
-    const loteMotQuery = logisticoMotoristaLoteId
-      ? `lote_motoristas?lote_id=eq.${logisticoMotoristaLoteId}&motorista_id=eq.${motoristaId}`
-      : `lote_motoristas?motorista_id=eq.${motoristaId}`;
-    const loteMotLista = await supabaseRequest('GET', loteMotQuery) || [];
+    // Atualiza lote_motoristas — busca prioritariamente pelo lote atual,
+    // com fallback robusto por motorista_id para garantir que o Fiscal receba o motorista.
+    let loteMotLista = [];
+    if (logisticoMotoristaLoteId) {
+      loteMotLista = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${logisticoMotoristaLoteId}&motorista_id=eq.${motoristaId}`) || [];
+    }
+    if (!loteMotLista.length) {
+      const todosMot = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${motoristaId}&order=criado_em.desc`) || [];
+      const statusAtivos = ['aguardando_nf', 'liberado_carregar', 'aguardando_emissao_doc'];
+      loteMotLista = todosMot.filter(r => statusAtivos.includes(r.status || ''));
+      if (!loteMotLista.length && todosMot.length) loteMotLista = [todosMot[0]];
+    }
     if (loteMotLista.length) {
       await Promise.all(loteMotLista.map(reg => {
         const anexosLote = [...(reg.anexos || []), ...uploadResults];
@@ -7081,7 +7109,7 @@ async function confirmarAnexoNF() {
       showToast('✅ NF anexada! Motorista enviado ao Fiscal para emissão do documento.', 'success');
     } else {
       registrarLog('logistico', 'NF anexada — sem lote vinculado ainda', `Motorista: #${motoristaId}`);
-      showToast('✅ NF salva! Motorista ainda não está em nenhum lote. Ao ser adicionado ao lote, irá direto ao Fiscal.', 'success');
+      showToast('✅ NF salva! Motorista ainda não está em nenhum lote ativo. Ao ser adicionado ao lote, irá direto ao Fiscal.', 'success');
     }
 
     document.getElementById('mlog-nf-arquivo-status').textContent = '';
