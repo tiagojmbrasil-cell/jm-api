@@ -7064,7 +7064,11 @@ async function confirmarAnexoNF() {
     });
 
     // Atualiza lote_motoristas
-    const loteMotLista = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${motoristaId}`) || [];
+    // Filtra pelo lote atual se disponível, senão busca por motorista_id
+    const loteMotQuery = logisticoMotoristaLoteId
+      ? `lote_motoristas?lote_id=eq.${logisticoMotoristaLoteId}&motorista_id=eq.${motoristaId}`
+      : `lote_motoristas?motorista_id=eq.${motoristaId}`;
+    const loteMotLista = await supabaseRequest('GET', loteMotQuery) || [];
     if (loteMotLista.length) {
       await Promise.all(loteMotLista.map(reg => {
         const anexosLote = [...(reg.anexos || []), ...uploadResults];
