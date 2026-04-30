@@ -3113,7 +3113,7 @@ function cfgBtnSubstituto(label, onConfirm) {
 function cfgConfirmarSemAnexo(label, callbackStr) {
   if (confirm(`Confirmar "${label}" sem anexar documento?\n\nEsta etapa será marcada como concluída sem arquivo.`)) {
     if (typeof callbackStr === 'function') callbackStr();
-    else if (typeof callbackStr === 'string') eval(callbackStr);
+    // eval removido por segurança — strings não são executadas como código
   }
 }
 
