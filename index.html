@@ -4566,8 +4566,10 @@ let motoristasPageData = [];
 async function carregarMotoristasPagina() {
   try {
     document.getElementById('motoristas-page-table').innerHTML = '<div class="loading">Carregando...</div>';
-    const motoristas = await supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500&select=id,nome,placa,cpf,contato,status,gr_status,gr_motivo,tipo_motorista,lote_id_origem,peso_saida_origem,criado_em') || [];
-    const loteMotoristas = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,criado_em') || [];
+    const [motoristas, loteMotoristas] = await Promise.all([
+      supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500&select=id,nome,placa,cpf,contato,status,gr_status,gr_motivo,tipo_motorista,lote_id_origem,peso_saida_origem,criado_em').then(r => r || []),
+      supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800&select=id,lote_id,motorista_id,peso_saida,status,tipo_pagamento,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_saldo_data,auxiliar_operacao,data_inicio_viagem,data_fim_viagem').then(r => r || []),
+    ]);
 
     // Para cada motorista, descobre o status mais atual:
     // Se tiver registro em lote_motoristas com status avançado, usa esse
