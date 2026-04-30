@@ -4588,6 +4588,7 @@ async function carregarMotoristasPagina() {
         data_inicio_viagem: loteReg?.data_inicio_viagem || null,
         data_fim_viagem: loteReg?.data_fim_viagem || null,
         auxiliar_operacao: loteReg?.auxiliar_operacao || null,
+        financeiro_saldo_data: loteReg?.financeiro_saldo_data || null,
       };
     });
     filtrarMotoristasPagina();
@@ -7381,7 +7382,7 @@ function renderFinanceiro(dados) {
                  <span style="font-size:12px;color:#ef4444;font-weight:600;">⚠️ Aguardando resolução do sinistro</span>
                </div>`
             : `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                 <input type="date" id="fin-saldo-data-${m.id}" style="width:auto;font-size:12px;padding:6px 10px;" />
+                 <input type="date" id="fin-saldo-data-${m.id}" style="width:auto;font-size:12px;padding:6px 10px;" value="${m.financeiro_saldo_data || ''}" />
                  <button class="btn-primary" style="padding:6px 10px;font-size:12px;background:var(--blue);" onclick="salvarDataSaldo(${m.id})">📅 Agendar saldo</button>
                  <button class="btn-primary" style="padding:6px 10px;font-size:12px;background:var(--green);" onclick="marcarSaldoPago(${m.id})">✅ Saldo pago</button>
                </div>`;
@@ -7797,6 +7798,7 @@ async function salvarDataSaldo(id) {
     await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { financeiro_saldo_data: dt });
     registrarLog('financeiro', 'Saldo agendado', `ID: #${id} · Data: ${dt}`);
     showToast('📅 Saldo agendado.', 'success');
+    await carregarFinanceiro();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 
