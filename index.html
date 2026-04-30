@@ -4681,13 +4681,22 @@ async function removerMotoristaPagina(id) {
 // ============ STATUS DO LOTE ============
 async function carregarStatusLote() {
   try {
-    const data = await supabaseRequest('GET', 'lotes?order=criado_em.desc&limit=200&select=id,cliente,agencia,produto,rota_origem,rota_destino,peso_ton,data_cadastro,status,valor_frete_empresa,valor_frete_motorista,criado_em') || [];
-    statusLoteData = await Promise.all(data.map(async l => {
-      const motoristas = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${l.id}`) || [];
+    const [data, todosMotoristas] = await Promise.all([
+      supabaseRequest('GET', 'lotes?order=criado_em.desc&limit=200&select=id,cliente,agencia,produto,rota_origem,rota_destino,peso_ton,data_cadastro,status,valor_frete_empresa,valor_frete_motorista,criado_em') || [],
+      supabaseRequest('GET', 'lote_motoristas?select=id,lote_id,peso_saida,status') || []
+    ]);
+    const lotes = data || [];
+    const motoristasMap = {};
+    (todosMotoristas || []).forEach(m => {
+      if (!motoristasMap[m.lote_id]) motoristasMap[m.lote_id] = [];
+      motoristasMap[m.lote_id].push(m);
+    });
+    statusLoteData = lotes.map(l => {
+      const motoristas = motoristasMap[l.id] || [];
       const carregado = motoristas.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
       const pesoTon = parseFloat(l.peso_ton || 0);
       return { ...l, motoristas, carregado, restante: Math.max(0, pesoTon - carregado) };
-    }));
+    });
 
     document.getElementById('sl-total').textContent = statusLoteData.length;
     document.getElementById('sl-finalizados').textContent = statusLoteData.filter(l => l.status === 'finalizado').length;
