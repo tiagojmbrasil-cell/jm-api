@@ -3700,7 +3700,7 @@ async function salvarCotacao() {
       quantidade: parseFloat(quantidade),
       tipo_produto: tipoProduto,
       preco: parseMoeda(preco) ?? parseFloat(preco),
-      valor_cotado: parseFloat(preco),
+      valor_cotado: parseMoeda(preco) ?? parseFloat(preco),
       status: 'pendente',
       motivo_nao_fechamento: null,
     });
