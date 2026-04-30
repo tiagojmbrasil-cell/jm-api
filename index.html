@@ -5251,11 +5251,38 @@ async function carregarFiscal() {
     document.getElementById('fiscal-table').innerHTML = '<div class="loading">Carregando motoristas...</div>';
     const statusFiscal = ['aguardando_emissao_doc'];
 
-    // Fonte única e autoritativa: lote_motoristas
-    const todosLoteMot = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,criado_em') || [];
-    const motoristas = todosLoteMot.filter(m => statusFiscal.includes(m.status || ''));
+    // Busca em paralelo: lote_motoristas (principal) + motoristas (fallback para quem nao tem lote_motoristas atualizado)
+    const [todosLoteMot, todosMotoristas] = await Promise.all([
+      supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,criado_em'),
+      supabaseRequest('GET', 'motoristas?status=eq.aguardando_emissao_doc&order=criado_em.desc&limit=500&select=id,nome,placa,cpf,contato,status,gr_status,gr_motivo,tipo_pagamento,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,lote_id_origem,criado_em'),
+    ]);
 
-    const loteIds = [...new Set(motoristas.map(m => m.lote_id))];
+    // Motoristas de lote_motoristas com status correto
+    const doLote = (todosLoteMot || []).filter(m => statusFiscal.includes(m.status || ''));
+
+    // IDs ja cobertos pelo lote_motoristas para evitar duplicatas
+    const motoristIdsNoLote = new Set(doLote.map(m => m.motorista_id));
+
+    // Motoristas da tabela motoristas que estao no status correto mas sem lote_motoristas atualizado
+    const doMotoristas = (todosMotoristas || [])
+      .filter(m => !motoristIdsNoLote.has(m.id))
+      .map(m => ({
+        id: `mot_${m.id}`,
+        _motorista_direto: true,
+        motorista_id: m.id,
+        lote_id: m.lote_id_origem || null,
+        nome: m.nome, placa: m.placa, cpf: m.cpf, contato: m.contato,
+        peso_saida: null, status: m.status,
+        tipo_pagamento: m.tipo_pagamento, gr_status: m.gr_status, gr_motivo: m.gr_motivo,
+        tipo_chave_pix: m.tipo_chave_pix, chave_pix: m.chave_pix,
+        nome_titular: m.nome_titular, cpf_titular: m.cpf_titular,
+        banco: m.banco, agencia: m.agencia, numero_conta: m.numero_conta, tipo_conta: m.tipo_conta,
+        numero_ce: null, criado_em: m.criado_em,
+      }));
+
+    const motoristas = [...doLote, ...doMotoristas];
+
+    const loteIds = [...new Set(motoristas.map(m => m.lote_id).filter(Boolean))];
     const lotesMap = {};
     await Promise.all(loteIds.map(async lid => {
       if (!lid) return;
@@ -5265,7 +5292,7 @@ async function carregarFiscal() {
     fiscalData = motoristas.map(m => ({ ...m, lote: lotesMap[m.lote_id] || null }));
     renderFiscal(fiscalData);
   } catch(e) {
-    document.getElementById('fiscal-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
+    document.getElementById('fiscal-table').innerHTML = '<div class="empty"><div class="empty-icon">\u26a0\ufe0f</div><p>Erro ao carregar.</p></div>';
   }
 }
 
@@ -5282,10 +5309,11 @@ function filtrarFiscal() {
 
 function renderFiscal(dados) {
   if (!dados.length) {
-    document.getElementById('fiscal-table').innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>Nenhum motorista encontrado.</p></div>';
+    document.getElementById('fiscal-table').innerHTML = '<div class="empty"><div class="empty-icon">\u{1F4CB}</div><p>Nenhum motorista encontrado.</p></div>';
     return;
   }
   const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  // Usa indice no fiscalData para referenciar motoristas (suporta tanto lote_motoristas quanto motoristas diretos)
   document.getElementById('fiscal-table').innerHTML = `
     <table>
       <thead><tr>
@@ -5301,25 +5329,28 @@ function renderFiscal(dados) {
         <th>Ação</th>
       </tr></thead>
       <tbody>
-        ${dados.map(m => {
+        ${dados.map((m, idx) => {
+          const fiscalIdx = fiscalData.indexOf(m);
+          const refIdx = fiscalIdx >= 0 ? fiscalIdx : idx;
           const st = m.status || '';
           const acao = st === 'aguardando_emissao_doc'
             ? `<div style="display:flex;gap:8px;">
-                 <button class="btn-primary" style="padding:6px 12px;font-size:12px;background:var(--green);" onclick="emitirDocumento(${m.id})">✅ Documento Emitido</button>
-                 <button class="btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="abrirFiscalModal(${m.id})">👁️ Ver</button>
+                 <button class="btn-primary" style="padding:6px 12px;font-size:12px;background:var(--green);" onclick="emitirDocumento(${refIdx})">\u2705 Documento Emitido</button>
+                 <button class="btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="abrirFiscalModal(${refIdx})">\u{1F441}\uFE0F Ver</button>
                </div>`
-            : `<button class="btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="abrirFiscalModal(${m.id})">👁️ Ver</button>`;
+            : `<button class="btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="abrirFiscalModal(${refIdx})">\u{1F441}\uFE0F Ver</button>`;
+          const loteLabel = m.lote_id ? `Lote #${m.lote_id}` : (m._motorista_direto ? 'Sem lote' : '—');
           return `<tr>
-            <td style="color:var(--muted);font-size:12px">#${m.id}</td>
-            <td><strong>${esc(m.nome || '—')}</strong></td>
+            <td style="color:var(--muted);font-size:12px">#${m.motorista_id || m.id}</td>
+            <td><strong>${esc(m.nome || '—')}</strong>${m._motorista_direto ? '<span style="font-size:10px;color:var(--muted);margin-left:4px;">(sem lote)</span>' : ''}</td>
             <td style="font-size:12px">${esc(m.cpf || '—')}</td>
             <td style="font-size:12px">${esc(m.placa || '—')}</td>
             <td>${badgeMotorista(st)}</td>
             <td style="font-size:12px">
-              <span style="color:var(--muted)">Lote #${m.lote_id}</span><br>
+              <span style="color:var(--muted)">${loteLabel}</span><br>
               <strong>${m.lote ? esc(m.lote.cliente || '—') : '—'}</strong>
             </td>
-            <td style="font-size:12px;color:var(--muted)">${m.lote ? esc(m.lote.origem||'—') + ' → ' + esc(m.lote.destino||'—') : '—'}</td>
+            <td style="font-size:12px;color:var(--muted)">${m.lote ? esc(m.lote.origem||'—') + ' \u2192 ' + esc(m.lote.destino||'—') : '—'}</td>
             <td style="font-size:12px;color:var(--accent);font-weight:600">${m.peso_saida ? m.peso_saida + ' ton' : '—'}</td>
             <td>${badgeTipoPagamento(m.tipo_pagamento)}</td>
             <td>${acao}</td>
@@ -5331,13 +5362,18 @@ function renderFiscal(dados) {
 
 
 // ============ MODAL FISCAL ============
-let motoristFiscalId = null;
+let motoristFiscalId = null; // id do registro lote_motoristas (null se motorista direto)
+let motoristFiscalMotoristaId = null; // id real do motorista
+let motoristFiscalDireto = false; // true se veio direto da tabela motoristas
 function _fiscalStatusChangeHandler() { atualizarStatusFiscal(); }
 
-async function abrirFiscalModal(id) {
-  const m = fiscalData.find(x => x.id === id);
+async function abrirFiscalModal(idx) {
+  // idx e sempre um indice em fiscalData (renderFiscal usa fiscalData.indexOf)
+  const m = fiscalData[idx];
   if (!m) return;
-  motoristFiscalId = id;
+  motoristFiscalId = m._motorista_direto ? null : (m.id ?? null);
+  motoristFiscalMotoristaId = m.motorista_id || null;
+  motoristFiscalDireto = !!m._motorista_direto;
 
   document.getElementById('mf-titulo').textContent = 'Motorista — ' + (m.nome || '#' + id);
   document.getElementById('mf-status-bar').innerHTML = badgeMotorista(m.status);
@@ -5573,20 +5609,27 @@ async function emitirDocumentoFiscal() {
     const btn = document.getElementById('mf-btn-doc-emitido');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Processando...'; }
     const statusFinal = 'aguardando_fotos';
-    // PATCH principal em lote_motoristas (fonte que o logístico lê) — salva o número do CE
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: statusFinal, numero_ce: numeroCe });
-    // Sincroniza tabela motoristas pelo motorista_id
-    const loteMotReg = fiscalData.find(x => x.id === motoristFiscalId);
-    if (loteMotReg?.motorista_id) {
-      await supabaseRequest('PATCH', `motoristas?id=eq.${loteMotReg.motorista_id}`, { status: statusFinal });
+
+    if (motoristFiscalDireto) {
+      // Motorista veio direto da tabela motoristas (sem lote_motoristas atualizado)
+      // Atualiza motoristas e tenta sincronizar lote_motoristas
+      await supabaseRequest('PATCH', `motoristas?id=eq.${motoristFiscalMotoristaId}`, { status: statusFinal });
+      const lmList = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${motoristFiscalMotoristaId}&order=criado_em.desc`) || [];
+      const statusAtivos = ['aguardando_emissao_doc','aguardando_nf','liberado_carregar'];
+      const lmAtivo = lmList.find(r => statusAtivos.includes(r.status||'')) || lmList[0];
+      if (lmAtivo) await supabaseRequest('PATCH', `lote_motoristas?id=eq.${lmAtivo.id}`, { status: statusFinal, numero_ce: numeroCe });
+      registrarLog('fiscal', `Documento emitido — CE: ${numeroCe} — enviado ao Logístico para fotos`, `Motorista: #${motoristFiscalMotoristaId}`);
+    } else {
+      // Motorista veio de lote_motoristas — atualiza normalmente
+      await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: statusFinal, numero_ce: numeroCe });
+      if (motoristFiscalMotoristaId) {
+        await supabaseRequest('PATCH', `motoristas?id=eq.${motoristFiscalMotoristaId}`, { status: statusFinal });
+      }
+      registrarLog('fiscal', `Documento emitido — CE: ${numeroCe} — enviado ao Logístico para fotos`, `LoteMot: #${motoristFiscalId}`);
     }
-    // Atualiza memória local
-    const m = fiscalData.find(x => x.id === motoristFiscalId);
-    if (m) { m.status = statusFinal; m.numero_ce = numeroCe; }
-    registrarLog('fiscal', `Documento emitido — CE: ${numeroCe} — enviado ao Logístico para fotos`, `LoteMot: #${motoristFiscalId}`);
+
     showToast('✅ Documento emitido! Motorista enviado ao Logístico para fotos do carregamento.', 'success');
     fecharModalFiscalBtn();
-    // Recarrega para garantir que a tabela reflita o novo status
     await carregarFiscal();
   } catch(e) {
     const btn = document.getElementById('mf-btn-doc-emitido');
@@ -5612,13 +5655,24 @@ async function emitirDocumento(loteMotId) {
   }
   try {
     const statusFinal = 'aguardando_fotos';
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${loteMotId}`, { status: statusFinal, numero_ce: numeroCe.trim() });
-    // Sincroniza tabela motoristas
-    const reg = fiscalData.find(x => x.id === loteMotId);
-    if (reg?.motorista_id) {
+    // loteMotId agora é um índice em fiscalData
+    const reg = fiscalData[loteMotId];
+    if (!reg) { showToast('Motorista não encontrado.', 'error'); return; }
+
+    if (reg._motorista_direto) {
+      // Motorista direto: atualiza motoristas + tenta lote_motoristas
       await supabaseRequest('PATCH', `motoristas?id=eq.${reg.motorista_id}`, { status: statusFinal });
+      const lmList = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${reg.motorista_id}&order=criado_em.desc`) || [];
+      const statusAtivos = ['aguardando_emissao_doc','aguardando_nf','liberado_carregar'];
+      const lmAtivo = lmList.find(r => statusAtivos.includes(r.status||'')) || lmList[0];
+      if (lmAtivo) await supabaseRequest('PATCH', `lote_motoristas?id=eq.${lmAtivo.id}`, { status: statusFinal, numero_ce: numeroCe.trim() });
+      registrarLog('fiscal', `Documento emitido — CE: ${numeroCe.trim()} — enviado ao Logístico para fotos`, `Motorista: #${reg.motorista_id}`);
+    } else {
+      await supabaseRequest('PATCH', `lote_motoristas?id=eq.${reg.id}`, { status: statusFinal, numero_ce: numeroCe.trim() });
+      if (reg.motorista_id) await supabaseRequest('PATCH', `motoristas?id=eq.${reg.motorista_id}`, { status: statusFinal });
+      registrarLog('fiscal', `Documento emitido — CE: ${numeroCe.trim()} — enviado ao Logístico para fotos`, `LoteMot: #${reg.id}`);
     }
-    registrarLog('fiscal', `Documento emitido — CE: ${numeroCe.trim()} — enviado ao Logístico para fotos`, `LoteMot: #${loteMotId}`);
+
     showToast('✅ Documento emitido! Motorista enviado ao Logístico para fotos do carregamento.', 'success');
     await carregarFiscal();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
@@ -5627,17 +5681,24 @@ async function emitirDocumento(loteMotId) {
 async function atualizarStatusFiscal() {
   const novoStatus = document.getElementById('mf-status-select').value;
   try {
-    // Se documento_emitido → envia ao Logístico com aguardando_fotos
     const statusFinal = novoStatus === 'documento_emitido' ? 'aguardando_fotos' : novoStatus;
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: statusFinal });
 
-    // Sincroniza status na tabela motoristas também (pelo motorista_id)
-    const loteMotReg = fiscalData.find(x => x.id === motoristFiscalId);
-    if (loteMotReg?.motorista_id) {
-      await supabaseRequest('PATCH', `motoristas?id=eq.${loteMotReg.motorista_id}`, { status: statusFinal });
+    if (motoristFiscalDireto) {
+      // Motorista direto: atualiza motoristas + tenta lote_motoristas
+      await supabaseRequest('PATCH', `motoristas?id=eq.${motoristFiscalMotoristaId}`, { status: statusFinal });
+      const lmList = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${motoristFiscalMotoristaId}&order=criado_em.desc`) || [];
+      const lmAtivo = lmList[0];
+      if (lmAtivo) await supabaseRequest('PATCH', `lote_motoristas?id=eq.${lmAtivo.id}`, { status: statusFinal });
+      registrarLog('fiscal', 'Status fiscal atualizado', `Motorista: #${motoristFiscalMotoristaId}, Status: ${statusFinal}`);
+    } else {
+      await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: statusFinal });
+      if (motoristFiscalMotoristaId) {
+        await supabaseRequest('PATCH', `motoristas?id=eq.${motoristFiscalMotoristaId}`, { status: statusFinal });
+      }
+      registrarLog('fiscal', 'Status fiscal atualizado', `ID: ${motoristFiscalId}, Status: ${statusFinal}`);
     }
 
-    const m = fiscalData.find(x => x.id === motoristFiscalId);
+    const m = fiscalData.find(x => motoristFiscalDireto ? x.motorista_id === motoristFiscalMotoristaId : x.id === motoristFiscalId);
     if (m) {
       m.status = statusFinal;
       document.getElementById('mf-status-bar').innerHTML = badgeMotorista(statusFinal);
@@ -5647,11 +5708,9 @@ async function atualizarStatusFiscal() {
     }
 
     if (novoStatus === 'documento_emitido') {
-      registrarLog('fiscal', 'Documento emitido — enviado ao Logístico para fotos', `ID: ${motoristFiscalId}`);
       showToast('✅ Documento emitido! Motorista enviado ao Logístico para fotos do carregamento.', 'success');
       fecharModalFiscalBtn();
     } else {
-      registrarLog('fiscal', 'Status fiscal atualizado', `ID: ${motoristFiscalId}, Status: ${statusFinal}`);
       showToast('Status atualizado!', 'success');
     }
     renderFiscal(fiscalData);
