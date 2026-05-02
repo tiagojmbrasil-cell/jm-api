@@ -4711,7 +4711,7 @@ function renderMotoristasPagina(dados) {
             </div>
           </div>
           ${m.sinistro_descricao ? `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(239,68,68,0.15);color:#ef4444;">⚠️ SINISTRO</span>` : ''}
-          ${(Array.isArray(m.ocorrencias) && m.ocorrencias.length) ? `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(239,68,68,0.12);color:#ef4444;" title="${m.ocorrencias[m.ocorrencias.length-1]?.texto||''}">📋 ${m.ocorrencias.length} ocorrência${m.ocorrencias.length>1?'s':''}</span>` : ''}
+          ${(m.ocorrencias && typeof m.ocorrencias === 'string' && m.ocorrencias.trim()) ? `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(239,68,68,0.12);color:#ef4444;" title="${m.ocorrencias}">📋 Ocorrência</span>` : ''}
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           ${badgeMotorista(m.status||'aguardando_gr')}
@@ -9867,45 +9867,15 @@ async function abrirEditarMotorista(id) {
 
   window._em_lote_mot_id = m._lote_mot_id || null;
 
-  // Ocorrências — visível para todos, editável somente pelo administrativo
+  // Ocorrências — campo único editável, somente administrativo
   const secaoOcorrencias = document.getElementById('em-secao-ocorrencias');
   if (secaoOcorrencias) {
     const isAdmin = (setorAtual === 'administrativo');
-    secaoOcorrencias.style.display = ''; // sempre visível
-    const ocorrencias = m.ocorrencias || [];
+    secaoOcorrencias.style.display = isAdmin ? '' : 'none';
     const textareaOcorr = document.getElementById('em-ocorrencias');
-    const labelNovaOcorr = document.getElementById('em-ocorrencias-nova-label');
     if (textareaOcorr) {
-      textareaOcorr.value = '';
-      if (isAdmin) {
-        textareaOcorr.removeAttribute('readonly');
-        textareaOcorr.removeAttribute('disabled');
-        textareaOcorr.style.opacity = '1';
-        textareaOcorr.style.cursor = '';
-        textareaOcorr.style.display = '';
-      } else {
-        textareaOcorr.style.display = 'none';
-      }
-    }
-    if (labelNovaOcorr) labelNovaOcorr.style.display = isAdmin ? '' : 'none';
-    // Histórico — todos veem
-    const historico = document.getElementById('em-ocorrencias-historico');
-    const lista = document.getElementById('em-ocorrencias-historico-lista');
-    const vazioMsg = document.getElementById('em-ocorrencias-vazio-msg');
-    if (ocorrencias.length > 0 && historico && lista) {
-      historico.style.display = '';
-      if (vazioMsg) vazioMsg.style.display = 'none';
-      lista.innerHTML = ocorrencias.slice().reverse().map(o => {
-        const dt = o.data ? new Date(o.data).toLocaleString('pt-BR') : '—';
-        return `<div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:10px 14px;">
-          <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">📅 ${dt} &nbsp;·&nbsp; 👤 ${o.autor || '—'}</div>
-          <div style="font-size:13px;color:var(--text);white-space:pre-wrap;">${(o.texto || '').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>
-        </div>`;
-      }).join('');
-    } else {
-      if (historico) historico.style.display = 'none';
-      // Para não-admin sem ocorrências, mostra mensagem
-      if (vazioMsg) vazioMsg.style.display = isAdmin ? 'none' : '';
+      // Carrega o texto salvo (campo simples string)
+      textareaOcorr.value = (typeof m.ocorrencias === 'string') ? m.ocorrencias : '';
     }
   }
 
@@ -10060,35 +10030,7 @@ async function salvarEdicaoMotorista() {
   if (!motoristaEditandoId) return;
   const tabela = motoristaEditandoTabela || 'motoristas';
 
-  // ── Salva ocorrência ANTES de qualquer validação ──────────────────────────
-  // Garante que o texto não se perca mesmo se a função retornar cedo
-  // (ex: documentos obrigatórios faltando)
-  if (setorAtual === 'administrativo') {
-    const textoOcorrAntecip = (document.getElementById('em-ocorrencias')?.value || '').trim();
-    if (textoOcorrAntecip) {
-      try {
-        const motAntecip = await supabaseRequest('GET', `motoristas?id=eq.${motoristaEditandoId}&select=ocorrencias`) || [];
-        const ocorrAntes = Array.isArray(motAntecip[0]?.ocorrencias) ? motAntecip[0].ocorrencias : [];
-        const novaOcorrAntecip = {
-          texto: textoOcorrAntecip,
-          data: new Date().toISOString(),
-          autor: window._nomeUsuarioPerfil || userAtual?.user_metadata?.nome || userAtual?.email || 'Administrativo',
-        };
-        await supabaseRequest('PATCH', `motoristas?id=eq.${motoristaEditandoId}`, {
-          ocorrencias: [...ocorrAntes, novaOcorrAntecip]
-        });
-        const campoOcorr = document.getElementById('em-ocorrencias');
-        if (campoOcorr) campoOcorr.value = '';
-        showToast('📋 Ocorrência registrada!', 'success');
-      } catch(e2) {
-        console.error('Erro ao salvar ocorrência:', e2);
-        showToast('⚠️ Erro ao salvar ocorrência: ' + (e2.message || 'Tente novamente'), 'error');
-        // Não apaga o texto do campo para o usuário poder tentar novamente
-        return;
-      }
-    }
-  }
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Ocorrências: campo único — salva junto com os demais dados ──────────
 
   // Validação de anexos obrigatórios — respeita as configurações do sistema (cfgGet)
   if (tabela === 'motoristas') {
@@ -10155,6 +10097,10 @@ async function salvarEdicaoMotorista() {
       tipo_chave_pix: document.getElementById('em-tipo-pix').value || null,
       chave_pix: document.getElementById('em-pix').value || null,
     };
+    // Salva ocorrências como campo único de texto (somente admin)
+    if (setorAtual === 'administrativo') {
+      dados.ocorrencias = document.getElementById('em-ocorrencias')?.value ?? null;
+    }
     if (tabela === 'lote_motoristas') {
       dados.peso_saida = parseFloat(document.getElementById('em-peso').value) || null;
     }
@@ -10739,26 +10685,17 @@ sb.auth.onAuthStateChange(async (event, session) => {
         </div>
       </div>
     </div>
-    <!-- OCORRÊNCIAS — visível apenas para administrativo -->
+    <!-- OCORRÊNCIAS — campo único editável, somente administrativo -->
     <div id="em-secao-ocorrencias" style="display:none;margin-top:4px;">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#ef4444;margin:18px 0 10px;display:flex;align-items:center;gap:8px;">
         <span>⚠️ Ocorrências</span>
         <span style="font-size:10px;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0;">Editável somente pelo Administrativo</span>
       </div>
-      <!-- Campo nova ocorrência — visível apenas para admin -->
-      <div id="em-ocorrencias-nova-label" class="form-group full" style="margin:0;">
-        <label style="font-size:12px;color:var(--muted);">Nova Ocorrência</label>
+      <div id="em-ocorrencias-label" class="form-group full" style="margin:0;">
         <textarea id="em-ocorrencias"
-          placeholder="Registre aqui qualquer ocorrência relevante sobre este motorista (incidentes, observações administrativas, histórico de problemas, etc.)..."
-          style="min-height:100px;border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.04);resize:vertical;"></textarea>
+          placeholder="Registre aqui qualquer ocorrência relevante sobre este motorista..."
+          style="min-height:120px;border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.04);resize:vertical;"></textarea>
       </div>
-      <!-- Histórico de ocorrências salvas — visível para todos -->
-      <div id="em-ocorrencias-historico" style="margin-top:10px;display:none;">
-        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Histórico de Ocorrências</div>
-        <div id="em-ocorrencias-historico-lista" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;"></div>
-      </div>
-      <!-- Mensagem para não-admin quando não há ocorrências -->
-      <div id="em-ocorrencias-vazio-msg" style="display:none;font-size:13px;color:var(--muted);padding:10px 0;">Nenhuma ocorrência registrada para este motorista.</div>
     </div>
 
     <div class="form-actions">
