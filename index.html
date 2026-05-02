@@ -4816,10 +4816,15 @@ function renderMotoristasPagina(dados) {
 }
 
 async function removerMotoristaPagina(id) {
-  if (!confirm('Remover este motorista?')) return;
+  if (!confirm('Remover este motorista? Ele será removido de todos os fluxos (Lotes, Logístico, Financeiro, GR).')) return;
   try {
-    await supabaseRequest('DELETE', `motoristas?id=eq.${id}`);
-    showToast('Motorista removido!', 'success');
+    // Remove em paralelo da tabela principal E do fluxo (lote_motoristas)
+    await Promise.all([
+      supabaseRequest('DELETE', `motoristas?id=eq.${id}`),
+      supabaseRequest('DELETE', `lote_motoristas?motorista_id=eq.${id}`)
+    ]);
+    registrarLog('motorista', 'Motorista excluído da base e removido do fluxo', `ID: ${id}`);
+    showToast('Motorista removido de todos os fluxos!', 'success');
     await carregarMotoristasPagina();
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
@@ -9861,8 +9866,8 @@ async function removerAnexoEditarPorIndice(idx) {
 }
 
 async function abrirEditarMotorista(id) {
-  // Garante que as configurações do sistema estão atualizadas antes de abrir o modal
-  await cfgLoadRemoto().catch(() => {});
+  // Atualiza config em background — não bloqueia abertura do modal
+  cfgLoadRemoto().catch(() => {});
 
   // Usa o cache já em memória — zero chamadas ao banco para abrir o modal
   const cached = motoristasPageData.find(m => m.id === id);
