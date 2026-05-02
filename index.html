@@ -10034,18 +10034,20 @@ async function salvarEdicaoMotorista() {
   if (!motoristaEditandoId) return;
   const tabela = motoristaEditandoTabela || 'motoristas';
 
-  // Validação de anexos obrigatórios (apenas para tabela motoristas)
+  // Validação de anexos obrigatórios — respeita as configurações do sistema (cfgGet)
   if (tabela === 'motoristas') {
-    const anexosObrigatorios = [
-      { id: 'em-arq-cnh',          tipo: 'cnh',           label: 'CNH do motorista' },
-      { id: 'em-arq-antt',         tipo: 'antt',          label: 'Registro na ANTT' },
-      { id: 'em-arq-doc-caminhao', tipo: 'doc_caminhao',  label: 'Documento do Caminhão/Carretas' },
-      { id: 'em-arq-residencia',   tipo: 'residencia',    label: 'Comprovante de Residência' },
-      { id: 'em-arq-foto-caminhao',tipo: 'foto_caminhao', label: 'Foto do Caminhão/Carretas' },
-      { id: 'em-arq-selfie-cnh',   tipo: 'selfie_cnh',    label: 'Selfie segurando a CNH' },
-      { id: 'em-arq-selfie-placa', tipo: 'selfie_placa',  label: 'Selfie ao lado do veículo (placa)' },
-      { id: 'em-arq-lonas',        tipo: 'lonas',         label: 'Fotos das Lonas' },
+    const todosDocs = [
+      { id: 'em-arq-cnh',          tipo: 'cnh',           label: 'CNH do motorista',                cfgAtivo: 'gr_anexo_cnh',          cfgReq: 'gr_anexo_cnh_req' },
+      { id: 'em-arq-antt',         tipo: 'antt',          label: 'Registro na ANTT',                cfgAtivo: 'gr_anexo_antt',         cfgReq: 'gr_anexo_antt_req' },
+      { id: 'em-arq-doc-caminhao', tipo: 'doc_caminhao',  label: 'Documento do Caminhão/Carretas',  cfgAtivo: 'gr_anexo_doc_caminhao', cfgReq: 'gr_anexo_doc_caminhao_req' },
+      { id: 'em-arq-residencia',   tipo: 'residencia',    label: 'Comprovante de Residência',       cfgAtivo: 'gr_anexo_residencia',   cfgReq: 'gr_anexo_residencia_req' },
+      { id: 'em-arq-foto-caminhao',tipo: 'foto_caminhao', label: 'Foto do Caminhão/Carretas',       cfgAtivo: 'gr_anexo_foto_caminhao',cfgReq: 'gr_anexo_foto_caminhao_req' },
+      { id: 'em-arq-selfie-cnh',   tipo: 'selfie_cnh',    label: 'Selfie segurando a CNH',          cfgAtivo: 'gr_anexo_selfie_cnh',   cfgReq: 'gr_anexo_selfie_cnh_req' },
+      { id: 'em-arq-selfie-placa', tipo: 'selfie_placa',  label: 'Selfie ao lado do veículo',       cfgAtivo: 'gr_anexo_selfie_placa', cfgReq: 'gr_anexo_selfie_placa_req' },
+      { id: 'em-arq-lonas',        tipo: 'lonas',         label: 'Fotos das Lonas',                 cfgAtivo: 'gr_anexo_lonas',        cfgReq: 'gr_anexo_lonas_req' },
     ];
+    // Só valida os que estão ATIVOS E marcados como OBRIGATÓRIOS nas configurações
+    const anexosObrigatorios = todosDocs.filter(d => cfgGet(d.cfgAtivo) && cfgGet(d.cfgReq));
     const anexosExistentes = motoristaEditandoAnexos || [];
     const faltando = [];
     for (const doc of anexosObrigatorios) {
