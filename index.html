@@ -5613,8 +5613,10 @@ async function emitirDocumentoFiscal() {
     if (motoristFiscalDireto) {
       // Motorista veio direto da tabela motoristas (sem lote_motoristas atualizado)
       // Atualiza motoristas e tenta sincronizar lote_motoristas
-      await supabaseRequest('PATCH', `motoristas?id=eq.${motoristFiscalMotoristaId}`, { status: statusFinal });
-      const lmList = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${motoristFiscalMotoristaId}&order=criado_em.desc`) || [];
+      const [, lmList] = await Promise.all([
+        supabaseRequest('PATCH', `motoristas?id=eq.${motoristFiscalMotoristaId}`, { status: statusFinal }),
+        supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${motoristFiscalMotoristaId}&order=criado_em.desc`).then(r => r || []),
+      ]);
       const statusAtivos = ['aguardando_emissao_doc','aguardando_nf','liberado_carregar'];
       const lmAtivo = lmList.find(r => statusAtivos.includes(r.status||'')) || lmList[0];
       if (lmAtivo) await supabaseRequest('PATCH', `lote_motoristas?id=eq.${lmAtivo.id}`, { status: statusFinal, numero_ce: numeroCe });
@@ -5661,8 +5663,10 @@ async function emitirDocumento(loteMotId) {
 
     if (reg._motorista_direto) {
       // Motorista direto: atualiza motoristas + tenta lote_motoristas
-      await supabaseRequest('PATCH', `motoristas?id=eq.${reg.motorista_id}`, { status: statusFinal });
-      const lmList = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${reg.motorista_id}&order=criado_em.desc`) || [];
+      const [, lmList] = await Promise.all([
+        supabaseRequest('PATCH', `motoristas?id=eq.${reg.motorista_id}`, { status: statusFinal }),
+        supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${reg.motorista_id}&order=criado_em.desc`).then(r => r || []),
+      ]);
       const statusAtivos = ['aguardando_emissao_doc','aguardando_nf','liberado_carregar'];
       const lmAtivo = lmList.find(r => statusAtivos.includes(r.status||'')) || lmList[0];
       if (lmAtivo) await supabaseRequest('PATCH', `lote_motoristas?id=eq.${lmAtivo.id}`, { status: statusFinal, numero_ce: numeroCe.trim() });
@@ -5685,9 +5689,11 @@ async function atualizarStatusFiscal() {
 
     if (motoristFiscalDireto) {
       // Motorista direto: atualiza motoristas + tenta lote_motoristas
-      await supabaseRequest('PATCH', `motoristas?id=eq.${motoristFiscalMotoristaId}`, { status: statusFinal });
-      const lmList = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${motoristFiscalMotoristaId}&order=criado_em.desc`) || [];
-      const lmAtivo = lmList[0];
+      const [, lmListAlt] = await Promise.all([
+        supabaseRequest('PATCH', `motoristas?id=eq.${motoristFiscalMotoristaId}`, { status: statusFinal }),
+        supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${motoristFiscalMotoristaId}&order=criado_em.desc`).then(r => r || []),
+      ]);
+      const lmAtivo = lmListAlt[0];
       if (lmAtivo) await supabaseRequest('PATCH', `lote_motoristas?id=eq.${lmAtivo.id}`, { status: statusFinal });
       registrarLog('fiscal', 'Status fiscal atualizado', `Motorista: #${motoristFiscalMotoristaId}, Status: ${statusFinal}`);
     } else {
@@ -6273,8 +6279,10 @@ async function confirmarFotosSemArquivo() {
   if (!confirm('Confirmar etapa de Fotos do Carregamento sem anexar foto?\n\nO motorista será enviado ao Financeiro sem registro fotográfico.')) return;
   try {
     const loteMotId = logisticoMotoristaSelecionadoId;
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${loteMotId}`, { status: 'fotos_inseridas' });
-    const lm = await supabaseRequest('GET', `lote_motoristas?id=eq.${loteMotId}`);
+    const [, lm] = await Promise.all([
+      supabaseRequest('PATCH', `lote_motoristas?id=eq.${loteMotId}`, { status: 'fotos_inseridas' }),
+      supabaseRequest('GET', `lote_motoristas?id=eq.${loteMotId}`).then(r => r || []),
+    ]);
     const motId = lm?.[0]?.motorista_id;
     if (motId) await supabaseRequest('PATCH', `motoristas?id=eq.${motId}`, { status: 'fotos_inseridas' });
     registrarLog('logistico', 'Fotos confirmadas sem anexo (cfg desativado)', `LoteMot: #${loteMotId}`);
@@ -6918,7 +6926,8 @@ async function carregarLogistico() {
     if (!el) return;
     el.innerHTML = '<div class="loading">Carregando...</div>';
     // Busca motoristas com status de NF e fotos (tabela motoristas)
-    const motoristas = await supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500&select=id,nome,placa,cpf,contato,status,gr_status,gr_motivo,tipo_motorista,lote_id_origem,peso_saida_origem,criado_em') || [];
+    const [motoristas, loteMotoristas] = await Promise.all([
+      supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500&select=id,nome,placa,cpf,contato,status,gr_status,gr_motivo,tipo_motorista,lote_id_origem,peso_saida_origem,criado_em') || [];
     // Busca lote_motoristas com status de trânsito
     const loteMotoristas = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,criado_em') || [];
 
@@ -7281,10 +7290,11 @@ function fecharModalTransito() {
 
 async function alterarTransitoModal(novoStatus) {
   try {
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`, { status: novoStatus });
-    // Sincroniza motoristas
-    const reg = await supabaseRequest('GET', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`) || [];
-    if (reg[0]?.motorista_id) await supabaseRequest('PATCH', `motoristas?id=eq.${reg[0].motorista_id}`, { status: novoStatus });
+    const [, regAlt] = await Promise.all([
+      supabaseRequest('PATCH', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`, { status: novoStatus }),
+      supabaseRequest('GET', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`).then(r => r || []),
+    ]);
+    if (regAlt[0]?.motorista_id) await supabaseRequest('PATCH', `motoristas?id=eq.${regAlt[0].motorista_id}`, { status: novoStatus });
     document.getElementById('mlog-transito-status').innerHTML = badgeMotorista(novoStatus);
     registrarLog('logistico', 'Status de trânsito alterado', `ID: #${logisticoMotoristaSelecionadoId} · ${novoStatus}`);
     showToast('🚛 Status atualizado!', 'success');
@@ -7426,9 +7436,11 @@ async function confirmarEncerrarMDFeLogistico() {
 async function confirmarFinalizarTransito() {
   if (!confirm('Tem certeza que deseja finalizar?\nO motorista será enviado ao Financeiro.')) return;
   try {
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`, { status: 'manifesto_encerrado' });
-    const reg = await supabaseRequest('GET', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`) || [];
-    if (reg[0]?.motorista_id) await supabaseRequest('PATCH', `motoristas?id=eq.${reg[0].motorista_id}`, { status: 'manifesto_encerrado' });
+    const [, regFin] = await Promise.all([
+      supabaseRequest('PATCH', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`, { status: 'manifesto_encerrado' }),
+      supabaseRequest('GET', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`).then(r => r || []),
+    ]);
+    if (regFin[0]?.motorista_id) await supabaseRequest('PATCH', `motoristas?id=eq.${regFin[0].motorista_id}`, { status: 'manifesto_encerrado' });
     registrarLog('logistico', 'Motorista finalizado — enviado ao Financeiro', `ID: #${logisticoMotoristaSelecionadoId}`);
     showToast('✅ Finalizado! Motorista enviado ao Financeiro.', 'success');
     fecharModalTransito();
@@ -8980,8 +8992,10 @@ async function salvarDecisaoGR() {
     if (decisao === 'aprovado') {
       setProgresso('🔗 Vinculando ao lote...');
       // Busca dados do motorista — dividida em 2 queries menores para evitar timeout 504
-      const motBasico = await supabaseRequest('GET', `motoristas?id=eq.${grMotoristaSelecionadoId}&select=id,nome,placa,contato,cpf,tipo_pagamento,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,tipo_chave_pix,chave_pix,lote_id_origem,peso_saida_origem,data_inicio_viagem_origem,data_fim_viagem_origem,auxiliar_operacao_origem,gr_motivo`) || [];
-      const motExtra = await supabaseRequest('GET', `motoristas?id=eq.${grMotoristaSelecionadoId}&select=id,checklist,anexos`) || [];
+      const [motBasico, motExtra] = await Promise.all([
+        supabaseRequest('GET', `motoristas?id=eq.${grMotoristaSelecionadoId}&select=id,nome,placa,contato,cpf,tipo_pagamento,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,tipo_chave_pix,chave_pix,lote_id_origem,peso_saida_origem,data_inicio_viagem_origem,data_fim_viagem_origem,auxiliar_operacao_origem,gr_motivo`).then(r => r || []),
+        supabaseRequest('GET', `motoristas?id=eq.${grMotoristaSelecionadoId}&select=id,checklist,anexos`).then(r => r || []),
+      ]);
       const motDados = motBasico[0] ? { ...motBasico[0], checklist: motExtra[0]?.checklist || {}, anexos: motExtra[0]?.anexos || [] } : null;
       if (motDados?.lote_id_origem && motDados?.peso_saida_origem) {
         setProgresso('⚖️ Verificando peso do lote...');
