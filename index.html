@@ -9832,6 +9832,9 @@ async function removerAnexoEditarPorIndice(idx) {
 }
 
 async function abrirEditarMotorista(id) {
+  // Garante que as configurações do sistema estão atualizadas antes de abrir o modal
+  await cfgLoadRemoto().catch(() => {});
+
   // Usa o cache já em memória — zero chamadas ao banco para abrir o modal
   const cached = motoristasPageData.find(m => m.id === id);
 
@@ -10007,6 +10010,29 @@ function aplicarCfgModalEdicaoMotorista() {
   show('em-doc-row-selfie_cnh',    cfgGet('gr_anexo_selfie_cnh'));
   show('em-doc-row-selfie_placa',  cfgGet('gr_anexo_selfie_placa'));
   show('em-doc-row-lonas',         cfgGet('gr_anexo_lonas'));
+
+  // Controla banner e seção de anexos baseado nas configurações
+  const docsAtivos = ['gr_anexo_cnh','gr_anexo_antt','gr_anexo_doc_caminhao','gr_anexo_residencia',
+    'gr_anexo_foto_caminhao','gr_anexo_selfie_cnh','gr_anexo_selfie_placa','gr_anexo_lonas'];
+  const algumDocAtivo = docsAtivos.some(k => cfgGet(k));
+  const algumDocObrigatorio = docsAtivos.some(k => cfgGet(k) && cfgGet(k + '_req'));
+
+  // Oculta seção inteira de anexos se nenhum doc estiver ativo
+  show('em-secao-anexos', algumDocAtivo);
+
+  // Controla banner "obrigatório"
+  const banner = document.getElementById('em-banner-docs-obrigatorios');
+  const bannerTitulo = document.getElementById('em-banner-docs-titulo');
+  if (banner) banner.style.display = algumDocAtivo ? '' : 'none';
+  if (bannerTitulo) {
+    if (algumDocObrigatorio) {
+      bannerTitulo.textContent = '⚠️ Todos os documentos abaixo são obrigatórios';
+      bannerTitulo.style.color = 'var(--accent)';
+    } else {
+      bannerTitulo.textContent = '📎 Documentos opcionais';
+      bannerTitulo.style.color = 'var(--muted)';
+    }
+  }
 }
 
 function fecharEditarMotorista() {
@@ -10054,7 +10080,12 @@ async function salvarEdicaoMotorista() {
         const campoOcorr = document.getElementById('em-ocorrencias');
         if (campoOcorr) campoOcorr.value = '';
         showToast('📋 Ocorrência registrada!', 'success');
-      } catch(e2) { console.warn('Erro ao salvar ocorrência:', e2); }
+      } catch(e2) {
+        console.error('Erro ao salvar ocorrência:', e2);
+        showToast('⚠️ Erro ao salvar ocorrência: ' + (e2.message || 'Tente novamente'), 'error');
+        // Não apaga o texto do campo para o usuário poder tentar novamente
+        return;
+      }
     }
   }
   // ─────────────────────────────────────────────────────────────────────────
@@ -10601,8 +10632,8 @@ sb.auth.onAuthStateChange(async (event, session) => {
         <div id="em-anexos-status-resumo" style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;"></div>
       </div>
       <div id="em-anexos-atuais" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"></div>
-      <div style="background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.2);border-radius:10px;padding:14px;">
-        <div style="font-size:12px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">⚠️ Todos os documentos abaixo são obrigatórios</div>
+      <div id="em-banner-docs-obrigatorios" style="background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.2);border-radius:10px;padding:14px;">
+        <div id="em-banner-docs-titulo" style="font-size:12px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">⚠️ Todos os documentos abaixo são obrigatórios</div>
         <p style="font-size:12px;color:var(--muted);margin:0 0 12px;line-height:1.5;">Para CNH, ANTT e outros documentos únicos, enviar um novo arquivo substitui o anterior. Em <strong>Foto caminhão</strong> e <strong>Lonas</strong> é possível adicionar várias fotos.</p>
         <div style="display:flex;flex-direction:column;gap:6px;">
 
