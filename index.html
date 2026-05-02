@@ -10034,6 +10034,31 @@ async function salvarEdicaoMotorista() {
   if (!motoristaEditandoId) return;
   const tabela = motoristaEditandoTabela || 'motoristas';
 
+  // ── Salva ocorrência ANTES de qualquer validação ──────────────────────────
+  // Garante que o texto não se perca mesmo se a função retornar cedo
+  // (ex: documentos obrigatórios faltando)
+  if (setorAtual === 'administrativo') {
+    const textoOcorrAntecip = (document.getElementById('em-ocorrencias')?.value || '').trim();
+    if (textoOcorrAntecip) {
+      try {
+        const motAntecip = await supabaseRequest('GET', `motoristas?id=eq.${motoristaEditandoId}&select=ocorrencias`) || [];
+        const ocorrAntes = Array.isArray(motAntecip[0]?.ocorrencias) ? motAntecip[0].ocorrencias : [];
+        const novaOcorrAntecip = {
+          texto: textoOcorrAntecip,
+          data: new Date().toISOString(),
+          autor: window._nomeUsuarioPerfil || userAtual?.user_metadata?.nome || userAtual?.email || 'Administrativo',
+        };
+        await supabaseRequest('PATCH', `motoristas?id=eq.${motoristaEditandoId}`, {
+          ocorrencias: [...ocorrAntes, novaOcorrAntecip]
+        });
+        const campoOcorr = document.getElementById('em-ocorrencias');
+        if (campoOcorr) campoOcorr.value = '';
+        showToast('📋 Ocorrência registrada!', 'success');
+      } catch(e2) { console.warn('Erro ao salvar ocorrência:', e2); }
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   // Validação de anexos obrigatórios — respeita as configurações do sistema (cfgGet)
   if (tabela === 'motoristas') {
     const todosDocs = [
@@ -10188,25 +10213,6 @@ async function salvarEdicaoMotorista() {
       try {
         await supabaseRequest('PATCH', `lote_motoristas?motorista_id=eq.${motoristaEditandoId}`, { anexos: dados.anexos });
       } catch (e2) { /* lote sem vínculo ignora */ }
-    }
-
-    // Salva ocorrência (apenas administrativo, apenas se houver texto)
-    if (setorAtual === 'administrativo') {
-      const textoOcorrencia = (document.getElementById('em-ocorrencias')?.value || '').trim();
-      if (textoOcorrencia) {
-        try {
-          const motAtual = await supabaseRequest('GET', `motoristas?id=eq.${motoristaEditandoId}&select=ocorrencias`) || [];
-          const ocorrenciasAtuais = Array.isArray(motAtual[0]?.ocorrencias) ? motAtual[0].ocorrencias : [];
-          const novaOcorrencia = {
-            texto: textoOcorrencia,
-            data: new Date().toISOString(),
-            autor: window._nomeUsuarioPerfil || userAtual?.user_metadata?.nome || userAtual?.email || 'Administrativo',
-          };
-          await supabaseRequest('PATCH', `motoristas?id=eq.${motoristaEditandoId}`, {
-            ocorrencias: [...ocorrenciasAtuais, novaOcorrencia]
-          });
-        } catch(e2) { console.warn('Erro ao salvar ocorrência:', e2); }
-      }
     }
 
     showToast('✅ Motorista atualizado!', 'success');
