@@ -3300,6 +3300,13 @@ async function fazerLogout() {
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-email').value = '';
   document.getElementById('login-senha').value = '';
+  // Garante que os campos do login nunca fiquem travados após logout
+  const loginEmail = document.getElementById('login-email');
+  const loginSenha = document.getElementById('login-senha');
+  const loginBtn   = document.getElementById('login-btn');
+  if (loginEmail) { loginEmail.removeAttribute('disabled'); loginEmail.style.opacity = ''; loginEmail.style.cursor = ''; }
+  if (loginSenha) { loginSenha.removeAttribute('disabled'); loginSenha.style.opacity = ''; loginSenha.style.cursor = ''; }
+  if (loginBtn)   { loginBtn.removeAttribute('disabled');   loginBtn.style.opacity   = ''; loginBtn.style.cursor   = ''; }
 }
 
 // PAGES
@@ -6657,25 +6664,36 @@ function aplicarPermissoes(setor, perms) {
     if (!pagEl) return;
     if (nivel === 1) {
       // Só ver: desabilita inputs, selects, textareas e botões de ação
+      // IMPORTANTE: nunca afeta elementos do login-screen
       pagEl.querySelectorAll('input, select, textarea').forEach(el => {
+        if (el.closest('#login-screen')) return; // protege campos de login
         el.setAttribute('disabled', 'disabled');
         el.style.opacity = '0.6';
         el.style.cursor = 'not-allowed';
       });
       pagEl.querySelectorAll('.btn-primary, .btn-secondary').forEach(el => {
+        if (el.closest('#login-screen')) return;
         el.style.display = 'none';
       });
     } else if (nivel === 2) {
       // Acesso total: garante que está habilitado
       pagEl.querySelectorAll('input, select, textarea').forEach(el => {
+        if (el.closest('#login-screen')) return;
         el.removeAttribute('disabled');
         el.style.opacity = '';
         el.style.cursor = '';
       });
       pagEl.querySelectorAll('.btn-primary, .btn-secondary').forEach(el => {
+        if (el.closest('#login-screen')) return;
         el.style.display = '';
       });
     }
+  });
+
+  // Garante que campos do login NUNCA fiquem desabilitados
+  ['login-email','login-senha','login-btn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.removeAttribute('disabled'); el.style.opacity = ''; el.style.cursor = ''; }
   });
 
   // Navegar para primeira aba visível
