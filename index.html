@@ -4818,10 +4818,14 @@ function renderMotoristasPagina(dados) {
 async function removerMotoristaPagina(id) {
   if (!confirm('Remover este motorista? Ele será removido de todos os fluxos (Lotes, Logístico, Financeiro, GR).')) return;
   try {
-    // Remove em paralelo da tabela principal E do fluxo (lote_motoristas)
+    // Busca os registros de lote_motoristas vinculados a este motorista_id
+    const loteRegs = await supabaseRequest('GET', `lote_motoristas?motorista_id=eq.${id}&select=id`) || [];
+    // Deleta cada registro de lote_motoristas por id (API só aceita DELETE por id)
+    const deleteLoteTasks = loteRegs.map(r => supabaseRequest('DELETE', `lote_motoristas?id=eq.${r.id}`));
+    // Deleta motorista principal + todos os registros de lote em paralelo
     await Promise.all([
       supabaseRequest('DELETE', `motoristas?id=eq.${id}`),
-      supabaseRequest('DELETE', `lote_motoristas?motorista_id=eq.${id}`)
+      ...deleteLoteTasks
     ]);
     registrarLog('motorista', 'Motorista excluído da base e removido do fluxo', `ID: ${id}`);
     showToast('Motorista removido de todos os fluxos!', 'success');
