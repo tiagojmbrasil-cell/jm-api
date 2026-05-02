@@ -7546,25 +7546,33 @@ async function confirmarEncerrarMDFeLogistico() {
         });
       }
     }
-    const canhotoAnexos = (await Promise.all(canhotoTasks)).filter(Boolean);
+    // Upload dos canhotos + PATCH do lote em PARALELO
+    const [canhotoAnexos] = await Promise.all([
+      Promise.all(canhotoTasks).then(r => r.filter(Boolean)),
+      supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'manifesto_encerrado' })
+    ]);
 
-    // Atualiza status → manifesto_encerrado (vai direto ao Financeiro)
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'manifesto_encerrado' });
-    // Sincroniza motoristas e salva canhotos
-    const reg = await supabaseRequest('GET', `lote_motoristas?id=eq.${id}&select=id,motorista_id`) || [];
-    if (reg[0]?.motorista_id) {
-      const motAtual = await supabaseRequest('GET', `motoristas?id=eq.${reg[0].motorista_id}&select=id,anexos`) || [];
-      const anexosAtuais = motAtual[0]?.anexos || [];
-      await supabaseRequest('PATCH', `motoristas?id=eq.${reg[0].motorista_id}`, {
-        status: 'manifesto_encerrado',
-        anexos: [...anexosAtuais, ...canhotoAnexos]
-      });
-    }
-    registrarLog('logistico', 'MDFe encerrado pelo Logístico — enviado ao Financeiro', `ID: #${id}`);
+    // Fecha modal e recarrega tela IMEDIATAMENTE — não espera sync do motorista
     showToast('✅ MDFe encerrado! Motorista enviado ao Financeiro.', 'success');
     fecharEncerrarMDFeLogistico();
     logisticoMotoristaSelecionadoId = null;
-    await carregarLogistico();
+    carregarLogistico(); // sem await — UI já atualiza
+
+    // Sincroniza motorista e salva canhotos em background (não bloqueia UI)
+    (async () => {
+      try {
+        const reg = await supabaseRequest('GET', `lote_motoristas?id=eq.${id}&select=id,motorista_id`) || [];
+        if (reg[0]?.motorista_id) {
+          const motAtual = await supabaseRequest('GET', `motoristas?id=eq.${reg[0].motorista_id}&select=id,anexos`) || [];
+          const anexosAtuais = motAtual[0]?.anexos || [];
+          await supabaseRequest('PATCH', `motoristas?id=eq.${reg[0].motorista_id}`, {
+            status: 'manifesto_encerrado',
+            anexos: [...anexosAtuais, ...canhotoAnexos]
+          });
+        }
+      } catch(e) { console.warn('Sync motorista background:', e); }
+    })();
+    registrarLog('logistico', 'MDFe encerrado pelo Logístico — enviado ao Financeiro', `ID: #${id}`); // sem await
   } catch(e) { showToast('Erro: ' + e.message, 'error'); }
 }
 
@@ -7727,15 +7735,20 @@ async function abrirModalFinFotos(id) {
     else { ceElFin.textContent = '—'; ceWrapFin.style.display = 'none'; }
   }
 
+  // Abre o modal IMEDIATAMENTE para resposta visual instantânea
+  document.getElementById('modal-fin-fotos-overlay').classList.add('open');
+
   const container = document.getElementById('mfin-fotos-container');
   container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">⏳ Carregando arquivos...</div>';
 
-  // Busca os anexos do lote_motoristas e do motorista
+  // Busca os anexos do lote_motoristas e do motorista EM PARALELO
   let anexosLote = m.anexos || [];
   let anexosMot = [];
   if (m.motorista_id) {
     try {
-      const motData = await supabaseRequest('GET', `motoristas?id=eq.${m.motorista_id}&select=anexos`);
+      const [motData] = await Promise.all([
+        supabaseRequest('GET', `motoristas?id=eq.${m.motorista_id}&select=anexos`)
+      ]);
       anexosMot = motData?.[0]?.anexos || [];
     } catch(e) { console.warn('Erro ao buscar anexos do motorista:', e); }
   }
@@ -7769,9 +7782,14 @@ async function abrirModalFinFotos(id) {
       const paths = todosAnexos.map(a => a.path || a.url).filter(Boolean);
       let urlMap = {};
       if (paths.length > 0) {
-        const { data: signedUrls, error } = await sb.storage.from('motoristas-docs').createSignedUrls(paths, 3600);
-        if (error) throw error;
-        (signedUrls || []).forEach(s => { urlMap[s.path] = s.signedUrl; });
+        // Gera signed URLs em lotes de 20 em paralelo para maior velocidade
+        const BATCH = 20;
+        const batches = [];
+        for (let i = 0; i < paths.length; i += BATCH) batches.push(paths.slice(i, i + BATCH));
+        const results = await Promise.all(batches.map(b => sb.storage.from('motoristas-docs').createSignedUrls(b, 3600)));
+        results.forEach(({ data: signedUrls, error }) => {
+          if (!error) (signedUrls || []).forEach(s => { urlMap[s.path] = s.signedUrl; });
+        });
       }
       const nomeAnexoFin = {
         nf: 'Nota Fiscal', foto_carregamento: 'Foto Carregamento',
@@ -7832,7 +7850,6 @@ async function abrirModalFinFotos(id) {
   window._mfinPdfCount = 0;
   mfinAdicionarPDF();
 
-  document.getElementById('modal-fin-fotos-overlay').classList.add('open');
 }
 
 async function aprovarAdiantamentoModal() {
