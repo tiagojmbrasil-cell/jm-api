@@ -9867,16 +9867,36 @@ async function abrirEditarMotorista(id) {
 
   window._em_lote_mot_id = m._lote_mot_id || null;
 
-  // Ocorrências — campo único editável, somente administrativo
+  // Ocorrências — visível para todos, editável somente pelo administrativo
   const secaoOcorrencias = document.getElementById('em-secao-ocorrencias');
   if (secaoOcorrencias) {
     const isAdmin = (setorAtual === 'administrativo');
-    secaoOcorrencias.style.display = isAdmin ? '' : 'none';
-    const textareaOcorr = document.getElementById('em-ocorrencias');
-    if (textareaOcorr) {
-      // Carrega o texto salvo (campo simples string)
-      textareaOcorr.value = (typeof m.ocorrencias === 'string') ? m.ocorrencias : '';
+    const textoOcorr = (typeof m.ocorrencias === 'string') ? m.ocorrencias : '';
+    secaoOcorrencias.style.display = ''; // sempre visível
+
+    // Label informativo
+    const labelInfo = document.getElementById('em-ocorrencias-label-info');
+    if (labelInfo) labelInfo.textContent = isAdmin ? 'Editável somente pelo Administrativo' : 'Somente leitura';
+
+    // Modo leitura: mostra o texto salvo para todos
+    const leituraDiv = document.getElementById('em-ocorrencias-leitura');
+    if (leituraDiv) {
+      leituraDiv.textContent = textoOcorr || 'Nenhuma ocorrência registrada.';
+      leituraDiv.style.color = textoOcorr ? 'var(--text)' : 'var(--muted)';
+      leituraDiv.style.fontStyle = textoOcorr ? 'normal' : 'italic';
     }
+
+    // Botão Editar — somente admin
+    const btnEditar = document.getElementById('em-ocorrencias-btn-editar');
+    if (btnEditar) btnEditar.style.display = isAdmin ? '' : 'none';
+
+    // Modo edição começa fechado
+    const edicaoDiv = document.getElementById('em-ocorrencias-edicao');
+    if (edicaoDiv) edicaoDiv.style.display = 'none';
+
+    // Preenche o textarea com o valor atual
+    const textareaOcorr = document.getElementById('em-ocorrencias');
+    if (textareaOcorr) textareaOcorr.value = textoOcorr;
   }
 
   // Abre o modal instantaneamente
@@ -10003,6 +10023,25 @@ function aplicarCfgModalEdicaoMotorista() {
       bannerTitulo.style.color = 'var(--muted)';
     }
   }
+}
+
+function emOcorrenciasIniciarEdicao() {
+  const leituraDiv = document.getElementById('em-ocorrencias-leitura');
+  const edicaoDiv = document.getElementById('em-ocorrencias-edicao');
+  const btnEditar = document.getElementById('em-ocorrencias-btn-editar');
+  if (leituraDiv) leituraDiv.style.display = 'none';
+  if (edicaoDiv) edicaoDiv.style.display = '';
+  if (btnEditar) btnEditar.style.display = 'none';
+  document.getElementById('em-ocorrencias')?.focus();
+}
+
+function emOcorrenciasCancelarEdicao() {
+  const leituraDiv = document.getElementById('em-ocorrencias-leitura');
+  const edicaoDiv = document.getElementById('em-ocorrencias-edicao');
+  const btnEditar = document.getElementById('em-ocorrencias-btn-editar');
+  if (leituraDiv) leituraDiv.style.display = '';
+  if (edicaoDiv) edicaoDiv.style.display = 'none';
+  if (btnEditar) btnEditar.style.display = '';
 }
 
 function fecharEditarMotorista() {
@@ -10192,6 +10231,21 @@ async function salvarEdicaoMotorista() {
       } catch (e2) { /* lote sem vínculo ignora */ }
     }
 
+    // Após salvar, volta para modo leitura e atualiza o texto exibido
+    if (setorAtual === 'administrativo') {
+      const textoSalvo = document.getElementById('em-ocorrencias')?.value || '';
+      const leituraDiv = document.getElementById('em-ocorrencias-leitura');
+      if (leituraDiv) {
+        leituraDiv.textContent = textoSalvo || 'Nenhuma ocorrência registrada.';
+        leituraDiv.style.color = textoSalvo ? 'var(--text)' : 'var(--muted)';
+        leituraDiv.style.fontStyle = textoSalvo ? 'normal' : 'italic';
+        leituraDiv.style.display = '';
+      }
+      const edicaoDiv = document.getElementById('em-ocorrencias-edicao');
+      if (edicaoDiv) edicaoDiv.style.display = 'none';
+      const btnEditar = document.getElementById('em-ocorrencias-btn-editar');
+      if (btnEditar) btnEditar.style.display = '';
+    }
     showToast('✅ Motorista atualizado!', 'success');
     ocultarProgressoUpload();
     if (btnEditar) { btnEditar.disabled = false; btnEditar.textContent = '💾 Salvar Alterações'; }
@@ -10685,16 +10739,31 @@ sb.auth.onAuthStateChange(async (event, session) => {
         </div>
       </div>
     </div>
-    <!-- OCORRÊNCIAS — campo único editável, somente administrativo -->
+    <!-- OCORRÊNCIAS — visível para todos, editável somente pelo administrativo -->
     <div id="em-secao-ocorrencias" style="display:none;margin-top:4px;">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#ef4444;margin:18px 0 10px;display:flex;align-items:center;gap:8px;">
-        <span>⚠️ Ocorrências</span>
-        <span style="font-size:10px;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0;">Editável somente pelo Administrativo</span>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#ef4444;margin:18px 0 10px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span>⚠️ Ocorrências</span>
+          <span id="em-ocorrencias-label-info" style="font-size:10px;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0;"></span>
+        </div>
+        <button id="em-ocorrencias-btn-editar" type="button" onclick="emOcorrenciasIniciarEdicao()"
+          style="display:none;font-size:12px;font-weight:600;padding:4px 14px;border-radius:6px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.08);color:#ef4444;cursor:pointer;">
+          ✏️ Editar
+        </button>
       </div>
-      <div id="em-ocorrencias-label" class="form-group full" style="margin:0;">
+      <!-- Modo leitura: exibe o texto salvo -->
+      <div id="em-ocorrencias-leitura" style="min-height:60px;background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.6;"></div>
+      <!-- Modo edição: somente admin -->
+      <div id="em-ocorrencias-edicao" style="display:none;">
         <textarea id="em-ocorrencias"
           placeholder="Registre aqui qualquer ocorrência relevante sobre este motorista..."
-          style="min-height:120px;border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.04);resize:vertical;"></textarea>
+          style="min-height:120px;border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.04);resize:vertical;width:100%;box-sizing:border-box;"></textarea>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button type="button" onclick="emOcorrenciasCancelarEdicao()"
+            style="font-size:12px;padding:4px 14px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;">
+            Cancelar
+          </button>
+        </div>
       </div>
     </div>
 
