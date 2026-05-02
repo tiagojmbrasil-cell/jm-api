@@ -3126,6 +3126,12 @@ let cotacaoAtualDados = null;
 let lotes = [];
 let sb = null;
 
+// Declaradas aqui para evitar ReferenceError (Temporal Dead Zone):
+// fazerLogin/fazerLogout usam estas variáveis antes da posição original (~linha 7989)
+let clienteIdAtual = null;
+let clienteNomeAtual = '';
+let userAtual = null;
+
 // SUPABASE REQUEST
 const API_URL = 'https://jmbrasil.vercel.app/api/cotacoes';
 
@@ -6627,7 +6633,7 @@ Object.defineProperty(window, 'permissoesAtual', {
   },
   configurable: false
 });
-let userAtual = null;
+// userAtual já declarado no topo do script principal
 
 function aplicarPermissoes(setor, perms) {
   // Desbloqueia apenas para esta escrita interna legítima, depois reativa
@@ -7986,8 +7992,7 @@ async function confirmarFinalizar(id) {
 
 
 // ============ PORTAL DO CLIENTE ============
-let clienteNomeAtual = '';
-let clienteIdAtual = null;
+// clienteNomeAtual e clienteIdAtual já declarados no topo do script principal
 
 async function carregarDashboardCliente() {
   const el = document.getElementById('dc-lotes-table');
