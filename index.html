@@ -4566,33 +4566,41 @@ let motoristasPageData = [];
 async function carregarMotoristasPagina() {
   try {
     document.getElementById('motoristas-page-table').innerHTML = '<div class="loading">Carregando...</div>';
-    const [motoristas, loteMotoristas] = await Promise.all([
-      supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500&select=id,nome,placa,cpf,contato,status,gr_status,gr_motivo,tipo_motorista,lote_id_origem,peso_saida_origem,criado_em').then(r => r || []),
-      supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800&select=id,lote_id,motorista_id,peso_saida,status,tipo_pagamento,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_saldo_data,auxiliar_operacao,data_inicio_viagem,data_fim_viagem').then(r => r || []),
+    const [motoristas, loteMotoristas, lotes] = await Promise.all([
+      supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500&select=id,nome,placa,placas_extras,cpf,contato,status,gr_status,gr_motivo,tipo_motorista,lote_id_origem,peso_saida_origem,data_inicio_viagem_origem,data_fim_viagem_origem,auxiliar_operacao_origem,criado_em,checklist,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,tipo_chave_pix,chave_pix,tipo_pagamento,valor_pedagio,tag_administradora,tag_numero,anexos').then(r => r || []),
+      supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800&select=id,lote_id,motorista_id,nome,placa,cpf,peso_saida,status,tipo_pagamento,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,auxiliar_operacao,data_inicio_viagem,data_fim_viagem,checklist,sinistro_descricao,criado_em').then(r => r || []),
+      supabaseRequest('GET', 'lotes?select=id,cliente,agencia,produto,coleta,rota_origem,rota_destino,valor_frete_empresa,valor_frete_motorista,peso_ton,status,pagador,obs,data_cadastro,criado_em').then(r => r || []),
     ]);
 
-    // Para cada motorista, descobre o status mais atual:
-    // Se tiver registro em lote_motoristas com status avançado, usa esse
-    // Caso contrário usa o status do próprio motorista
     const statusAvancados = [
       'aguardando_emissao_doc','aguardando_fotos','fotos_inseridas',
       'adiantamento_pago','em_transito','aguardando_chegada',
       'aguardando_encerramento_mdfe','manifesto_encerrado',
       'saldo_agendado','saldo_pago'
     ];
+    const lotesMap = {};
+    (lotes || []).forEach(l => { lotesMap[l.id] = l; });
+
     motoristasPageData = motoristas.map(m => {
       const loteReg = loteMotoristas.find(lm => lm.motorista_id === m.id);
       const statusFinal = (loteReg && statusAvancados.includes(loteReg.status)) ? loteReg.status : m.status;
+      const loteInfo = loteReg?.lote_id ? (lotesMap[loteReg.lote_id] || null) : (m.lote_id_origem ? (lotesMap[m.lote_id_origem] || null) : null);
       return {
         ...m,
         status: statusFinal,
-        _lote_id: loteReg?.lote_id || null,
+        _lote_id: loteReg?.lote_id || m.lote_id_origem || null,
         _lote_mot_id: loteReg?.id || null,
         _lote_reg: loteReg || null,
-        data_inicio_viagem: loteReg?.data_inicio_viagem || null,
-        data_fim_viagem: loteReg?.data_fim_viagem || null,
-        auxiliar_operacao: loteReg?.auxiliar_operacao || null,
+        _lote_info: loteInfo,
+        data_inicio_viagem: loteReg?.data_inicio_viagem || m.data_inicio_viagem_origem || null,
+        data_fim_viagem: loteReg?.data_fim_viagem || m.data_fim_viagem_origem || null,
+        auxiliar_operacao: loteReg?.auxiliar_operacao || m.auxiliar_operacao_origem || null,
+        financeiro_adiantamento_data: loteReg?.financeiro_adiantamento_data || null,
         financeiro_saldo_data: loteReg?.financeiro_saldo_data || null,
+        financeiro_saldo_motivo: loteReg?.financeiro_saldo_motivo || null,
+        manifesto_numero: loteReg?.manifesto_numero || null,
+        numero_ce: loteReg?.numero_ce || null,
+        sinistro_descricao: loteReg?.sinistro_descricao || null,
         // dados bancários do lote_motoristas (mais atuais)
         nome_titular: loteReg?.nome_titular || m.nome_titular || null,
         cpf_titular: loteReg?.cpf_titular || m.cpf_titular || null,
@@ -4604,6 +4612,7 @@ async function carregarMotoristasPagina() {
         chave_pix: loteReg?.chave_pix || m.chave_pix || null,
         tipo_pagamento: loteReg?.tipo_pagamento || m.tipo_pagamento || null,
         peso_saida: loteReg?.peso_saida || m.peso_saida_origem || null,
+        checklist: loteReg?.checklist || m.checklist || {},
       };
     });
     filtrarMotoristasPagina();
@@ -4632,41 +4641,166 @@ function renderMotoristasPagina(dados) {
     document.getElementById('motoristas-page-table').innerHTML = '<div class="empty"><div class="empty-icon">🚛</div><p>Nenhum motorista encontrado.</p></div>';
     return;
   }
-  document.getElementById('motoristas-page-table').innerHTML = `
-    <table>
-      <thead><tr>
-        <th>#</th><th>Motorista</th><th>CPF</th><th>Placa</th><th>Contato</th>
-        <th>Status no Processo</th><th>Status GR</th><th>Motivo GR</th><th>Pagamento</th><th></th>
-      </tr></thead>
-      <tbody>
-        ${dados.map(m => {
-          const fmtD = d => d ? d.split('-').reverse().join('/') : null;
-          const dInicio = fmtD(m.data_inicio_viagem);
-          const dFim = fmtD(m.data_fim_viagem);
-          return `<tr>
-          <td style="color:var(--muted);font-size:12px">#${m.id}</td>
-          <td>
-            <strong>${m.nome || '—'}</strong>
-            ${m.auxiliar_operacao ? `<div style="font-size:11px;margin-top:3px;"><span style="background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2);border-radius:4px;padding:2px 6px;">👤 <span style="color:var(--muted);">Aux.:</span> <strong style="color:var(--accent);">${m.auxiliar_operacao}</strong></span></div>` : ''}
-            ${dInicio || dFim ? `<div style="font-size:11px;color:var(--muted);margin-top:3px;">${dInicio ? '📅 ' + dInicio : ''} ${dFim ? '→ 🏁 ' + dFim : ''}</div>` : ''}
-          </td>
-          <td style="font-size:12px">${m.cpf || '—'}</td>
-          <td style="font-size:12px">${m.placa || '—'}</td>
-          <td style="font-size:12px">${m.contato || '—'}</td>
-          <td>
-            ${badgeMotorista(m.status || 'aguardando_gr')}
-            ${m.status === 'saldo_agendado' && m.financeiro_saldo_data ? `<div style="font-size:11px;color:#3b82f6;margin-top:4px;font-weight:600;">📅 Pgto: ${m.financeiro_saldo_data.split('-').reverse().join('/')}</div>` : ''}
-          </td>
-          <td>${badgeGR(m.gr_status || 'pendente')}</td>
-          <td style="font-size:12px;color:${m.gr_motivo ? '#ef4444' : 'var(--muted)'};max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${m.gr_motivo || ''}">${m.gr_motivo || '—'}</td>
-          <td>${badgeTipoPagamento(m.tipo_pagamento)}</td>
-          <td style="display:flex;gap:6px;">
-            <button onclick="abrirEditarMotorista(${m.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">✏️ Editar</button>
-            <button onclick="removerMotoristaPagina(${m.id})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🗑</button>
-          </td>
-        </tr>`;}).join('')}
-      </tbody>
-    </table>`;
+  const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  const fmtD = d => d ? d.split('-').reverse().join('/') : null;
+  const fmtM = v => v != null && v !== '' ? 'R$ ' + parseFloat(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
+  const linha = (label, valor, cor) => valor && valor !== '—'
+    ? `<div style="display:flex;align-items:baseline;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+        <span style="font-size:11px;color:var(--muted);min-width:130px;flex-shrink:0;">${label}</span>
+        <span style="font-size:13px;font-weight:500;color:${cor||'var(--text)'};">${valor}</span>
+       </div>` : '';
+
+  document.getElementById('motoristas-page-table').innerHTML = dados.map(m => {
+    const ck = m.checklist || {};
+    const lote = m._lote_info || {};
+    const loteId = m._lote_id;
+    const lmId = m._lote_mot_id;
+    const dInicio = fmtD(m.data_inicio_viagem);
+    const dFim = fmtD(m.data_fim_viagem);
+    const dAdiant = fmtD(m.financeiro_adiantamento_data);
+    const dSaldo = fmtD(m.financeiro_saldo_data);
+    const dCadastro = m.criado_em ? new Date(m.criado_em).toLocaleString('pt-BR') : '—';
+
+    // Prazo saldo label
+    const prazoMap = { '5':'5 dias após descarga', '7':'7 dias após descarga', '8+':'8+ dias após descarga' };
+
+    // Placas extras
+    let placasExtras = '';
+    try {
+      const extras = Array.isArray(m.placas_extras) ? m.placas_extras : (m.placas_extras ? JSON.parse(m.placas_extras) : []);
+      if (extras.length) placasExtras = extras.join(', ');
+    } catch(e) {}
+
+    // Tipo de pagamento banco/pix
+    const tipoPgto = m.tipo_pagamento === 'pix' ? 'PIX' : m.tipo_pagamento === 'conta_bancaria' ? 'Conta Bancária' : (m.tipo_pagamento || '—');
+
+    // GR color
+    const grCor = m.gr_status === 'aprovado' ? 'var(--green)' : m.gr_status === 'reprovado' ? 'var(--red)' : 'var(--yellow)';
+
+    // Status cor borda lateral
+    const stMap = {
+      saldo_pago:'var(--green)', manifesto_encerrado:'#10b981', adiantamento_pago:'var(--green)',
+      em_transito:'#3b82f6', aguardando_chegada:'#eab308', aguardando_fotos:'#eab308',
+      fotos_inseridas:'#8b5cf6', liberado_carregar:'#22c55e', aguardando_emissao_doc:'#f97316',
+      sinistro:'#ef4444', aguardando_gr:'#eab308', reprovado_gr:'#ef4444',
+    };
+    const bordaCor = stMap[m.status] || 'var(--border)';
+
+    // Docs cadastrais (anexos)
+    const docLabels = { cnh:'CNH', antt:'ANTT', doc_caminhao:'Doc. Caminhão', residencia:'Comp. Residência',
+      foto_caminhao:'Foto Caminhão', selfie_cnh:'Selfie c/ CNH', selfie_placa:'Selfie Placa', lonas:'Lonas',
+      nf:'Nota Fiscal', foto_carregamento:'Foto Carregamento', canhoto:'Canhoto', checklist_gerenciadora:'Checklist GR' };
+    const anexos = Array.isArray(m.anexos) ? m.anexos : [];
+    const docsOk = Object.keys(docLabels).filter(t => anexos.some(a => a.tipo === t));
+    const docsBadges = docsOk.length
+      ? docsOk.map(t => `<span style="font-size:10px;background:rgba(34,197,94,0.12);color:var(--green);border:1px solid rgba(34,197,94,0.25);border-radius:4px;padding:1px 7px;">${docLabels[t]}</span>`).join(' ')
+      : '<span style="font-size:11px;color:var(--muted);">Nenhum documento anexado</span>';
+
+    return `
+    <div style="border:1px solid var(--border);border-left:4px solid ${bordaCor};border-radius:var(--radius);background:var(--surface);margin-bottom:16px;overflow:hidden;">
+
+      <!-- CABEÇALHO DO CARD -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span style="font-size:11px;color:var(--muted);font-family:'Syne',sans-serif;">#${m.id}</span>
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--text);">${esc(m.nome||'—')}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+              🪪 ${esc(m.cpf||'—')} &nbsp;·&nbsp; 📞 ${esc(m.contato||'—')}
+              ${m.tipo_motorista ? ` &nbsp;·&nbsp; <strong style="color:var(--accent);">${m.tipo_motorista}</strong>` : ''}
+            </div>
+          </div>
+          ${m.sinistro_descricao ? `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(239,68,68,0.15);color:#ef4444;">⚠️ SINISTRO</span>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          ${badgeMotorista(m.status||'aguardando_gr')}
+          ${badgeGR(m.gr_status||'pendente')}
+          <button onclick="abrirEditarMotorista(${m.id})" style="background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;">✏️ Editar</button>
+          <button onclick="removerMotoristaPagina(${m.id})" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;">🗑</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0;padding:0;">
+
+        <!-- BLOCO 1: VEÍCULO & IDENTIFICAÇÃO -->
+        <div style="padding:16px 18px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--accent);margin-bottom:10px;">🚛 Veículo & Identificação</div>
+          ${linha('Placa Principal', esc(m.placa||'—'), 'var(--text)')}
+          ${placasExtras ? linha('Placas Extras', esc(placasExtras), 'var(--muted)') : ''}
+          ${linha('Cadastrado em', dCadastro, 'var(--muted)')}
+          ${m.auxiliar_operacao ? linha('Auxiliar Op.', esc(m.auxiliar_operacao), 'var(--accent)') : ''}
+          ${m.valor_pedagio != null ? linha('Valor Pedágio', fmtM(m.valor_pedagio), '#3b82f6') : ''}
+          ${m.tag_administradora ? linha('Tag Administradora', esc(m.tag_administradora), 'var(--text)') : ''}
+          ${m.tag_numero ? linha('Nº Tag', esc(m.tag_numero), 'var(--text)') : ''}
+        </div>
+
+        <!-- BLOCO 2: LOTE -->
+        <div style="padding:16px 18px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#3b82f6;margin-bottom:10px;">📦 Lote #${loteId||'—'}</div>
+          ${linha('Cliente', esc(lote.cliente||'—'), 'var(--text)')}
+          ${linha('Agência', esc(lote.agencia||'—'), 'var(--text)')}
+          ${linha('Produto', esc(lote.produto||'—'), 'var(--text)')}
+          ${linha('Coleta', esc(lote.coleta||'—'), 'var(--muted)')}
+          ${linha('Origem', esc(lote.rota_origem||'—'), 'var(--text)')}
+          ${linha('Destino', esc(lote.rota_destino||'—'), 'var(--text)')}
+          ${linha('Peso Total Lote', lote.peso_ton ? lote.peso_ton+' ton' : '—', 'var(--text)')}
+          ${linha('Peso Motorista', m.peso_saida ? m.peso_saida+' ton' : '—', 'var(--accent)')}
+          ${linha('Tarifa Empresa', fmtM(lote.valor_frete_empresa), 'var(--green)')}
+          ${linha('Tarifa Motorista', fmtM(lote.valor_frete_motorista), 'var(--green)')}
+          ${linha('Status Lote', lote.status ? lote.status.replace(/_/g,' ') : '—', 'var(--muted)')}
+          ${lote.pagador ? linha('Pagador', esc(lote.pagador.replace(/_/g,' ')), 'var(--muted)') : ''}
+          ${lote.obs ? linha('Obs. Lote', esc(lote.obs.substring(0,80)+(lote.obs.length>80?'…':'')), 'var(--muted)') : ''}
+        </div>
+
+        <!-- BLOCO 3: VIAGEM & GR -->
+        <div style="padding:16px 18px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#22c55e;margin-bottom:10px;">📅 Viagem & GR</div>
+          ${linha('Data Início Viagem', dInicio||'—', 'var(--text)')}
+          ${linha('Data Fim Viagem', dFim||'—', 'var(--text)')}
+          ${linha('GR Status', m.gr_status||'—', grCor)}
+          ${m.gr_motivo ? linha('Motivo GR', esc(m.gr_motivo), '#ef4444') : ''}
+          ${m.numero_ce ? linha('Nº CE', esc(m.numero_ce), 'var(--accent)') : ''}
+          ${m.manifesto_numero ? linha('Nº Manifesto', esc(m.manifesto_numero), 'var(--text)') : ''}
+          ${m.sinistro_descricao ? linha('Sinistro', esc(m.sinistro_descricao), '#ef4444') : ''}
+          <!-- Checklist GR -->
+          ${ck.valor_frete_motorista != null ? linha('Vlr Frete (Mot.)', fmtM(ck.valor_frete_motorista), 'var(--green)') : ''}
+          ${ck.valor_carga != null ? linha('Valor da Carga', fmtM(ck.valor_carga), 'var(--text)') : ''}
+          ${ck.canal_contato ? linha('Canal Contato', esc(ck.canal_contato), 'var(--muted)') : ''}
+          ${ck.prazo_saldo ? linha('Prazo Saldo', prazoMap[ck.prazo_saldo]||ck.prazo_saldo, 'var(--text)') : ''}
+          ${ck.prazo_excecao ? linha('Exceção Prazo', esc(ck.prazo_excecao)+(ck.prazo_assinatura?' (Resp: '+esc(ck.prazo_assinatura)+')':''), '#eab308') : ''}
+          ${(ck.pgto_adiantamento70||ck.pgto_saldo30) ? linha('Pagamento', [ck.pgto_adiantamento70?'Adiantamento 70%':'',ck.pgto_saldo30?'Saldo 30%':''].filter(Boolean).join(' + '), 'var(--text)') : ''}
+          ${ck.pgto_excecao ? linha('Exceção Pgto', esc(ck.pgto_excecao)+(ck.pgto_assinatura?' (Resp: '+esc(ck.pgto_assinatura)+')':''), '#eab308') : ''}
+          ${(ck.recolhimento_pf||ck.recolhimento_pj) ? linha('Recolhimento', [ck.recolhimento_pf?'PF (INSS+SEST)':'',ck.recolhimento_pj?'PJ (R$ 88)':''].filter(Boolean).join(' | '), 'var(--muted)') : ''}
+          ${ck.ref_profissional ? linha('Ref. Profissional', esc(ck.ref_profissional), 'var(--muted)') : ''}
+          ${ck.ref_pessoal ? linha('Ref. Pessoal', esc(ck.ref_pessoal), 'var(--muted)') : ''}
+          ${ck.contato_proprietario ? linha('Contato Proprietário', esc(ck.contato_proprietario), 'var(--muted)') : ''}
+        </div>
+
+        <!-- BLOCO 4: FINANCEIRO & PAGAMENTO -->
+        <div style="padding:16px 18px;border-bottom:1px solid var(--border);">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#facc15;margin-bottom:10px;">💰 Financeiro & Pagamento</div>
+          ${linha('Tipo Pagamento', tipoPgto, 'var(--text)')}
+          ${m.nome_titular ? linha('Titular', esc(m.nome_titular), 'var(--text)') : ''}
+          ${m.cpf_titular ? linha('CPF/CNPJ Titular', esc(m.cpf_titular), 'var(--text)') : ''}
+          ${m.banco ? linha('Banco', esc(m.banco), 'var(--text)') : ''}
+          ${m.agencia ? linha('Agência', esc(m.agencia), 'var(--text)') : ''}
+          ${m.numero_conta ? linha('Conta', esc(m.numero_conta)+(m.tipo_conta?' ('+m.tipo_conta+')':''), 'var(--text)') : ''}
+          ${m.tipo_chave_pix && m.chave_pix ? linha('Chave PIX', esc(m.tipo_chave_pix)+': '+esc(m.chave_pix), '#22c55e') : ''}
+          ${dAdiant ? linha('Dt. Adiantamento', dAdiant, '#3b82f6') : ''}
+          ${dSaldo ? linha('Dt. Saldo', dSaldo, '#3b82f6') : ''}
+          ${m.financeiro_saldo_motivo ? linha('Motivo Reprov. Saldo', esc(m.financeiro_saldo_motivo), '#ef4444') : ''}
+        </div>
+
+      </div>
+
+      <!-- LINHA DE DOCUMENTOS -->
+      <div style="padding:12px 18px;background:rgba(0,0,0,0.12);border-top:1px solid var(--border);">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:8px;">📎 Documentos Anexados</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">${docsBadges}</div>
+      </div>
+
+    </div>`;
+  }).join('');
 }
 
 async function removerMotoristaPagina(id) {
