@@ -4659,7 +4659,7 @@ function renderMotoristasPagina(dados) {
     const dFim = fmtD(m.data_fim_viagem);
     const dAdiant = fmtD(m.financeiro_adiantamento_data);
     const dSaldo = fmtD(m.financeiro_saldo_data);
-    const dCadastro = m.criado_em ? new Date(m.criado_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—';
+    const dCadastro = m.criado_em ? new Date(m.criado_em).toLocaleString('pt-BR') : '—';
 
     // Prazo saldo label
     const prazoMap = { '5':'5 dias após descarga', '7':'7 dias após descarga', '8+':'8+ dias após descarga' };
@@ -4711,7 +4711,7 @@ function renderMotoristasPagina(dados) {
             </div>
           </div>
           ${m.sinistro_descricao ? `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(239,68,68,0.15);color:#ef4444;">⚠️ SINISTRO</span>` : ''}
-          ${(m.ocorrencias && typeof m.ocorrencias === 'string' && m.ocorrencias.trim()) ? `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(239,68,68,0.12);color:#ef4444;" title="${m.ocorrencias}">📋 Ocorrência</span>` : ''}
+          ${(m.ocorrencias && typeof m.ocorrencias === 'string' && m.ocorrencias.trim() && m.ocorrencias.trim() !== '[]' && m.ocorrencias.trim() !== '{}') ? `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(239,68,68,0.12);color:#ef4444;" title="${m.ocorrencias}">📋 Ocorrência</span>` : ''}
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           ${badgeMotorista(m.status||'aguardando_gr')}
@@ -6148,7 +6148,7 @@ function renderLogs(lista) {
         ${visivel.map(l => {
           const cor = tipoCor[l.tipo] || 'var(--muted)';
           const icon = tipoIcon[l.tipo] || '📌';
-          const dt = l.criado_em ? new Date(l.criado_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—';
+          const dt = l.criado_em ? new Date(l.criado_em).toLocaleString('pt-BR') : '—';
           return `<tr>
             <td style="font-size:12px;color:var(--muted);white-space:nowrap;">${dt}</td>
             <td>
@@ -8575,6 +8575,7 @@ async function salvarMotoristaGR() {
       auxiliar_operacao_origem: _grLoteIdOrigem ? (window._nomeUsuarioPerfil || userAtual?.email || 'Desconhecido') : null,
       checklist,
       anexos: [],
+      ocorrencias: null,
     });
 
     const motoristaId = resultado[0]?.id;
@@ -9529,7 +9530,7 @@ function renderRelAtividades(dados) {
   dados.forEach(r => { grupos[r.tipo||'—'] = (grupos[r.tipo||'—']||0)+1; });
   renderGrafico(grupos, 'Ações por Tipo');
   const rows = dados.map(r => `<tr>
-    <td style="font-size:12px;color:var(--muted);white-space:nowrap">${r.criado_em ? new Date(r.criado_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—'}</td>
+    <td style="font-size:12px;color:var(--muted);white-space:nowrap">${r.criado_em ? new Date(r.criado_em).toLocaleString('pt-BR') : '—'}</td>
     <td style="font-size:12px"><div style="font-weight:600">${r.usuario_nome||'—'}</div><div style="color:var(--muted);font-size:11px">${r.usuario_email||''}</div></td>
     <td><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--surface2);color:var(--accent)">${(r.setor||'—').toUpperCase()}</span></td>
     <td style="font-size:12px">${r.acao||'—'}</td>
@@ -9564,7 +9565,7 @@ function exportarExcel() {
     rows = relDadosAtual.map(r => [r.id, r.nome||'', r.cpf||'', r.lote?.cliente||'', r.lote?.agencia||'', r.lote?.tarifa_empresa||0, r.lote?.tarifa_motorista||0, fmtData(r.financeiro_adiantamento_data), fmtData(r.financeiro_saldo_data), r.status||'']);
   } else if (relTipoAtual === 'atividades') {
     cols = ['Data/Hora','Usuário','Email','Setor','Ação','Detalhes'];
-    rows = relDadosAtual.map(r => [r.criado_em ? new Date(r.criado_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '', r.usuario_nome||'', r.usuario_email||'', r.setor||'', r.acao||'', r.detalhes||'']);
+    rows = relDadosAtual.map(r => [r.criado_em ? new Date(r.criado_em).toLocaleString('pt-BR') : '', r.usuario_nome||'', r.usuario_email||'', r.setor||'', r.acao||'', r.detalhes||'']);
   }
 
   const bom = '\uFEFF'; // BOM para Excel reconhecer UTF-8
@@ -9589,7 +9590,7 @@ function exportarPDF() {
   const titulo = document.getElementById('rel-titulo-tabela').textContent;
   const conteudo = document.getElementById('rel-tabela').innerHTML;
   const cards = document.getElementById('rel-cards').innerHTML;
-  const dt = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  const dt = new Date().toLocaleString('pt-BR');
 
   const janela = window.open('', '_blank', 'width=900,height=700');
   janela.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
@@ -9871,7 +9872,7 @@ async function abrirEditarMotorista(id) {
   const secaoOcorrencias = document.getElementById('em-secao-ocorrencias');
   if (secaoOcorrencias) {
     const isAdmin = (setorAtual === 'administrativo');
-    const textoOcorr = (typeof m.ocorrencias === 'string') ? m.ocorrencias : '';
+    const textoOcorr = (typeof m.ocorrencias === 'string' && m.ocorrencias.trim() !== '[]' && m.ocorrencias.trim() !== '{}') ? m.ocorrencias : '';
     secaoOcorrencias.style.display = ''; // sempre visível
 
     // Label informativo
