@@ -5130,7 +5130,7 @@ async function salvarCliente() {
         return;
       }
       const duplicadosRazao = razao
-        ? await supabaseRequest('GET', `clientes_cadastro?razao_social=ilike.${encodeURIComponent(razao)}&select=id,razao_social,cnpj`) || []
+        ? await supabaseRequest('GET', `clientes_cadastro?razao_social=eq.${encodeURIComponent(razao)}&select=id,razao_social,cnpj`) || []
         : [];
       if (duplicadosRazao.length > 0) {
         showToast(`⚠️ Já existe um cliente com esta Razão Social: "${duplicadosRazao[0].razao_social}"`, 'error');
