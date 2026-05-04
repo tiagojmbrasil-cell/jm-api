@@ -5000,7 +5000,7 @@ function mascaraCNPJ(input) {
 async function buscarCNPJ() {
   const cnpj = document.getElementById('cl-cnpj').value.replace(/\D/g,'');
   const status = document.getElementById('cl-cnpj-status');
-  if (cnpj.length !== 14) { status.textContent = '⚠️ CNPJ deve ter 14 dígitos'; status.style.color='var(--red)'; return; }
+  if (cnpj.length !== 11 && cnpj.length !== 14) { status.textContent = '⚠️ CPF deve ter 11 dígitos ou CNPJ deve ter 14 dígitos'; status.style.color='var(--red)'; return; }
   status.textContent = '🔍 Buscando...'; status.style.color='var(--muted)';
 
   // Helper: fetch com timeout reduzido
