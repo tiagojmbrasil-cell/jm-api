@@ -2361,6 +2361,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">LOTE</div><div style="font-weight:600;font-size:13px" id="mfin-lote">—</div></div>
       <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">📅 INÍCIO VIAGEM</div><div style="font-weight:600;font-size:13px" id="mfin-data-inicio">—</div></div>
       <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">🏁 FIM VIAGEM</div><div style="font-weight:600;font-size:13px" id="mfin-data-fim">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">📦 DATA DESCARGA</div><div style="font-weight:600;font-size:13px;color:#22c55e;" id="mfin-data-descarga">—</div></div>
       <div id="mfin-ce-wrap" style="background:rgba(249,115,22,0.07);border:1px solid rgba(249,115,22,0.2);border-radius:7px;padding:6px 10px;display:none;">
         <div style="font-size:10px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">📋 Nº CE</div>
         <div style="font-weight:700;font-size:13px;" id="mfin-ce">—</div>
@@ -4579,7 +4580,7 @@ async function carregarMotoristasPagina() {
     document.getElementById('motoristas-page-table').innerHTML = '<div class="loading">Carregando...</div>';
     const [motoristas, loteMotoristas, lotes] = await Promise.all([
       supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500&select=id,nome,placa,placas_extras,cpf,contato,status,gr_status,gr_motivo,tipo_motorista,lote_id_origem,peso_saida_origem,data_inicio_viagem_origem,data_fim_viagem_origem,auxiliar_operacao_origem,criado_em,checklist,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,tipo_chave_pix,chave_pix,tipo_pagamento,valor_pedagio,tag_administradora,tag_numero,anexos,ocorrencias').then(r => r || []),
-      supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800&select=id,lote_id,motorista_id,nome,placa,cpf,peso_saida,status,tipo_pagamento,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,auxiliar_operacao,data_inicio_viagem,data_fim_viagem,checklist,sinistro_descricao,criado_em').then(r => r || []),
+      supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800&select=id,lote_id,motorista_id,nome,placa,cpf,peso_saida,status,tipo_pagamento,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,auxiliar_operacao,data_inicio_viagem,data_fim_viagem,checklist,sinistro_descricao,criado_em,data_descarga').then(r => r || []),
       supabaseRequest('GET', 'lotes?select=id,cliente,agencia,produto,coleta,rota_origem,rota_destino,valor_frete_empresa,valor_frete_motorista,peso_ton,status,pagador,obs,data_cadastro,criado_em').then(r => r || []),
     ]);
 
@@ -4670,6 +4671,7 @@ function renderMotoristasPagina(dados) {
     const dFim = fmtD(m.data_fim_viagem);
     const dAdiant = fmtD(m.financeiro_adiantamento_data);
     const dSaldo = fmtD(m.financeiro_saldo_data);
+    const dDescarga = fmtD(m.data_descarga);
     const dCadastro = m.criado_em ? fmtBrasilia(m.criado_em) : '—';
 
     // Prazo saldo label
@@ -4791,6 +4793,7 @@ function renderMotoristasPagina(dados) {
         <!-- BLOCO 4: FINANCEIRO & PAGAMENTO -->
         <div style="padding:16px 18px;border-bottom:1px solid var(--border);">
           <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#facc15;margin-bottom:10px;">💰 Financeiro & Pagamento</div>
+          ${dDescarga ? linha('Data Descarga', dDescarga, '#22c55e') : ''}
           ${linha('Tipo Pagamento', tipoPgto, 'var(--text)')}
           ${m.nome_titular ? linha('Titular', esc(m.nome_titular), 'var(--text)') : ''}
           ${m.cpf_titular ? linha('CPF/CNPJ Titular', esc(m.cpf_titular), 'var(--text)') : ''}
@@ -6443,7 +6446,8 @@ async function confirmarCanhotoSemArquivo() {
   if (!confirm('Confirmar canhoto sem anexar arquivo?\n\nA entrega será registrada como concluída sem imagem do canhoto.')) return;
   try {
     const id = logisticoMotoristaSelecionadoId;
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'manifesto_encerrado' });
+    const dataDescarga = new Date().toISOString().split('T')[0];
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'manifesto_encerrado', data_descarga: dataDescarga });
     registrarLog('logistico', 'Canhoto confirmado sem anexo (cfg desativado)', `LoteMot: #${id}`);
     showToast('✅ Canhoto confirmado. Manifesto encerrado.', 'success');
     await carregarLogistico();
@@ -7558,7 +7562,7 @@ async function confirmarEncerrarMDFeLogistico() {
     // Upload dos canhotos + PATCH do lote em PARALELO
     const [canhotoAnexos] = await Promise.all([
       Promise.all(canhotoTasks).then(r => r.filter(Boolean)),
-      supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'manifesto_encerrado' })
+      supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'manifesto_encerrado', data_descarga: new Date().toISOString().split('T')[0] })
     ]);
 
     // Fecha modal e recarrega tela IMEDIATAMENTE — não espera sync do motorista
@@ -7589,7 +7593,7 @@ async function confirmarEncerrarMDFeLogistico() {
 async function confirmarFinalizarTransito() {
   if (!confirm('Tem certeza que deseja finalizar?\nO motorista será enviado ao Financeiro.')) return;
   try {
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`, { status: 'manifesto_encerrado' });
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`, { status: 'manifesto_encerrado', data_descarga: new Date().toISOString().split('T')[0] });
     const reg = await supabaseRequest('GET', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`) || [];
     if (reg[0]?.motorista_id) await supabaseRequest('PATCH', `motoristas?id=eq.${reg[0].motorista_id}`, { status: 'manifesto_encerrado' });
     registrarLog('logistico', 'Motorista finalizado — enviado ao Financeiro', `ID: #${logisticoMotoristaSelecionadoId}`);
@@ -7609,7 +7613,7 @@ async function carregarFinanceiro() {
     const el = document.getElementById('financeiro-table');
     if (!el) return;
     el.innerHTML = '<div class="loading">Carregando...</div>';
-    financeiroData = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,criado_em') || [];
+    financeiroData = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,criado_em,data_descarga') || [];
     filtrarFinanceiro();
   } catch (e) {
     document.getElementById('financeiro-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
@@ -7735,6 +7739,8 @@ async function abrirModalFinFotos(id) {
   const fmtD = d => d ? d.split('-').reverse().join('/') : '—';
   document.getElementById('mfin-data-inicio').textContent = fmtD(m.data_inicio_viagem);
   document.getElementById('mfin-data-fim').textContent = fmtD(m.data_fim_viagem);
+  const elDescarga = document.getElementById('mfin-data-descarga');
+  if (elDescarga) elDescarga.textContent = m.data_descarga ? m.data_descarga.split('-').reverse().join('/') : '—';
   document.getElementById('mfin-auxiliar').textContent = m.auxiliar_operacao || '—';
   // Exibe o número do CE
   const ceWrapFin = document.getElementById('mfin-ce-wrap');
