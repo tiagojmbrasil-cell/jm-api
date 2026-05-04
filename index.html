@@ -5957,7 +5957,7 @@ async function confirmarEncerramentoMDFe() {
     }
     const canhotoAnexos = (await Promise.all(canhotoTasks)).filter(Boolean);
 
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: 'manifesto_encerrado' });
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: 'manifesto_encerrado', data_descarga: new Date().toISOString().split('T')[0] });
     // Salva canhotos na tabela motoristas
     const loteMotReg = fiscalData.find(x => x.id === motoristFiscalId);
     if (loteMotReg?.motorista_id && canhotoAnexos.length) {
