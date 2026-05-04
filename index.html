@@ -2361,8 +2361,14 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">LOTE</div><div style="font-weight:600;font-size:13px" id="mfin-lote">—</div></div>
       <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">📅 INÍCIO VIAGEM</div><div style="font-weight:600;font-size:13px" id="mfin-data-inicio">—</div></div>
       <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">🏁 FIM VIAGEM</div><div style="font-weight:600;font-size:13px" id="mfin-data-fim">—</div></div>
-      <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">📦 DATA DESCARGA</div><div style="font-weight:600;font-size:13px;color:#22c55e;" id="mfin-data-descarga">—</div></div>
+      <div id="mfin-descarga-wrap" style="background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.25);border-radius:7px;padding:6px 10px;">
+        <div style="font-size:10px;color:#22c55e;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">📦 DATA DESCARGA</div>
+        <div style="font-weight:700;font-size:13px;color:#22c55e;" id="mfin-descarga">—</div>
+      </div>
       <div id="mfin-ce-wrap" style="background:rgba(249,115,22,0.07);border:1px solid rgba(249,115,22,0.2);border-radius:7px;padding:6px 10px;display:none;">
+        <div style="font-size:10px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">📋 Nº CE</div>
+        <div style="font-weight:700;font-size:13px;" id="mfin-ce">—</div>
+      </div>
         <div style="font-size:10px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">📋 Nº CE</div>
         <div style="font-weight:700;font-size:13px;" id="mfin-ce">—</div>
       </div>
@@ -2401,6 +2407,10 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">MOTORISTA</div><div style="font-weight:600;font-size:13px" id="mme-nome">—</div></div>
       <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">CPF</div><div style="font-weight:600;font-size:13px" id="mme-cpf">—</div></div>
       <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">LOTE</div><div style="font-weight:600;font-size:13px" id="mme-lote">—</div></div>
+      <div style="background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.25);border-radius:7px;padding:6px 10px;">
+        <div style="font-size:10px;color:#22c55e;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">📦 DATA DESCARGA</div>
+        <div style="font-weight:700;font-size:13px;color:#22c55e;" id="mme-descarga">—</div>
+      </div>
     </div>
 
     <!-- Arquivos -->
@@ -3425,7 +3435,7 @@ async function carregarDashboard() {
     const [cotData, lotesData, lotMotData] = await Promise.all([
       supabaseRequest('GET', 'cotacoes_view?order=criado_em.desc&limit=500'),
       supabaseRequest('GET', 'lotes?order=criado_em.desc&limit=500'),
-      supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=1000&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,criado_em'),
+      supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=1000&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,data_descarga,criado_em'),
     ]);
     _dashRaw.cotacoes  = cotData || [];
     _dashRaw.lotes     = lotesData || [];
@@ -4306,7 +4316,7 @@ async function abrirMotoristas(id) {
 
 async function carregarMotoristas() {
   try {
-    const motoristas = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}&order=criado_em.asc&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,criado_em`) || [];
+    const motoristas = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}&order=criado_em.asc&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,data_descarga,criado_em`) || [];
     const totalCarregado = motoristas.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
 
     // Busca loteAtualDados do banco se não estiver em memória
@@ -4477,7 +4487,7 @@ async function adicionarMotorista() {
   }
 
   const pesoTotal = parseFloat(loteAtualDados.peso_ton || 0);
-  const motoristasExistentes = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,criado_em`) || [];
+  const motoristasExistentes = await supabaseRequest('GET', `lote_motoristas?lote_id=eq.${loteAtualId}&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,data_descarga,criado_em`) || [];
   const totalCarregado = motoristasExistentes.reduce((sum, m) => sum + parseFloat(m.peso_saida || 0), 0);
   const restante = pesoTotal - totalCarregado;
 
@@ -4580,7 +4590,7 @@ async function carregarMotoristasPagina() {
     document.getElementById('motoristas-page-table').innerHTML = '<div class="loading">Carregando...</div>';
     const [motoristas, loteMotoristas, lotes] = await Promise.all([
       supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500&select=id,nome,placa,placas_extras,cpf,contato,status,gr_status,gr_motivo,tipo_motorista,lote_id_origem,peso_saida_origem,data_inicio_viagem_origem,data_fim_viagem_origem,auxiliar_operacao_origem,criado_em,checklist,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,tipo_chave_pix,chave_pix,tipo_pagamento,valor_pedagio,tag_administradora,tag_numero,anexos,ocorrencias').then(r => r || []),
-      supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800&select=id,lote_id,motorista_id,nome,placa,cpf,peso_saida,status,tipo_pagamento,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,auxiliar_operacao,data_inicio_viagem,data_fim_viagem,checklist,sinistro_descricao,criado_em,data_descarga').then(r => r || []),
+      supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800&select=id,lote_id,motorista_id,nome,placa,cpf,peso_saida,status,tipo_pagamento,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,auxiliar_operacao,data_inicio_viagem,data_fim_viagem,checklist,sinistro_descricao,data_descarga,criado_em').then(r => r || []),
       supabaseRequest('GET', 'lotes?select=id,cliente,agencia,produto,coleta,rota_origem,rota_destino,valor_frete_empresa,valor_frete_motorista,peso_ton,status,pagador,obs,data_cadastro,criado_em').then(r => r || []),
     ]);
 
@@ -4793,8 +4803,8 @@ function renderMotoristasPagina(dados) {
         <!-- BLOCO 4: FINANCEIRO & PAGAMENTO -->
         <div style="padding:16px 18px;border-bottom:1px solid var(--border);">
           <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#facc15;margin-bottom:10px;">💰 Financeiro & Pagamento</div>
-          ${dDescarga ? linha('Data Descarga', dDescarga, '#22c55e') : ''}
           ${linha('Tipo Pagamento', tipoPgto, 'var(--text)')}
+          ${dDescarga ? linha('Data Descarga', dDescarga, '#22c55e') : ''}
           ${m.nome_titular ? linha('Titular', esc(m.nome_titular), 'var(--text)') : ''}
           ${m.cpf_titular ? linha('CPF/CNPJ Titular', esc(m.cpf_titular), 'var(--text)') : ''}
           ${m.banco ? linha('Banco', esc(m.banco), 'var(--text)') : ''}
@@ -5411,7 +5421,7 @@ async function carregarFiscal() {
 
     // Busca em paralelo: lote_motoristas (principal) + motoristas (fallback para quem nao tem lote_motoristas atualizado)
     const [todosLoteMot, todosMotoristas] = await Promise.all([
-      supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,criado_em'),
+      supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=500&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,data_descarga,criado_em'),
       supabaseRequest('GET', 'motoristas?status=eq.aguardando_emissao_doc&order=criado_em.desc&limit=500&select=id,nome,placa,cpf,contato,status,gr_status,gr_motivo,tipo_pagamento,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,lote_id_origem,criado_em'),
     ]);
 
@@ -5957,7 +5967,7 @@ async function confirmarEncerramentoMDFe() {
     }
     const canhotoAnexos = (await Promise.all(canhotoTasks)).filter(Boolean);
 
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: 'manifesto_encerrado', data_descarga: new Date().toISOString().split('T')[0] });
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${motoristFiscalId}`, { status: 'manifesto_encerrado' });
     // Salva canhotos na tabela motoristas
     const loteMotReg = fiscalData.find(x => x.id === motoristFiscalId);
     if (loteMotReg?.motorista_id && canhotoAnexos.length) {
@@ -6446,8 +6456,8 @@ async function confirmarCanhotoSemArquivo() {
   if (!confirm('Confirmar canhoto sem anexar arquivo?\n\nA entrega será registrada como concluída sem imagem do canhoto.')) return;
   try {
     const id = logisticoMotoristaSelecionadoId;
-    const dataDescarga = new Date().toISOString().split('T')[0];
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'manifesto_encerrado', data_descarga: dataDescarga });
+    const dataDescargaAgora = new Date().toISOString().split('T')[0];
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'manifesto_encerrado', data_descarga: dataDescargaAgora });
     registrarLog('logistico', 'Canhoto confirmado sem anexo (cfg desativado)', `LoteMot: #${id}`);
     showToast('✅ Canhoto confirmado. Manifesto encerrado.', 'success');
     await carregarLogistico();
@@ -7079,7 +7089,7 @@ async function carregarLogistico() {
     // Busca motoristas com status de NF e fotos (tabela motoristas)
     const motoristas = await supabaseRequest('GET', 'motoristas?order=criado_em.desc&limit=500&select=id,nome,placa,cpf,contato,status,gr_status,gr_motivo,tipo_motorista,lote_id_origem,peso_saida_origem,criado_em') || [];
     // Busca lote_motoristas com status de trânsito
-    const loteMotoristas = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,criado_em') || [];
+    const loteMotoristas = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,data_descarga,criado_em') || [];
 
     const statusNF = ['aguardando_nf'];
     const statusFotos = ['aguardando_fotos'];
@@ -7560,9 +7570,10 @@ async function confirmarEncerrarMDFeLogistico() {
       }
     }
     // Upload dos canhotos + PATCH do lote em PARALELO
+    const dataDescargaLogistico = new Date().toISOString().split('T')[0];
     const [canhotoAnexos] = await Promise.all([
       Promise.all(canhotoTasks).then(r => r.filter(Boolean)),
-      supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'manifesto_encerrado', data_descarga: new Date().toISOString().split('T')[0] })
+      supabaseRequest('PATCH', `lote_motoristas?id=eq.${id}`, { status: 'manifesto_encerrado', data_descarga: dataDescargaLogistico })
     ]);
 
     // Fecha modal e recarrega tela IMEDIATAMENTE — não espera sync do motorista
@@ -7580,6 +7591,7 @@ async function confirmarEncerrarMDFeLogistico() {
           const anexosAtuais = motAtual[0]?.anexos || [];
           await supabaseRequest('PATCH', `motoristas?id=eq.${reg[0].motorista_id}`, {
             status: 'manifesto_encerrado',
+            data_descarga: dataDescargaLogistico,
             anexos: [...anexosAtuais, ...canhotoAnexos]
           });
         }
@@ -7593,7 +7605,7 @@ async function confirmarEncerrarMDFeLogistico() {
 async function confirmarFinalizarTransito() {
   if (!confirm('Tem certeza que deseja finalizar?\nO motorista será enviado ao Financeiro.')) return;
   try {
-    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`, { status: 'manifesto_encerrado', data_descarga: new Date().toISOString().split('T')[0] });
+    await supabaseRequest('PATCH', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`, { status: 'manifesto_encerrado' });
     const reg = await supabaseRequest('GET', `lote_motoristas?id=eq.${logisticoMotoristaSelecionadoId}`) || [];
     if (reg[0]?.motorista_id) await supabaseRequest('PATCH', `motoristas?id=eq.${reg[0].motorista_id}`, { status: 'manifesto_encerrado' });
     registrarLog('logistico', 'Motorista finalizado — enviado ao Financeiro', `ID: #${logisticoMotoristaSelecionadoId}`);
@@ -7613,7 +7625,7 @@ async function carregarFinanceiro() {
     const el = document.getElementById('financeiro-table');
     if (!el) return;
     el.innerHTML = '<div class="loading">Carregando...</div>';
-    financeiroData = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,criado_em,data_descarga') || [];
+    financeiroData = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=800&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,data_descarga,criado_em') || [];
     filtrarFinanceiro();
   } catch (e) {
     document.getElementById('financeiro-table').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Erro ao carregar.</p></div>';
@@ -7739,9 +7751,10 @@ async function abrirModalFinFotos(id) {
   const fmtD = d => d ? d.split('-').reverse().join('/') : '—';
   document.getElementById('mfin-data-inicio').textContent = fmtD(m.data_inicio_viagem);
   document.getElementById('mfin-data-fim').textContent = fmtD(m.data_fim_viagem);
-  const elDescarga = document.getElementById('mfin-data-descarga');
-  if (elDescarga) elDescarga.textContent = m.data_descarga ? m.data_descarga.split('-').reverse().join('/') : '—';
   document.getElementById('mfin-auxiliar').textContent = m.auxiliar_operacao || '—';
+  // Data Descarga
+  const descargaEl = document.getElementById('mfin-descarga');
+  if (descargaEl) descargaEl.textContent = m.data_descarga ? fmtD(m.data_descarga) : '—';
   // Exibe o número do CE
   const ceWrapFin = document.getElementById('mfin-ce-wrap');
   const ceElFin = document.getElementById('mfin-ce');
@@ -7970,6 +7983,10 @@ async function abrirModalManifestoEncerrado(id) {
   document.getElementById('mme-nome').textContent = m.nome || '—';
   document.getElementById('mme-cpf').textContent = m.cpf || '—';
   document.getElementById('mme-lote').textContent = 'Lote #' + (m.lote_id || '—');
+  // Data Descarga
+  const fmtDMme = d => d ? d.split('-').reverse().join('/') : '—';
+  const mmeDescargaEl = document.getElementById('mme-descarga');
+  if (mmeDescargaEl) mmeDescargaEl.textContent = m.data_descarga ? fmtDMme(m.data_descarga) : '—';
 
   const container = document.getElementById('mme-fotos-container');
   container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">⏳ Carregando arquivos...</div>';
@@ -9356,12 +9373,12 @@ async function gerarRelatorio() {
       if (cliente) dados = dados.filter(r => (r.cliente||'').toLowerCase() === cliente.toLowerCase());
       renderRelLotes(dados);
     } else if (relTipoAtual === 'motoristas') {
-      dados = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=2000&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,criado_em') || [];
+      dados = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=2000&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,data_descarga,criado_em') || [];
       dados = filtrarPorData(dados, 'criado_em', dtIni, dtFim);
       if (status) dados = dados.filter(r => r.status === status);
       renderRelMotoristas(dados);
     } else if (relTipoAtual === 'financeiro') {
-      dados = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=2000&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,criado_em') || [];
+      dados = await supabaseRequest('GET', 'lote_motoristas?order=criado_em.desc&limit=2000&select=id,lote_id,motorista_id,nome,placa,cpf,contato,peso_saida,status,tipo_pagamento,gr_status,gr_motivo,tipo_chave_pix,chave_pix,nome_titular,cpf_titular,banco,agencia,numero_conta,tipo_conta,financeiro_adiantamento_data,financeiro_saldo_data,financeiro_saldo_motivo,manifesto_numero,numero_ce,data_descarga,criado_em') || [];
       dados = filtrarPorData(dados, 'criado_em', dtIni, dtFim);
       const statusFin = ['fotos_inseridas','adiantamento_pago','manifesto_encerrado','saldo_agendado','saldo_pago'];
       dados = dados.filter(r => statusFin.includes(r.status));
